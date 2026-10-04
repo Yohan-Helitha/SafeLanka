@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Command dark theme: portal = dark control room, field = light outdoor surface */
+:root,
+[data-surface='portal'] {
+  --canvas: 15 23 42;
+  --panel: 22 32 51;
+  --raised: 30 41 66;
+  --line: 38 50 74;
+  --ink: 226 232 240;
+  --muted: 148 163 184;
+  --faint: 100 116 139;
+  --action: 14 116 144;
+  --signal: 34 211 238;
+  --ok: 52 211 153;
+  --caution: 251 191 36;
+  --danger: 248 113 113;
+}
+
+[data-surface='field'] {
+  --canvas: 241 245 249;
+  --panel: 255 255 255;
+  --raised: 248 250 252;
+  --line: 203 213 225;
+  --ink: 15 23 42;
+  --muted: 71 85 105;
+  --faint: 100 116 139;
+  --action: 14 116 144;
+  --signal: 8 145 178;
+  --ok: 5 150 105;
+  --caution: 180 83 9;
+  --danger: 185 28 28;
+}
+
+@layer base {
+  html {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+    background-color: #0f172a;
+    margin: 0;
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--signal));
+    outline-offset: 2px;
+  }
+  dialog {
+    @apply bg-panel text-ink;
+  }
+  dialog::backdrop {
+    background: rgb(2 6 23 / 0.7);
+  }
+}
+
+@layer components {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

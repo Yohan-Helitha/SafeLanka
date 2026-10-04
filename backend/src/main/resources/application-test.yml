@@ -10,7 +10,14 @@ logging:
     lk.dmc.disaster: INFO
 
 app:
+  integrations:
+    sms:
+      provider: mock      # tests never send real SMS, whatever backend/.env says
   storage:
     root: ./target/test-uploads
   simulation:
     enabled: false
+  auth:
+    jwt-secret: test-only-secret-that-is-at-least-32-characters-long
+    cookie-secure: false
+    expose-dev-code: true
