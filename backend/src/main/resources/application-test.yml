@@ -1,0 +1,16 @@
+spring:
+  # Used only when Testcontainers is off (-Dapp.test.use-testcontainers=false); otherwise @ServiceConnection overrides it.
+  datasource:
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/disaster_test}
+    username: ${TEST_DB_USERNAME:disaster}
+    password: ${TEST_DB_PASSWORD:disaster}
+
+logging:
+  level:
+    lk.dmc.disaster: INFO
+
+app:
+  storage:
+    root: ./target/test-uploads
+  simulation:
+    enabled: false

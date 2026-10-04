@@ -1,0 +1,23 @@
+# Java / Maven
+backend/target/
+backend/uploads/
+*.class
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# Local secrets
+.env
+*.local

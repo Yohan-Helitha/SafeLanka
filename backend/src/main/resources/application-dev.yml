@@ -1,0 +1,8 @@
+logging:
+  level:
+    lk.dmc.disaster: DEBUG
+    org.springframework.modulith: DEBUG
+
+app:
+  simulation:
+    enabled: true
