@@ -105,9 +105,13 @@ Layers per module: `web` (controllers) → `application` (use cases) → `domain
 ├─ docs/                     architecture, API and module guides
 ├─ backend/                  Spring Boot (Maven) – lk.dmc.disaster.*
 │  └─ src/main/resources/db/migration/   Flyway V1_0_1 … V6_0_1 (30 tables + seed data)
-└─ frontend/                 React + TypeScript + Vite
-   └─ src/{shared,features/{reports,warnings,response,analytics}}
-```
+└─ frontend/                 React + TypeScript + Vite + Tailwind (see frontend/README.md)
+   └─ src/{components,constants,context,hooks,navigation,screens,services,theme,types,utils}
+      each with reports / warnings / response / analytics module folders
+
+## Frontend
+
+All 25 screens for the five roles are built in the Command dark theme and run on an in-browser mock database that matches the Flyway seed, so the UI works without the backend. Set `VITE_USE_MOCKS=false` in `frontend/.env.local` to call the Spring Boot API instead. Pick a seeded person on the landing screen (no login); details, routes and folder rules are in [frontend/README.md](frontend/README.md).
 
 ## Database
 
@@ -128,5 +132,5 @@ Seed data (fixed UUIDs): 5 districts, 2 river basins, 9 named users + 40 demo re
 - [x] Configuration (`application*.yml`), bootstrap code, module declarations
 - [x] Migrations V1–V6 applied (7 migrations), `./mvnw verify` passes
 - [x] Secret templates (`backend/.env.example`, `frontend/.env.example`) and Docker-free run/test path
-- [x] Frontend scaffolded (dependencies installed, feature folders created)
+- [x] Frontend: 25 screens, services layer with mock and HTTP implementations, offline outbox
 - [ ] GitHub repository settings: collaborators and `main` branch protection
