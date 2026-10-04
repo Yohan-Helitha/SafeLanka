@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { ROLE_LABEL, ROLE_ORDER } from '@/constants/roles'
-import { useActingUser } from '@/context/ActingUserContext'
+import { useAuth } from '@/context/AuthContext'
 import { useReferenceData } from '@/hooks/shared'
 import { api } from '@/services'
 import type { AppUser } from '@/types'
@@ -12,7 +12,7 @@ interface Props {
 
 /** Named seed users grouped by role (demo residents are left out). */
 export function UserPicker({ onPick }: Props) {
-  const { user: current } = useActingUser()
+  const { user: current } = useAuth()
   const { districtName } = useReferenceData()
   const users = useQuery({
     queryKey: ['reference', 'users'],

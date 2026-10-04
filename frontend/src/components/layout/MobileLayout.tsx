@@ -4,7 +4,7 @@ import { APP_NAME } from '@/constants/app'
 import { CITIZEN_NAV } from '@/navigation/navConfig'
 import { OfflineBanner } from './OfflineBanner'
 import { OfflineToggle } from './OfflineToggle'
-import { RoleSwitcher } from './RoleSwitcher'
+import { UserMenu } from './UserMenu'
 
 interface Props {
   title: string
@@ -24,7 +24,7 @@ export function MobileLayout({ title, bottomNav = false }: Props) {
           </div>
           <div className="flex items-center gap-2">
             <OfflineToggle className="border-slate-600 text-slate-300" />
-            <RoleSwitcher compact />
+            <UserMenu compact />
           </div>
         </div>
         <OfflineBanner />

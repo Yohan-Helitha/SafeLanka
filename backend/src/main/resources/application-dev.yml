@@ -6,3 +6,6 @@ logging:
 app:
   simulation:
     enabled: true
+  auth:
+    cookie-secure: false      # the dev server runs on plain http (also from a phone on the LAN)
+    expose-dev-code: true     # the SMS code is returned and logged, since the gateway is mocked

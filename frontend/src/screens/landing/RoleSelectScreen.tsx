@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { UserPicker } from '@/components/layout/UserPicker'
 import { APP_NAME } from '@/constants/app'
 import { homeFor, ROLE_LABEL } from '@/constants/roles'
-import { useActingUser } from '@/context/ActingUserContext'
+import { useAuth } from '@/context/AuthContext'
 import { useDocumentTitle } from '@/hooks/shared'
 import type { AppUser } from '@/types'
 
 /** Entry point: there is no login, so people choose who to act as. */
 export function RoleSelectScreen() {
   useDocumentTitle('')
-  const { user, signIn } = useActingUser()
+  const { user, signIn } = useAuth()
   const navigate = useNavigate()
 
   const pick = (next: AppUser) => {

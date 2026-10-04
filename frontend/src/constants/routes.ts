@@ -1,5 +1,12 @@
+import { env } from './env'
+
 export const paths = {
   landing: '/',
+  auth: {
+    login: '/login',
+    signup: '/signup',
+    verify: '/verify',
+  },
   citizen: {
     home: '/app',
     alert: (id: string) => `/app/alerts/${id}`,
@@ -32,3 +39,6 @@ export const paths = {
     analysis: (id: string) => `/district/analytics/${id}`,
   },
 } as const
+
+/** Where someone who is not signed in is sent: the login screen, or the role picker in demo mode. */
+export const entryPath: string = env.authMode === 'login' ? paths.auth.login : paths.landing

@@ -1,5 +1,6 @@
 export * from './common'
 export * from './reference'
+export * from './auth'
 export * from './reports'
 export * from './warnings'
 export * from './response'

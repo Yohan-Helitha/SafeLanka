@@ -7,7 +7,7 @@ import { Button, CharCount, Field, PageHeader, Segmented, Select, TextArea } fro
 import { LIMITS } from '@/constants/app'
 import { CATEGORY_LABEL } from '@/constants/labels'
 import { paths } from '@/constants/routes'
-import { useCurrentUser } from '@/context/ActingUserContext'
+import { useCurrentUser } from '@/context/AuthContext'
 import { useDocumentTitle, useGeolocation, useReferenceData } from '@/hooks/shared'
 import { useSubmitReport } from '@/hooks/reports/useReports'
 import type { ReportInput } from '@/types'

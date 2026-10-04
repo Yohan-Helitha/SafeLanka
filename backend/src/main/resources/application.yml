@@ -19,6 +19,7 @@ spring:
           time_zone: UTC
   flyway:
     locations: classpath:db/migration
+    out-of-order: true     # owners add migrations in parallel; versions are unique per owner
   servlet:
     multipart:
       max-file-size: 5MB
@@ -51,14 +52,27 @@ app:
     root: ./uploads
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  auth:
+    jwt-secret: ${JWT_SECRET:}            # required, at least 32 characters (see backend/.env.example)
+    issuer: safelanka
+    access-token-ttl: 15m
+    refresh-token-ttl: 7d
+    otp-ttl: 5m
+    otp-max-attempts: 3
+    otp-resend-cooldown: 60s
+    max-failed-logins: 5
+    lock-duration: 15m
+    cookie-secure: ${AUTH_COOKIE_SECURE:true}   # false only for plain-http local development
+    expose-dev-code: false                      # true only in dev/test: returns the SMS code in the response
   paging:
     max-page-size: 100
   # External integrations are simulated in dev/test; real values go in backend/.env
   integrations:
     sms:
-      url: ${SMS_GATEWAY_URL:}
-      api-key: ${SMS_GATEWAY_API_KEY:}
-      sender-id: ${SMS_SENDER_ID:}
+      provider: ${SMS_PROVIDER:mock}        # mock (default, no messages sent) | textlk (real SMS)
+      sender-id: ${SMS_SENDER_ID:TextLKDemo}
+      textlk:
+        api-key: ${SMS_TEXTLK_API_KEY:}
     push:
       fcm-server-key: ${FCM_SERVER_KEY:}
     weather:

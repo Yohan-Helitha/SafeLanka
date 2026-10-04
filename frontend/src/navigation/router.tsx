@@ -3,7 +3,7 @@ import type { RouteObject } from 'react-router-dom'
 import { MobileLayout, PortalLayout } from '@/components/layout'
 import { paths } from '@/constants/routes'
 import { NotFoundScreen } from '@/screens/landing/NotFoundScreen'
-import { RoleSelectScreen } from '@/screens/landing/RoleSelectScreen'
+import { LandingRoute } from '@/screens/landing/LandingRoute'
 import { RequireRole } from './RequireRole'
 
 /** Screens load on demand so the charts and field flows do not weigh down the first paint. */
@@ -11,6 +11,11 @@ const screen = (load: () => Promise<Record<string, unknown>>, name: string): Pic
   lazy: async () => ({ Component: (await load())[name] as React.ComponentType }),
 })
 
+const authScreens = {
+  login: () => import('@/screens/auth/LoginScreen'),
+  signup: () => import('@/screens/auth/SignupScreen'),
+  verify: () => import('@/screens/auth/VerifyPhoneScreen'),
+}
 const reportsScreens = {
   hazard: () => import('@/screens/reports/ReportHazardScreen'),
   done: () => import('@/screens/reports/ReportSubmittedScreen'),
@@ -53,7 +58,12 @@ const analyticsReport = (backTo: string): Pick<RouteObject, 'lazy'> => ({
 })
 
 export const router = createBrowserRouter([
-  { path: paths.landing, element: <RoleSelectScreen /> },
+  { path: paths.landing, element: <LandingRoute /> },
+
+  // Accounts (login mode; in demo mode these redirect to the role picker)
+  { path: paths.auth.login, ...screen(authScreens.login, 'LoginScreen') },
+  { path: paths.auth.signup, ...screen(authScreens.signup, 'SignupScreen') },
+  { path: paths.auth.verify, ...screen(authScreens.verify, 'VerifyPhoneScreen') },
 
   // Citizens and volunteers: light mobile app with a bottom bar
   {

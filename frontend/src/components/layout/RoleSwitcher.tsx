@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { homeFor, ROLE_LABEL } from '@/constants/roles'
 import { paths } from '@/constants/routes'
-import { useActingUser } from '@/context/ActingUserContext'
+import { useAuth } from '@/context/AuthContext'
 import type { AppUser } from '@/types'
 import { Button, Dialog } from '../ui'
 import { UserPicker } from './UserPicker'
@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function RoleSwitcher({ compact = false }: Props) {
-  const { user, signIn, signOut } = useActingUser()
+  const { user, signIn, signOut } = useAuth()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
 

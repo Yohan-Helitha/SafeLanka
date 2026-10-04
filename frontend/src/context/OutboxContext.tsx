@@ -7,6 +7,7 @@ import { connectivity } from '@/services/offline/connectivity'
 import { outboxStore } from '@/services/offline/outbox'
 import type { OutboxItem, OutboxPayload } from '@/services/offline/outbox'
 import { plural } from '@/utils/format'
+import { useAuth } from './AuthContext'
 import { useToast } from './ToastContext'
 
 interface OutboxState {
@@ -38,11 +39,15 @@ async function send(payload: OutboxPayload): Promise<void> {
 export function OutboxProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
-  const [items, setItems] = useState<OutboxItem[]>([])
+  const { user } = useAuth()
+  const ownerId = user?.id
+  const [all, setAll] = useState<OutboxItem[]>([])
   const [flushing, setFlushing] = useState(false)
   const busy = useRef(false)
 
-  const reload = useCallback(async () => setItems(await outboxStore.all()), [])
+  const reload = useCallback(async () => setAll(await outboxStore.all()), [])
+  // Only the signed-in person's items are shown and sent.
+  const items = useMemo(() => all.filter((i) => !i.ownerId || i.ownerId === ownerId), [all, ownerId])
 
   useEffect(() => {
     void reload()
@@ -52,6 +57,7 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
     async (clientRef: string, payload: OutboxPayload, label: string) => {
       await outboxStore.put({
         clientRef,
+        ownerId,
         kind: payload.kind,
         payload,
         label,
@@ -62,7 +68,7 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
       })
       await reload()
     },
-    [reload],
+    [reload, ownerId],
   )
 
   const discard = useCallback(
@@ -81,6 +87,7 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
     try {
       for (const item of await outboxStore.all()) {
         if (item.state === 'NEEDS_ATTENTION') continue
+        if (item.ownerId && item.ownerId !== ownerId) continue
         try {
           await send(item.payload)
           await outboxStore.remove(item.clientRef)
@@ -106,7 +113,7 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
       toast(`${plural(sent, 'saved item')} ${sent === 1 ? 'was' : 'were'} sent`)
       await queryClient.invalidateQueries()
     }
-  }, [queryClient, reload, toast])
+  }, [queryClient, reload, toast, ownerId])
 
   useEffect(() => {
     const unsubscribe = connectivity.subscribe(() => {

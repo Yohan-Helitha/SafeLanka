@@ -2,8 +2,9 @@ import { env } from '@/constants/env'
 import type { Page } from '@/types'
 import { ApiError } from './ApiError'
 import type { ApiErrorCode } from './ApiError'
+import { refreshAccessToken } from './auth/tokenRefresh'
 import { connectivity } from './offline/connectivity'
-import { getActingUserId } from './session'
+import { getAccessToken, getActingUserId, notifySessionExpired } from './session'
 
 type Query = Record<string, string | number | boolean | undefined | null | (string | number)[]>
 
@@ -17,17 +18,36 @@ function buildUrl(path: string, query?: Query): string {
   return url.toString()
 }
 
-async function send(path: string, init: RequestInit & { query?: Query } = {}): Promise<Response> {
-  if (connectivity.isOffline()) throw ApiError.offline()
+/** One network attempt, with the current credentials. Headers are rebuilt each time so a retry uses a renewed token. */
+async function attempt(path: string, init: RequestInit & { query?: Query }): Promise<Response> {
   const headers = new Headers(init.headers)
-  const user = getActingUserId()
-  if (user) headers.set('X-Acting-User', user)
-  let res: Response
+  const token = getAccessToken()
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+  const actingUser = getActingUserId()
+  if (env.authMode === 'demo' && actingUser) headers.set('X-Acting-User', actingUser)
   try {
-    res = await fetch(buildUrl(path, init.query), { ...init, headers })
+    return await fetch(buildUrl(path, init.query), { ...init, headers, credentials: 'include' })
   } catch {
     throw ApiError.offline()
   }
+}
+
+async function send(path: string, init: RequestInit & { query?: Query } = {}): Promise<Response> {
+  if (connectivity.isOffline()) throw ApiError.offline()
+  let res = await attempt(path, init)
+
+  // An expired access token: renew it once through the refresh cookie and replay the request.
+  if (res.status === 401 && env.authMode === 'login' && !path.startsWith('/auth/')) {
+    try {
+      await refreshAccessToken()
+    } catch (e) {
+      if (e instanceof ApiError && e.isOffline) throw e
+      notifySessionExpired()
+      throw new ApiError(401, 'UNAUTHENTICATED', 'Your session ended. Log in again.')
+    }
+    res = await attempt(path, init)
+  }
+
   if (!res.ok) {
     let body: { error?: { code?: ApiErrorCode; message?: string; details?: Record<string, unknown> } } = {}
     try {

@@ -2,7 +2,7 @@ import { ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { paths } from '@/constants/routes'
 import { LEVEL_ORDER } from '@/constants/labels'
-import { useActingUser } from '@/context/ActingUserContext'
+import { useAuth } from '@/context/AuthContext'
 import { useActiveWarnings } from '@/hooks/warnings/useWarnings'
 import { SEVERITY } from '@/theme/tokens'
 import { formatTime } from '@/utils/format'
@@ -10,7 +10,7 @@ import { SeverityIcon } from '../domain'
 
 /** The one bold element in the portal: the highest active warning, always in view. */
 export function SituationStrip() {
-  const { user } = useActingUser()
+  const { user } = useAuth()
   const { data } = useActiveWarnings()
 
   const active = (data ?? []).filter((w) => user?.role !== 'DISTRICT_OFFICER' || w.districtIds.includes(user.districtId))

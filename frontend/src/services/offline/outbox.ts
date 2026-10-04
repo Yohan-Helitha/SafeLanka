@@ -11,6 +11,8 @@ export type OutboxPayload =
 
 export interface OutboxItem {
   clientRef: string
+  /** Who queued it; another person logging in on this device must not send it. Missing on old items. */
+  ownerId?: string
   kind: OutboxKind
   payload: OutboxPayload
   label: string

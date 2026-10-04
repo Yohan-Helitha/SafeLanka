@@ -1,4 +1,7 @@
 import { env } from '@/constants/env'
+import { authHttp } from './auth/auth.http'
+import { authMock } from './auth/auth.mock'
+import type { AuthApi } from './auth/authApi'
 import { analyticsHttp } from './analytics/analytics.http'
 import { analyticsMock } from './analytics/analytics.mock'
 import type { AnalyticsApi } from './analytics/analyticsApi'
@@ -16,6 +19,7 @@ import { warningsMock } from './warnings/warnings.mock'
 import type { WarningsApi } from './warnings/warningsApi'
 
 export interface Api {
+  auth: AuthApi
   reference: ReferenceApi
   reports: ReportsApi
   warnings: WarningsApi
@@ -25,8 +29,8 @@ export interface Api {
 
 /** The only data access screens use. VITE_USE_MOCKS switches between the in-browser mocks and the Spring Boot API. */
 export const api: Api = env.useMocks
-  ? { reference: referenceMock, reports: reportsMock, warnings: warningsMock, response: responseMock, analytics: analyticsMock }
-  : { reference: referenceHttp, reports: reportsHttp, warnings: warningsHttp, response: responseHttp, analytics: analyticsHttp }
+  ? { auth: authMock, reference: referenceMock, reports: reportsMock, warnings: warningsMock, response: responseMock, analytics: analyticsMock }
+  : { auth: authHttp, reference: referenceHttp, reports: reportsHttp, warnings: warningsHttp, response: responseHttp, analytics: analyticsHttp }
 
 export { ApiError, isApiError } from './ApiError'
 export type { ExportFormat } from './analytics/analyticsApi'

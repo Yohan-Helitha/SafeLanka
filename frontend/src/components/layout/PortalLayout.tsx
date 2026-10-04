@@ -1,12 +1,12 @@
 import clsx from 'clsx'
 import { NavLink, Outlet } from 'react-router-dom'
 import { APP_NAME } from '@/constants/app'
-import { useCurrentUser } from '@/context/ActingUserContext'
+import { useCurrentUser } from '@/context/AuthContext'
 import { useReferenceData } from '@/hooks/shared'
 import { PORTAL_NAV } from '@/navigation/navConfig'
 import { OfflineBanner } from './OfflineBanner'
 import { OfflineToggle } from './OfflineToggle'
-import { RoleSwitcher } from './RoleSwitcher'
+import { UserMenu } from './UserMenu'
 import { SituationStrip } from './SituationStrip'
 
 /** Dark control-room layout for DMC and district officers. */
@@ -42,7 +42,7 @@ export function PortalLayout() {
           ))}
         </nav>
         <div className="border-t border-line p-3">
-          <RoleSwitcher />
+          <UserMenu />
         </div>
       </aside>
 
@@ -55,7 +55,7 @@ export function PortalLayout() {
             </div>
             <div className="flex items-center gap-2">
               <OfflineToggle />
-              <RoleSwitcher compact />
+              <UserMenu compact />
             </div>
           </div>
           <nav aria-label="Main" className="flex gap-1 overflow-x-auto border-b border-line bg-sidebar px-2 md:hidden">

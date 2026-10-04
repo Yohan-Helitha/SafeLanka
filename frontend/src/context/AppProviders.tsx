@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { isApiError } from '@/services'
-import { ActingUserProvider } from './ActingUserContext'
+import { AuthProvider } from './AuthContext'
 import { OutboxProvider } from './OutboxContext'
 import { ToastProvider } from './ToastContext'
 
@@ -23,9 +23,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={client}>
       <ToastProvider>
-        <ActingUserProvider>
+        <AuthProvider>
           <OutboxProvider>{children}</OutboxProvider>
-        </ActingUserProvider>
+        </AuthProvider>
       </ToastProvider>
     </QueryClientProvider>
   )
