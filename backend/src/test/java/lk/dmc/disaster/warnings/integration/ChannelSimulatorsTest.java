@@ -90,4 +90,15 @@ class ChannelSimulatorsTest {
     assertThat(new SmsGatewaySimulator(failing()).channel()).isEqualTo(Channel.SMS);
     assertThat(new AudibleAlertSimulator(failing()).channel()).isEqualTo(Channel.AUDIBLE);
   }
+
+  @Test
+  void supports_audibleOnlyFromWarningLevel_otherChannelsAlways() {
+    AudibleAlertSimulator audible = new AudibleAlertSimulator(failing());
+    PushChannelSimulator push = new PushChannelSimulator(failing());
+
+    assertThat(audible.supports(WarningLevel.WATCH)).isFalse();
+    assertThat(audible.supports(WarningLevel.WARNING)).isTrue();
+    assertThat(audible.supports(WarningLevel.EVACUATE)).isTrue();
+    assertThat(push.supports(WarningLevel.ADVISORY)).isTrue();
+  }
 }

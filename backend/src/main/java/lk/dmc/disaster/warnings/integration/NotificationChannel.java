@@ -1,5 +1,6 @@
 package lk.dmc.disaster.warnings.integration;
 
+import lk.dmc.disaster.shared.domain.WarningLevel;
 import lk.dmc.disaster.warnings.entity.Channel;
 
 /**
@@ -10,6 +11,11 @@ public interface NotificationChannel {
 
   /** The channel this strategy serves. */
   Channel channel();
+
+  /** Whether this channel is used for warnings of the given level. Every level by default. */
+  default boolean supports(WarningLevel level) {
+    return true;
+  }
 
   /**
    * Sends one message to one citizen. A failure is returned, not thrown, so one bad channel never
