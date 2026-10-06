@@ -27,15 +27,15 @@ export function SituationStrip() {
   const latest = [...active].sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))[0]
   const body = (
     <>
-      <SeverityIcon level={top.level} className="size-5 shrink-0" />
-      <span className="font-display text-lg font-semibold uppercase tracking-wide">{SEVERITY[top.level].label}</span>
-      <span className="min-w-0 flex-1 truncate font-medium">{top.title}</span>
+      <SeverityIcon level={top.level} className="size-4 shrink-0 sm:size-5" />
+      <span className="font-display text-sm font-semibold uppercase tracking-wide shrink-0 sm:text-lg">{SEVERITY[top.level].label}</span>
+      <span className="min-w-0 flex-1 truncate text-xs font-medium sm:text-sm">{top.title}</span>
       <span className="tabular hidden shrink-0 text-sm opacity-90 sm:inline">
         {active.length} active · issued {formatTime(latest.issuedAt)}
       </span>
     </>
   )
-  const cls = 'flex items-center gap-3 px-4 py-2.5 text-white'
+  const cls = 'flex items-center gap-2 px-3 py-2 text-white sm:gap-3 sm:px-4 sm:py-2.5'
   const style = { backgroundColor: SEVERITY[top.level].hex }
 
   return user?.role === 'DMC_OFFICER' ? (
