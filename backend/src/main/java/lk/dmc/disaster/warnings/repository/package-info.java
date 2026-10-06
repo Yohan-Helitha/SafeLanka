@@ -1,2 +1,2 @@
-/** persistence: Spring Data repositories. */
-package lk.dmc.disaster.warnings.persistence;
+/** repository: Spring Data repositories. */
+package lk.dmc.disaster.warnings.repository;
