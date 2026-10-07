@@ -65,10 +65,10 @@ class ReportController {
   ResponseEntity<ApiResponse<ReportListItemResponse>> submit(
       @RequestPart("report") @Valid SubmitReportRequest report,
       @RequestPart(value = "photo", required = false) MultipartFile photo) {
-    SubmissionResult result = submission.submit(actingUser.require().id(), toCommand(report, photo));
+    SubmissionResult result =
+        submission.submit(actingUser.require().id(), toCommand(report, photo));
     HttpStatus status = result.created() ? HttpStatus.CREATED : HttpStatus.OK;
-    return ResponseEntity.status(status)
-        .body(ApiResponse.of(mapper.toListItem(result)));
+    return ResponseEntity.status(status).body(ApiResponse.of(mapper.toListItem(result)));
   }
 
   @Operation(summary = "My reports, newest first", description = "Roles: CITIZEN, VOLUNTEER.")
@@ -83,8 +83,9 @@ class ReportController {
 
   @Operation(
       summary = "One report in full",
-      description = "Roles: DMC_OFFICER, or the citizen or volunteer who reported it (otherwise 403)."
-          + " Possible duplicates are shown to officers only.")
+      description =
+          "Roles: DMC_OFFICER, or the citizen or volunteer who reported it (otherwise 403)."
+              + " Possible duplicates are shown to officers only.")
   @GetMapping("/{id}")
   @RequiresRole({Role.CITIZEN, Role.VOLUNTEER, Role.DMC_OFFICER})
   ApiResponse<ReportDetailResponse> detail(@PathVariable UUID id) {
