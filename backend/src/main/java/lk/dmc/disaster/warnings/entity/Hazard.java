@@ -87,9 +87,15 @@ public class Hazard {
   /** A verified report with no matching hazard starts one. */
   public static Hazard fromReport(
       UUID hazardTypeId, HazardArea area, String description, Instant now) {
+    return fromReport(hazardTypeId, area, description, WarningRules.REPORT_HAZARD_SEVERITY, now);
+  }
+
+  /** A verified report starts one at the severity the officer chose when verifying it. */
+  public static Hazard fromReport(
+      UUID hazardTypeId, HazardArea area, String description, int severity, Instant now) {
     return open(
         hazardTypeId,
-        WarningRules.REPORT_HAZARD_SEVERITY,
+        severity,
         area,
         description,
         HazardSource.REPORT,

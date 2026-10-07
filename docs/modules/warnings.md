@@ -69,12 +69,16 @@ leave an entity are copies.
   its time). A warning that is escalated is sent again, and each delivery records the level it was
   sent at, so the delivery totals describe the current level while "people reached" counts everyone
   the warning ever reached. Warnings escalated before this change keep the ESCALATED status.
-- **Severity (how dangerous a hazard is, 1 to 5) comes from evidence and the officer.** A hazard
-  made from a verified report starts at 2. Each further verified report linked to it can raise it
-  (3 reports give 3, 5 give 4, 8 or more give 5; the thresholds are in `WarningRules`), and it is
-  never lowered automatically. The duty officer can set it up or down on the hazard detail page
-  (`PATCH /api/hazards/{id}/severity`) until the hazard is resolved. Severity only orders the
-  Hazards list; it does not decide the warning level, which the officer chooses.
+- **Severity (how dangerous a hazard is, 1 to 5) comes from the officer and the evidence.** When
+  the officer verifies a ground report they choose a severity (default 2) on the report screen; it
+  travels in `ReportVerifiedEvent`. A hazard created from that report starts at that severity, and a
+  hazard the report is added to is raised to it if it is lower. Evidence also raises severity by
+  itself (3 verified reports give 3, 5 give 4, 8 or more give 5; the thresholds are in
+  `WarningRules`). Severity is never lowered automatically; the officer can set it up or down on the
+  hazard detail page (`PATCH /api/hazards/{id}/severity`) until the hazard is resolved. Severity
+  only orders the Hazards list; it does not decide the warning level, which the officer chooses.
+  The reports module change is small and optional: `VerifyRequest.severity`, passed on in the event,
+  not stored on the report.
 - **Hand-written mappers** instead of MapStruct: the mapping is nested and needs the hazard type
   code lookup.
 - **Simulation is dev-only.** `SimulationController` has `@Profile("dev")`. The simulator opens a

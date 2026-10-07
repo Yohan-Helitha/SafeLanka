@@ -40,7 +40,8 @@ public class HazardEvidenceListener {
                         event.reportId(),
                         event.hazardTypeId(),
                         event.districtId(),
-                        report.description())),
+                        report.description(),
+                        event.severity())),
             () -> log.warn("Verified report {} not found, no hazard linked", event.reportId()));
   }
 }

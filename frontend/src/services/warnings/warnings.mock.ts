@@ -129,13 +129,15 @@ bus.subscribe((event) => {
   const linkedAt = new Date().toISOString()
   if (open) {
     if (!open.evidence.some((e) => e.reportId === report.id)) open.evidence.push({ reportId: report.id, linkedAt })
+    // The officer's severity raises the hazard; it is never lowered here.
+    open.severity = Math.max(open.severity, event.severity ?? 0)
     return
   }
   db.hazards.push({
     id: newId(),
     eventId: null,
     hazardTypeId: report.hazardTypeId,
-    severity: 2,
+    severity: event.severity ?? 2,
     districtId: report.districtId,
     riverBasinId: null,
     description: report.description,

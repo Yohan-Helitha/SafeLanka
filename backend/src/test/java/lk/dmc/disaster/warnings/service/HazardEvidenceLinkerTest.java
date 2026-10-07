@@ -142,6 +142,45 @@ class HazardEvidenceLinkerTest {
   }
 
   @Test
+  void link_newHazard_startsAtTheSeverityTheOfficerChoseWhenVerifying() {
+    when(evidence.existsByIdReportId(report.reportId())).thenReturn(false);
+    when(areas.basinsOfDistrict(DISTRICT)).thenReturn(Set.of());
+    when(hazards.findNewestOpenMatching(TYPE, DISTRICT, Set.of())).thenReturn(Optional.empty());
+    when(hazards.save(any(Hazard.class))).thenAnswer(call -> call.getArgument(0));
+    VerifiedReportRef judged =
+        new VerifiedReportRef(report.reportId(), TYPE, DISTRICT, report.description(), 4);
+
+    Hazard created = linker.link(judged).orElseThrow();
+
+    assertThat(created.getSeverity()).isEqualTo(4);
+  }
+
+  @Test
+  void link_existingHazard_isRaisedToTheOfficersSeverity() {
+    Hazard existing = existingReportHazard();
+    when(evidence.countByIdHazardId(existing.getId())).thenReturn(1L);
+    VerifiedReportRef judged =
+        new VerifiedReportRef(report.reportId(), TYPE, DISTRICT, report.description(), 5);
+
+    linker.link(judged);
+
+    assertThat(existing.getSeverity()).isEqualTo(5);
+  }
+
+  @Test
+  void link_officersLowerSeverity_neverLowersAnExistingHazard() {
+    Hazard existing = existingReportHazard();
+    existing.setSeverity(4);
+    when(evidence.countByIdHazardId(existing.getId())).thenReturn(1L);
+    VerifiedReportRef judged =
+        new VerifiedReportRef(report.reportId(), TYPE, DISTRICT, report.description(), 1);
+
+    linker.link(judged);
+
+    assertThat(existing.getSeverity()).isEqualTo(4);
+  }
+
+  @Test
   void link_reportAlreadyLinked_doesNothing() {
     when(evidence.existsByIdReportId(report.reportId())).thenReturn(true);
 

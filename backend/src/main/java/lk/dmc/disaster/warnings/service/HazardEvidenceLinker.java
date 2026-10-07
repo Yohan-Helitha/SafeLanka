@@ -58,14 +58,18 @@ public class HazardEvidenceLinker {
                 areas.basinsOfDistrict(report.districtId()))
             .orElseGet(() -> hazards.save(newHazardFor(report)));
     evidence.save(HazardEvidence.link(hazard.getId(), report.reportId(), clock.instant()));
-    raiseSeverityToMatchEvidence(hazard);
+    raiseSeverity(hazard, report.severity());
     log.info("Report {} linked to hazard {}", report.reportId(), hazard.getId());
     return Optional.of(hazard);
   }
 
-  /** More verified reports mean a more serious hazard. Never lowers what the officer set. */
-  private void raiseSeverityToMatchEvidence(Hazard hazard) {
-    int severity = WarningRules.severityForEvidence(evidence.countByIdHazardId(hazard.getId()));
+  /**
+   * More verified reports mean a more serious hazard, and the verifying officer's own judgement
+   * counts too: the hazard is raised to the higher of the two. It is never lowered here.
+   */
+  private void raiseSeverity(Hazard hazard, Integer officerSeverity) {
+    int fromEvidence = WarningRules.severityForEvidence(evidence.countByIdHazardId(hazard.getId()));
+    int severity = officerSeverity == null ? fromEvidence : Math.max(fromEvidence, officerSeverity);
     if (severity > hazard.getSeverity()) {
       log.info("Hazard {} severity raised to {} by its evidence", hazard.getId(), severity);
       hazard.raiseSeverity(severity);
@@ -77,6 +81,7 @@ public class HazardEvidenceLinker {
         report.hazardTypeId(),
         new HazardArea(report.districtId(), null),
         report.description(),
+        report.severity() == null ? WarningRules.REPORT_HAZARD_SEVERITY : report.severity(),
         clock.instant());
   }
 }

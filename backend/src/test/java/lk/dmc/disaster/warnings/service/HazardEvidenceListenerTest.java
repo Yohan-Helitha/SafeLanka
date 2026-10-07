@@ -53,6 +53,19 @@ class HazardEvidenceListenerTest {
   }
 
   @Test
+  void officersSeverity_isPassedToTheLinker() {
+    when(verifiedReports.findVerified(List.of(REPORT)))
+        .thenReturn(
+            List.of(
+                new VerifiedReportSummary(
+                    REPORT, "RPT-1", "FLOOD", "Water over the road.", DISTRICT, NOW)));
+
+    listener.on(new ReportVerifiedEvent(REPORT, TYPE, "FLOOD", DISTRICT, null, null, NOW, 4));
+
+    verify(linker).link(new VerifiedReportRef(REPORT, TYPE, DISTRICT, "Water over the road.", 4));
+  }
+
+  @Test
   void reportThatCannotBeFound_isNotLinked() {
     when(verifiedReports.findVerified(List.of(REPORT))).thenReturn(List.of());
 

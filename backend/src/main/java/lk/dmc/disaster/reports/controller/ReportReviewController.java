@@ -65,8 +65,9 @@ class ReportReviewController {
   ApiResponse<ReportDetailResponse> verify(
       @PathVariable UUID id, @RequestBody(required = false) @Valid VerifyRequest request) {
     String comment = request == null ? null : request.comment();
+    Integer severity = request == null ? null : request.severity();
     return ApiResponse.of(
-        mapper.toDetail(verification.verify(id, actingUser.require().id(), comment)));
+        mapper.toDetail(verification.verify(id, actingUser.require().id(), comment, severity)));
   }
 
   @Operation(
