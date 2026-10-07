@@ -40,9 +40,8 @@ class SupabaseFileStorage implements FileStorage {
   SupabaseFileStorage(
       @Value("${app.storage.supabase.url:}") String url,
       @Value("${app.storage.supabase.service-key:}") String serviceKey,
-      @Value("${app.storage.supabase.bucket:evidence}") String bucket,
-      RestClient.Builder builder) {
-    this(builder.requestFactory(withTimeouts()), url, serviceKey, bucket);
+      @Value("${app.storage.supabase.bucket:evidence}") String bucket) {
+    this(RestClient.builder().requestFactory(withTimeouts()), url, serviceKey, bucket);
   }
 
   /** Lets tests supply a builder wired to a mock server. */

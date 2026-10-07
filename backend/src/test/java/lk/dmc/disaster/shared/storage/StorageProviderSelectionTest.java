@@ -4,14 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.springframework.web.client.RestClient;
 
 /** Which storage the application uses is decided by configuration alone. */
 class StorageProviderSelectionTest {
 
   private final ApplicationContextRunner runner =
       new ApplicationContextRunner()
-          .withBean(RestClient.Builder.class, RestClient::builder)
           .withUserConfiguration(LocalFileStorage.class, SupabaseFileStorage.class)
           .withPropertyValues("app.storage.root=target/test-uploads");
 
