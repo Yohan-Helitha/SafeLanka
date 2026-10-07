@@ -120,6 +120,38 @@ class HazardTest {
   }
 
   @Test
+  void setSeverity_officerCanRaiseAndLower() {
+    Hazard hazard = manual();
+
+    hazard.setSeverity(5);
+    assertThat(hazard.getSeverity()).isEqualTo(5);
+
+    hazard.setSeverity(1);
+    assertThat(hazard.getSeverity()).isEqualTo(1);
+  }
+
+  @Test
+  void setSeverity_outsideOneToFive_isValidationError() {
+    Hazard hazard = manual();
+
+    assertThatThrownBy(() -> hazard.setSeverity(0))
+        .isInstanceOfSatisfying(
+            AppException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.VALIDATION_ERROR));
+    assertThatThrownBy(() -> hazard.setSeverity(6)).isInstanceOf(AppException.class);
+  }
+
+  @Test
+  void setSeverity_resolvedHazard_isInvalidTransition() {
+    Hazard hazard = manual();
+    hazard.assessAs(HazardStatus.RESOLVED);
+
+    assertThatThrownBy(() -> hazard.setSeverity(4))
+        .isInstanceOfSatisfying(
+            AppException.class,
+            e -> assertThat(e.code()).isEqualTo(ErrorCode.INVALID_STATE_TRANSITION));
+  }
+
+  @Test
   void evidenceLink_exposesBothIds() {
     UUID hazardId = UUID.randomUUID();
     UUID reportId = UUID.randomUUID();

@@ -5,6 +5,7 @@ import java.util.Optional;
 import lk.dmc.disaster.warnings.entity.Hazard;
 import lk.dmc.disaster.warnings.entity.HazardArea;
 import lk.dmc.disaster.warnings.entity.HazardEvidence;
+import lk.dmc.disaster.warnings.entity.WarningRules;
 import lk.dmc.disaster.warnings.integration.AreaReference;
 import lk.dmc.disaster.warnings.repository.HazardEvidenceRepository;
 import lk.dmc.disaster.warnings.repository.HazardRepository;
@@ -57,8 +58,18 @@ public class HazardEvidenceLinker {
                 areas.basinsOfDistrict(report.districtId()))
             .orElseGet(() -> hazards.save(newHazardFor(report)));
     evidence.save(HazardEvidence.link(hazard.getId(), report.reportId(), clock.instant()));
+    raiseSeverityToMatchEvidence(hazard);
     log.info("Report {} linked to hazard {}", report.reportId(), hazard.getId());
     return Optional.of(hazard);
+  }
+
+  /** More verified reports mean a more serious hazard. Never lowers what the officer set. */
+  private void raiseSeverityToMatchEvidence(Hazard hazard) {
+    int severity = WarningRules.severityForEvidence(evidence.countByIdHazardId(hazard.getId()));
+    if (severity > hazard.getSeverity()) {
+      log.info("Hazard {} severity raised to {} by its evidence", hazard.getId(), severity);
+      hazard.raiseSeverity(severity);
+    }
   }
 
   private Hazard newHazardFor(VerifiedReportRef report) {

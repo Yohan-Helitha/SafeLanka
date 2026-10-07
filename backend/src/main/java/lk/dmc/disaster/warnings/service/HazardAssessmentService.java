@@ -88,6 +88,24 @@ public class HazardAssessmentService {
     return hazard;
   }
 
+  /**
+   * Sets the severity the officer judges right, up or down. New verified reports may raise it again
+   * later.
+   *
+   * @throws AppException VALIDATION_ERROR outside 1 to 5; NOT_FOUND; INVALID_STATE_TRANSITION when
+   *     the hazard is resolved
+   */
+  @Transactional
+  public Hazard setSeverity(UUID hazardId, int severity) {
+    Hazard hazard =
+        hazards
+            .findById(hazardId)
+            .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Hazard not found."));
+    hazard.setSeverity(severity);
+    log.info("Hazard {} severity set to {} by the officer", hazardId, severity);
+    return hazard;
+  }
+
   private void requireKnownType(UUID hazardTypeId) {
     if (!hazardTypes.codesById().containsKey(hazardTypeId)) {
       throw new AppException(

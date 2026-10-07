@@ -31,6 +31,8 @@ export interface WarningsApi {
   hazard(id: string): Promise<HazardDetail>
   createHazard(input: HazardInput): Promise<HazardDetail>
   setHazardStatus(id: string, status: HazardStatus): Promise<HazardDetail>
+  /** How dangerous the officer judges the hazard, 1 (low) to 5 (very dangerous). */
+  setHazardSeverity(id: string, severity: number): Promise<HazardDetail>
   audience(districtIds: string[], basinIds: string[]): Promise<Audience>
   publish(input: WarningInput): Promise<Warning>
   update(id: string, input: WarningUpdate): Promise<Warning>

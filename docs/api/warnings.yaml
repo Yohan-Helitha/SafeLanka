@@ -107,6 +107,37 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/InvalidTransition' }
 
+  /api/hazards/{id}/severity:
+    patch:
+      tags: [Hazards]
+      summary: Set how dangerous a hazard is, 1 to 5 (DMC_OFFICER)
+      description: |
+        Verified reports raise a report hazard's severity by themselves as they arrive (2 for the
+        first two, 3 for three, 4 for five, 5 for eight or more) and never lower it. The officer can
+        set it up or down. A resolved hazard cannot be changed.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [severity]
+              properties:
+                severity: { type: integer, minimum: 1, maximum: 5, example: 4 }
+      responses:
+        '200':
+          description: Updated hazard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/HazardDetail' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
   /api/warnings/audience:
     get:
       tags: [Warnings]

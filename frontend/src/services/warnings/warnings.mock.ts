@@ -234,6 +234,15 @@ export const warningsMock: WarningsApi = {
       return toDetail(row)
     }),
 
+  setHazardSeverity: (id, severity) =>
+    mockCall(() => {
+      requireRole('DMC_OFFICER')
+      const row = hazardRow(id)
+      if (row.status === 'RESOLVED') fail('INVALID_STATE_TRANSITION', 'A resolved hazard cannot be changed.')
+      row.severity = severity
+      return toDetail(row)
+    }),
+
   audience: (districtIds, basinIds) =>
     mockCall(() => ({ recipients: recipientsFor(districtIds, basinIds).length })),
 

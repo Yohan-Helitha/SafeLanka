@@ -36,6 +36,24 @@ public final class WarningRules {
   /** Severity a hazard is raised to when a gauge reaches major flood level. */
   public static final int MAJOR_FLOOD_SEVERITY = 4;
 
+  /** Verified reports needed before a report hazard's severity reaches 3, 4 and 5. */
+  private static final int[] REPORTS_FOR_SEVERITY_3_4_5 = {3, 5, 8};
+
+  /**
+   * The severity that a number of verified reports on one hazard justifies: more independent
+   * reports of the same danger mean a more serious hazard. One or two reports give the starting
+   * severity; 3 give 3, 5 give 4 and 8 or more give 5.
+   */
+  public static int severityForEvidence(long verifiedReports) {
+    int severity = REPORT_HAZARD_SEVERITY;
+    for (int i = 0; i < REPORTS_FOR_SEVERITY_3_4_5.length; i++) {
+      if (verifiedReports >= REPORTS_FOR_SEVERITY_3_4_5[i]) {
+        severity = REPORT_HAZARD_SEVERITY + 1 + i;
+      }
+    }
+    return severity;
+  }
+
   /** Lowest level that also triggers the audible channel. */
   public static final WarningLevel AUDIBLE_MIN_LEVEL = WarningLevel.WARNING;
 
