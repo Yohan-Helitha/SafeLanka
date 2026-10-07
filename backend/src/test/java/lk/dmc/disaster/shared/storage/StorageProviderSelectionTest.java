@@ -56,6 +56,9 @@ class StorageProviderSelectionTest {
   void anExplicitLocalSelectionUsesTheDisk() {
     runner
         .withPropertyValues("app.storage.provider=local")
-        .run(context -> assertThat(context.getBean(FileStorage.class)).isInstanceOf(LocalFileStorage.class));
+        .run(
+            context ->
+                assertThat(context.getBean(FileStorage.class))
+                    .isInstanceOf(LocalFileStorage.class));
   }
 }
