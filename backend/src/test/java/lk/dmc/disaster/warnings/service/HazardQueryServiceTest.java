@@ -19,6 +19,7 @@ import lk.dmc.disaster.shared.error.AppException;
 import lk.dmc.disaster.shared.error.ErrorCode;
 import lk.dmc.disaster.warnings.entity.Hazard;
 import lk.dmc.disaster.warnings.entity.HazardEvidence;
+import lk.dmc.disaster.warnings.entity.HazardStatus;
 import lk.dmc.disaster.warnings.entity.Sensor;
 import lk.dmc.disaster.warnings.entity.SensorReading;
 import lk.dmc.disaster.warnings.entity.Warning;
@@ -73,6 +74,41 @@ class HazardQueryServiceTest {
   }
 
   // ---- list --------------------------------------------------------------------------------
+
+  @Test
+  void list_explicitStatuses_areUsedInPlaceOfTheOpenOnes() {
+    hazardsFound();
+
+    assertThat(service.list(List.of(HazardStatus.RESOLVED), null, null)).isEmpty();
+  }
+
+  @Test
+  void list_sensorHazardWhoseGaugeHasNoReadingsYet_hasNoLatestReading() {
+    Sensor sensor = ServiceFixtures.sensor();
+    Hazard hazard = Hazard.fromSensor(sensor, UUID.randomUUID(), "Gauge crossed alert level.", NOW);
+    hazardsFound(hazard);
+    when(evidence.countByHazardIds(List.of(hazard.getId()))).thenReturn(List.of());
+    when(gauges.latest(sensor.getId())).thenReturn(Optional.empty());
+
+    assertThat(service.list(null, null, null).get(0).latestReading()).isNull();
+  }
+
+  @Test
+  void detail_sensorHazardWhoseGaugeIsGone_hasNoGauge() {
+    Sensor sensor = ServiceFixtures.sensor();
+    Hazard hazard = Hazard.fromSensor(sensor, UUID.randomUUID(), "Gauge crossed alert level.", NOW);
+    when(hazards.findById(hazard.getId())).thenReturn(Optional.of(hazard));
+    when(evidence.findByIdHazardId(hazard.getId())).thenReturn(List.of());
+    when(verifiedReports.findVerified(List.of())).thenReturn(List.of());
+    when(warnings.listForHazard(hazard.getId())).thenReturn(List.of());
+    when(gauges.history(sensor.getId(), NOW.minus(WarningRules.CHART_WINDOW)))
+        .thenReturn(Optional.empty());
+
+    HazardDetailView view = service.detail(hazard.getId());
+
+    assertThat(view.gauge()).isNull();
+    assertThat(view.summary().latestReading()).isNull();
+  }
 
   @Test
   void list_returnsEntriesWithEvidenceCountsAndZeroWhenNone() {

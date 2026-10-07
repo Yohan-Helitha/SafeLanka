@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class WarningMapper {
 
+  /** Maps one warning with its areas, evidence and delivery totals. */
   public WarningResponse toResponse(WarningView view) {
     Warning warning = view.warning();
     return new WarningResponse(
@@ -43,14 +44,17 @@ public class WarningMapper {
         toSummary(view.deliveries()));
   }
 
+  /** Maps a page of warnings. */
   public PageResponse<WarningResponse> toPage(Page<WarningView> page) {
     return PageResponse.of(page, this::toResponse);
   }
 
+  /** Maps the delivery totals and one page of deliveries. */
   public DeliveriesResponse toDeliveries(DeliveryOutcome outcome, Page<DeliveryItem> page) {
     return new DeliveriesResponse(toSummary(outcome), PageResponse.of(page, this::toDelivery));
   }
 
+  /** Maps the delivery totals, overall and per channel. */
   public DeliverySummaryResponse toSummary(DeliveryOutcome outcome) {
     return new DeliverySummaryResponse(
         outcome.targeted(),

@@ -38,6 +38,7 @@ public class HazardMapper {
     return entries.stream().map(entry -> toListItem(entry, codes)).toList();
   }
 
+  /** Maps one hazard with its evidence, gauge and warnings. */
   public HazardDetail toDetail(HazardDetailView view) {
     HazardListItem item = toListItem(view.summary(), hazardTypes.codesById());
     return new HazardDetail(

@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 public record PageResponse<T>(
     List<T> content, int page, int size, long totalElements, int totalPages) {
 
+  /** Maps a Spring page into a page response, converting each item. */
   public static <S, T> PageResponse<T> of(Page<S> page, Function<S, T> mapper) {
     return new PageResponse<>(
         page.getContent().stream().map(mapper).toList(),

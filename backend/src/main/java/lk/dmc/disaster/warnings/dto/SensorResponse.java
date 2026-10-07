@@ -17,6 +17,7 @@ public record SensorResponse(
     String unit,
     ReadingResponse latest) {
 
+  /** Builds the response from a gauge and its newest reading. */
   public static SensorResponse from(SensorSnapshot snapshot) {
     Sensor sensor = snapshot.sensor();
     return new SensorResponse(

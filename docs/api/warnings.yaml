@@ -1,0 +1,688 @@
+openapi: 3.0.3
+info:
+  title: LankaGuard API - warnings module (UC01)
+  version: v1
+  description: |
+    Hazard assessment and public warnings. Every response is wrapped as `{ "data": ... }`;
+    every error as `{ "error": { "code", "message", "details" } }`.
+    Written by hand from the controllers; the running app serves the authoritative copy at
+    `/v3/api-docs/warnings` (Swagger UI group "warnings"). Re-export it when a controller changes.
+servers:
+  - url: http://localhost:8080
+security:
+  - bearerAuth: []
+tags:
+  - name: Hazards
+  - name: Warnings
+  - name: Citizen alerts
+  - name: Simulation
+    description: Only available when the backend runs with the dev profile.
+
+paths:
+  /api/hazards:
+    get:
+      tags: [Hazards]
+      summary: List hazards, most severe first (DMC_OFFICER)
+      description: Open hazards (UNDER_ASSESSMENT, WARNED, MONITORING) unless `status` is given.
+      parameters:
+        - name: status
+          in: query
+          description: Comma separated, for example `UNDER_ASSESSMENT,WARNED`.
+          schema: { type: array, items: { $ref: '#/components/schemas/HazardStatus' } }
+          style: form
+          explode: false
+        - { name: hazardTypeId, in: query, schema: { type: string, format: uuid } }
+        - { name: districtId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Hazards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/HazardListItem' } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Hazards]
+      summary: Record a hazard by hand (DMC_OFFICER)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateHazardRequest' }
+      responses:
+        '201':
+          description: The new hazard (MANUAL, UNDER_ASSESSMENT)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/HazardDetail' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/hazards/{id}:
+    get:
+      tags: [Hazards]
+      summary: Hazard detail with verified reports, 24 h of gauge readings and warnings
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: Hazard detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/HazardDetail' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/hazards/{id}/status:
+    patch:
+      tags: [Hazards]
+      summary: Keep a hazard under monitoring, or resolve it
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [MONITORING, RESOLVED] }
+                note: { type: string, maxLength: 300, description: Accepted but not stored. }
+      responses:
+        '200':
+          description: Updated hazard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/HazardDetail' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /api/warnings/audience:
+    get:
+      tags: [Warnings]
+      summary: How many people a warning would reach (DMC_OFFICER)
+      description: Give districtIds, riverBasinIds or both. 400 when both are empty.
+      parameters:
+        - name: districtIds
+          in: query
+          schema: { type: array, items: { type: string, format: uuid } }
+        - name: riverBasinIds
+          in: query
+          schema: { type: array, items: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Audience
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/AudienceResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+
+  /api/warnings:
+    get:
+      tags: [Warnings]
+      summary: List warnings, newest first (DMC_OFFICER, DISTRICT_OFFICER)
+      parameters:
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/WarningStatus' } }
+        - { name: eventId, in: query, schema: { type: string, format: uuid } }
+        - { name: page, in: query, schema: { type: integer, default: 0, minimum: 0 } }
+        - { name: size, in: query, schema: { type: integer, default: 20, minimum: 1, maximum: 100 } }
+      responses:
+        '200':
+          description: A page of warnings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/PageResponse'
+                      - type: object
+                        properties:
+                          content: { type: array, items: { $ref: '#/components/schemas/WarningResponse' } }
+    post:
+      tags: [Warnings]
+      summary: Issue a warning (DMC_OFFICER)
+      description: |
+        Sends the warning to everyone in the chosen areas over every enabled channel.
+        `confirm` must be true (422 otherwise). 409 with `details.warningId` when an ACTIVE
+        warning of the same hazard already covers one of the districts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PublishWarningRequest' }
+      responses:
+        '201':
+          description: The new warning with delivery totals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/WarningResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/BusinessRule' }
+
+  /api/warnings/{id}:
+    get:
+      tags: [Warnings]
+      summary: One warning with its delivery totals (DMC_OFFICER, DISTRICT_OFFICER)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: The warning
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/WarningResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Warnings]
+      summary: Change the texts of an ACTIVE warning (nothing is sent again)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WarningTexts' }
+      responses:
+        '200':
+          description: The updated warning
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/WarningResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /api/warnings/{id}/escalate:
+    post:
+      tags: [Warnings]
+      summary: Replace an ACTIVE warning with a higher-level one (DMC_OFFICER)
+      description: |
+        Creates a new warning with `supersedesId` set and sends it again. Give all four texts or none
+        (none keeps the current texts). `confirm` must be true.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [level]
+              properties:
+                level: { $ref: '#/components/schemas/WarningLevel' }
+                title: { type: string }
+                message: { type: string }
+                smsText: { type: string }
+                instructions: { type: string }
+                confirm: { type: boolean }
+      responses:
+        '201':
+          description: The new warning
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/WarningResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+        '422': { $ref: '#/components/responses/BusinessRule' }
+
+  /api/warnings/{id}/cancel:
+    post:
+      tags: [Warnings]
+      summary: Cancel an ACTIVE warning with a reason (DMC_OFFICER)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string, minLength: 5, maxLength: 300 }
+      responses:
+        '200':
+          description: The cancelled warning
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/WarningResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/InvalidTransition' }
+
+  /api/warnings/{id}/deliveries:
+    get:
+      tags: [Warnings]
+      summary: Delivery totals by channel and a filterable list (DMC_OFFICER)
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/DeliveryStatus' } }
+        - { name: channel, in: query, schema: { $ref: '#/components/schemas/Channel' } }
+        - { name: page, in: query, schema: { type: integer, default: 0 } }
+        - { name: size, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        '200':
+          description: Totals and a page of deliveries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      summary: { $ref: '#/components/schemas/DeliverySummary' }
+                      items:
+                        allOf:
+                          - $ref: '#/components/schemas/PageResponse'
+                          - type: object
+                            properties:
+                              content: { type: array, items: { $ref: '#/components/schemas/DeliveryResponse' } }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/warnings/active/mine:
+    get:
+      tags: [Citizen alerts]
+      summary: Active alerts for me, most serious first (CITIZEN, VOLUNTEER)
+      responses:
+        '200':
+          description: Alerts for the signed-in person's district and river basin
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/CitizenAlert' } }
+
+  /api/simulation/sensors:
+    get:
+      tags: [Simulation]
+      summary: Simulated gauges with their newest reading (dev profile, DMC_OFFICER)
+      responses:
+        '200':
+          description: Gauges
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/SensorResponse' } }
+
+  /api/simulation/sensors/{id}/tick:
+    post:
+      tags: [Simulation]
+      summary: Add the next scripted reading (dev profile)
+      description: Crossing the alert level opens a SENSOR hazard. It never issues a warning.
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses:
+        '200':
+          description: The reading and whether it opened a hazard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/TickResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/simulation/sensors/{id}/readings:
+    post:
+      tags: [Simulation]
+      summary: Add a reading with a chosen value (dev profile)
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [value]
+              properties:
+                value: { type: number, minimum: 0, maximum: 9999.99, example: 2.6 }
+      responses:
+        '200':
+          description: The reading and whether it opened a hazard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/TickResponse' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/simulation/channels:
+    get:
+      tags: [Simulation]
+      summary: The demo switches of each channel (dev profile)
+      responses:
+        '200':
+          description: Channel settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/ChannelSetting' } }
+
+  /api/simulation/channels/{channel}:
+    patch:
+      tags: [Simulation]
+      summary: Switch a channel on or off, or make its gateway fail (dev profile)
+      parameters:
+        - { name: channel, in: path, required: true, schema: { $ref: '#/components/schemas/Channel' } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled: { type: boolean }
+                simulateFailure: { type: boolean }
+      responses:
+        '200':
+          description: The updated setting
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/ChannelSetting' }
+        '400': { $ref: '#/components/responses/ValidationError' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  responses:
+    ValidationError:
+      description: 400 VALIDATION_ERROR. Field errors are in `error.details.fields`.
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Forbidden:
+      description: 403 FORBIDDEN_ROLE
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NotFound:
+      description: 404 NOT_FOUND
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Conflict:
+      description: 409 CONFLICT. `error.details.warningId` is the ACTIVE warning that overlaps.
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    InvalidTransition:
+      description: 409 INVALID_STATE_TRANSITION (for example editing a warning that is not ACTIVE)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    BusinessRule:
+      description: 422 BUSINESS_RULE (not confirmed, resolved hazard, unverified evidence, level not higher)
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string, example: BUSINESS_RULE }
+            message: { type: string }
+            details: { type: object, additionalProperties: true }
+    PageResponse:
+      type: object
+      properties:
+        content: { type: array, items: {} }
+        page: { type: integer }
+        size: { type: integer }
+        totalElements: { type: integer, format: int64 }
+        totalPages: { type: integer }
+
+    WarningLevel: { type: string, enum: [ADVISORY, WATCH, WARNING, EVACUATE] }
+    WarningStatus: { type: string, enum: [ACTIVE, ESCALATED, CANCELLED, EXPIRED] }
+    HazardStatus: { type: string, enum: [UNDER_ASSESSMENT, WARNED, MONITORING, RESOLVED] }
+    HazardSource: { type: string, enum: [MANUAL, SENSOR, REPORT] }
+    TargetType: { type: string, enum: [DISTRICT, RIVER_BASIN] }
+    Channel: { type: string, enum: [PUSH, SMS, AUDIBLE] }
+    DeliveryStatus: { type: string, enum: [QUEUED, DELIVERED, FAILED] }
+
+    LatestReading:
+      type: object
+      nullable: true
+      properties:
+        sensorName: { type: string, example: Kelani at Hanwella }
+        value: { type: number, example: 1.74 }
+        unit: { type: string, example: m }
+        aboveAlert: { type: boolean }
+        recordedAt: { type: string, format: date-time }
+    HazardListItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        hazardTypeId: { type: string, format: uuid }
+        hazardTypeCode: { type: string, example: FLOOD }
+        severity: { type: integer, minimum: 1, maximum: 5 }
+        districtId: { type: string, format: uuid, nullable: true }
+        riverBasinId: { type: string, format: uuid, nullable: true }
+        description: { type: string }
+        source: { $ref: '#/components/schemas/HazardSource' }
+        status: { $ref: '#/components/schemas/HazardStatus' }
+        detectedAt: { type: string, format: date-time }
+        verifiedReportCount: { type: integer, format: int64 }
+        latestReading: { $ref: '#/components/schemas/LatestReading' }
+    HazardDetail:
+      allOf:
+        - $ref: '#/components/schemas/HazardListItem'
+        - type: object
+          properties:
+            evidence:
+              type: array
+              items:
+                type: object
+                properties:
+                  reportId: { type: string, format: uuid }
+                  referenceNo: { type: string, example: RPT-2026-0001 }
+                  category: { type: string }
+                  description: { type: string }
+                  districtId: { type: string, format: uuid }
+                  capturedAt: { type: string, format: date-time }
+            sensor:
+              type: object
+              nullable: true
+              properties:
+                id: { type: string, format: uuid }
+                code: { type: string }
+                name: { type: string }
+                riverBasinId: { type: string, format: uuid }
+                districtId: { type: string, format: uuid }
+                alertLevel: { type: number }
+                majorFloodLevel: { type: number }
+                unit: { type: string }
+                readings:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      value: { type: number }
+                      recordedAt: { type: string, format: date-time }
+            warnings:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  hazardId: { type: string, format: uuid }
+                  level: { $ref: '#/components/schemas/WarningLevel' }
+                  status: { $ref: '#/components/schemas/WarningStatus' }
+                  title: { type: string }
+                  districtIds: { type: array, items: { type: string, format: uuid } }
+                  riverBasinIds: { type: array, items: { type: string, format: uuid } }
+                  issuedAt: { type: string, format: date-time }
+                  reached: { type: integer, format: int64 }
+    CreateHazardRequest:
+      type: object
+      required: [hazardTypeId, severity, description]
+      description: A districtId or a riverBasinId is required.
+      properties:
+        hazardTypeId: { type: string, format: uuid }
+        severity: { type: integer, minimum: 1, maximum: 5, example: 4 }
+        districtId: { type: string, format: uuid }
+        riverBasinId: { type: string, format: uuid }
+        description:
+          type: string
+          minLength: 10
+          maxLength: 500
+          example: Kelani river is rising fast near Hanwella; low-lying homes at risk.
+        eventId: { type: string, format: uuid }
+
+    WarningTexts:
+      type: object
+      required: [title, message, smsText, instructions]
+      properties:
+        title: { type: string, minLength: 5, maxLength: 80, example: Kelani river flood warning }
+        message: { type: string, minLength: 10, maxLength: 1000 }
+        smsText: { type: string, minLength: 10, maxLength: 160 }
+        instructions: { type: string, minLength: 5, maxLength: 300 }
+    PublishWarningRequest:
+      allOf:
+        - $ref: '#/components/schemas/WarningTexts'
+        - type: object
+          required: [hazardId, level, targetType, confirm]
+          properties:
+            hazardId: { type: string, format: uuid }
+            eventId: { type: string, format: uuid }
+            level: { $ref: '#/components/schemas/WarningLevel' }
+            targetType: { $ref: '#/components/schemas/TargetType' }
+            districtIds: { type: array, items: { type: string, format: uuid } }
+            riverBasinIds: { type: array, items: { type: string, format: uuid } }
+            evidenceReportIds: { type: array, items: { type: string, format: uuid } }
+            confirm: { type: boolean, description: Must be true. }
+    DeliverySummary:
+      type: object
+      properties:
+        targeted: { type: integer, format: int64 }
+        delivered: { type: integer, format: int64 }
+        failed: { type: integer, format: int64 }
+        byChannel:
+          type: array
+          items:
+            type: object
+            properties:
+              channel: { $ref: '#/components/schemas/Channel' }
+              delivered: { type: integer, format: int64 }
+              failed: { type: integer, format: int64 }
+    WarningResponse:
+      allOf:
+        - $ref: '#/components/schemas/WarningTexts'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            hazardId: { type: string, format: uuid }
+            eventId: { type: string, format: uuid, nullable: true }
+            level: { $ref: '#/components/schemas/WarningLevel' }
+            status: { $ref: '#/components/schemas/WarningStatus' }
+            targetType: { $ref: '#/components/schemas/TargetType' }
+            districtIds: { type: array, items: { type: string, format: uuid } }
+            riverBasinIds: { type: array, items: { type: string, format: uuid } }
+            resolvedDistrictIds: { type: array, items: { type: string, format: uuid } }
+            issuedAt: { type: string, format: date-time }
+            issuedBy: { type: string, format: uuid }
+            supersedesId: { type: string, format: uuid, nullable: true }
+            cancelledAt: { type: string, format: date-time, nullable: true }
+            cancelReason: { type: string, nullable: true }
+            evidenceReportIds: { type: array, items: { type: string, format: uuid } }
+            deliverySummary: { $ref: '#/components/schemas/DeliverySummary' }
+    DeliveryResponse:
+      type: object
+      properties:
+        citizenId: { type: string, format: uuid }
+        districtId: { type: string, format: uuid, nullable: true }
+        channel: { $ref: '#/components/schemas/Channel' }
+        status: { $ref: '#/components/schemas/DeliveryStatus' }
+        attemptedAt: { type: string, format: date-time }
+        deliveredAt: { type: string, format: date-time, nullable: true }
+        failureReason: { type: string, nullable: true, example: Simulated gateway timeout }
+    ChannelSetting:
+      type: object
+      properties:
+        channel: { $ref: '#/components/schemas/Channel' }
+        enabled: { type: boolean }
+        simulateFailure: { type: boolean }
+    AudienceResponse:
+      type: object
+      properties:
+        citizenCount: { type: integer, format: int64 }
+        resolvedDistrictIds: { type: array, items: { type: string, format: uuid } }
+        channels: { type: array, items: { $ref: '#/components/schemas/ChannelSetting' } }
+    CitizenAlert:
+      type: object
+      properties:
+        warningId: { type: string, format: uuid }
+        level: { $ref: '#/components/schemas/WarningLevel' }
+        title: { type: string }
+        message: { type: string }
+        instructions: { type: string }
+        issuedAt: { type: string, format: date-time }
+        districtId: { type: string, format: uuid }
+        riverBasinId: { type: string, format: uuid, nullable: true }
+        audible: { type: boolean, description: True from WARNING upward. }
+    SensorResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        riverBasinId: { type: string, format: uuid }
+        districtId: { type: string, format: uuid }
+        alertLevel: { type: number }
+        majorFloodLevel: { type: number }
+        unit: { type: string }
+        latest:
+          type: object
+          nullable: true
+          properties:
+            value: { type: number }
+            recordedAt: { type: string, format: date-time }
+    TickResponse:
+      type: object
+      properties:
+        reading:
+          type: object
+          properties:
+            value: { type: number }
+            recordedAt: { type: string, format: date-time }
+        thresholdCrossed: { type: boolean }
+        hazardId: { type: string, format: uuid, nullable: true }

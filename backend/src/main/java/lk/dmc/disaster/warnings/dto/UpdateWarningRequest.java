@@ -13,6 +13,7 @@ public record UpdateWarningRequest(
     @NotBlank @Size(min = WarningRules.INSTRUCTIONS_MIN, max = WarningRules.INSTRUCTIONS_MAX)
         String instructions) {
 
+  /** The new texts, checked against the warning text limits. */
   public WarningContent toContent() {
     return new WarningContent(title, message, smsText, instructions);
   }

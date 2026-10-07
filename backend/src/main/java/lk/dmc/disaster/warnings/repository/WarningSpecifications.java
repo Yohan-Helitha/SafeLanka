@@ -10,11 +10,13 @@ public final class WarningSpecifications {
 
   private WarningSpecifications() {}
 
+  /** Only warnings with this status; null matches all. */
   public static Specification<Warning> withStatus(WarningStatus status) {
     return (root, query, cb) ->
         status == null ? cb.conjunction() : cb.equal(root.get("status"), status);
   }
 
+  /** Only warnings of this event; null matches all. */
   public static Specification<Warning> forEvent(UUID eventId) {
     return (root, query, cb) ->
         eventId == null ? cb.conjunction() : cb.equal(root.get("eventId"), eventId);

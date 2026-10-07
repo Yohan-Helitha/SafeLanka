@@ -23,6 +23,7 @@ public record CreateHazardRequest(
         String description,
     UUID eventId) {
 
+  /** Turns the request into the command for the assessment service. */
   public CreateHazardCommand toCommand() {
     return new CreateHazardCommand(
         hazardTypeId, severity, new HazardArea(districtId, riverBasinId), description, eventId);

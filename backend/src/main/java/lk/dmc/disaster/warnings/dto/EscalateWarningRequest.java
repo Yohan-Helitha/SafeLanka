@@ -18,6 +18,7 @@ public record EscalateWarningRequest(
     String instructions,
     boolean confirm) {
 
+  /** Turns the request into the command for the publication service. */
   public EscalateCommand toCommand(UUID warningId, UUID issuedBy) {
     return new EscalateCommand(warningId, level, newContent(), confirm, issuedBy);
   }

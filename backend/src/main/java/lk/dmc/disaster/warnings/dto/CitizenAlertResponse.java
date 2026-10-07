@@ -23,6 +23,7 @@ public record CitizenAlertResponse(
     UUID riverBasinId,
     boolean audible) {
 
+  /** Builds the response from a citizen alert. */
   public static CitizenAlertResponse from(CitizenAlert alert) {
     return new CitizenAlertResponse(
         alert.warningId(),

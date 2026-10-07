@@ -73,6 +73,17 @@ class SensorAndDeliveryTest {
   }
 
   @Test
+  void delivery_failedWithNoReason_isStoredAsUnknownFailure() {
+    NotificationDelivery delivery =
+        NotificationDelivery.queue(UUID.randomUUID(), UUID.randomUUID(), Channel.PUSH, NOW);
+
+    delivery.failed(null);
+
+    assertThat(delivery.getStatus()).isEqualTo(DeliveryStatus.FAILED);
+    assertThat(delivery.getFailureReason()).isEqualTo("Unknown failure");
+  }
+
+  @Test
   void delivery_failedWithBlankOrHugeReason_isStillStoredWithinLimit() {
     NotificationDelivery blank =
         NotificationDelivery.queue(UUID.randomUUID(), UUID.randomUUID(), Channel.SMS, NOW);

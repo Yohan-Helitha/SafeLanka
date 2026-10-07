@@ -104,6 +104,30 @@ class RequestDtoTest {
   }
 
   @Test
+  void escalateRequest_anySingleTextGiven_countsAsNewTextAndNeedsTheRest() {
+    UUID warningId = UUID.randomUUID();
+    var onlyMessage =
+        new EscalateWarningRequest(WarningLevel.EVACUATE, null, "Leave now.", null, null, true);
+    var onlySms =
+        new EscalateWarningRequest(
+            WarningLevel.EVACUATE, null, null, "DMC: Leave now.", null, true);
+    var onlyInstructions =
+        new EscalateWarningRequest(WarningLevel.EVACUATE, null, null, null, "Go now.", true);
+
+    assertThatThrownBy(() -> onlyMessage.toCommand(warningId, OFFICER))
+        .isInstanceOf(AppException.class);
+    assertThatThrownBy(() -> onlySms.toCommand(warningId, OFFICER))
+        .isInstanceOf(AppException.class);
+    assertThatThrownBy(() -> onlyInstructions.toCommand(warningId, OFFICER))
+        .isInstanceOf(AppException.class);
+  }
+
+  @Test
+  void readingResponse_from_noReading_isNull() {
+    assertThat(ReadingResponse.from(null)).isNull();
+  }
+
+  @Test
   void channelSettingPatch_toChange_keepsMissingFlagsNull() {
     var change = new ChannelSettingPatch(null, true).toChange();
 

@@ -44,6 +44,7 @@ public record PublishWarningRequest(
     Set<UUID> evidenceReportIds,
     boolean confirm) {
 
+  /** Turns the request into the command for the publication service. */
   public PublishCommand toCommand(UUID issuedBy) {
     WarningDraft draft =
         new WarningDraft(
