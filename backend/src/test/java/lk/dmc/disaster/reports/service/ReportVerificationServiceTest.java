@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lk.dmc.disaster.reports.ReportRejectedEvent;
@@ -22,7 +23,6 @@ import lk.dmc.disaster.reports.entity.ReportDraft;
 import lk.dmc.disaster.reports.entity.ReportPhoto;
 import lk.dmc.disaster.reports.entity.ReportStatus;
 import lk.dmc.disaster.reports.repository.HazardReportRepository;
-import lk.dmc.disaster.reports.repository.ReportPhotoRepository;
 import lk.dmc.disaster.shared.error.BusinessRuleException;
 import lk.dmc.disaster.shared.error.InvalidStateTransitionException;
 import lk.dmc.disaster.shared.error.NotFoundException;
@@ -45,19 +45,21 @@ class ReportVerificationServiceTest {
   private static final UUID DISTRICT = UUID.randomUUID();
 
   @Mock HazardReportRepository reports;
-  @Mock ReportPhotoRepository photos;
+  @Mock ReportQueryService queries;
   @Mock ApplicationEventPublisher events;
 
   private ReportVerificationService service;
   private HazardReport report;
+  private final ReportDetailView view = new ReportDetailView(null, null, null, List.of(), null);
 
   @BeforeEach
   void setUp() {
     service =
         new ReportVerificationService(
-            reports, photos, events, Clock.fixed(DECIDED, ZoneOffset.UTC));
+            reports, queries, events, Clock.fixed(DECIDED, ZoneOffset.UTC));
     report = newReport(6.9391, 79.8921, null);
     lenient().when(reports.findWithLockById(report.getId())).thenReturn(Optional.of(report));
+    lenient().when(queries.viewOf(report, true)).thenReturn(view);
   }
 
   private static HazardReport newReport(Double lat, Double lng, String manualText) {
@@ -81,9 +83,9 @@ class ReportVerificationServiceTest {
 
   @Test
   void verify_marksVerifiedSavesAndPublishesEventWithTheReportDetails() {
-    ReportWithPhoto result = service.verify(report.getId(), OFFICER, "Confirmed on site");
+    service.verify(report.getId(), OFFICER, "Confirmed on site");
 
-    assertThat(result.report().getStatus()).isEqualTo(ReportStatus.VERIFIED);
+    assertThat(report.getStatus()).isEqualTo(ReportStatus.VERIFIED);
     assertThat(report.getReviewedBy()).isEqualTo(OFFICER);
     assertThat(report.getReviewedAt()).isEqualTo(DECIDED);
     verify(reports).save(report);
@@ -109,11 +111,8 @@ class ReportVerificationServiceTest {
   }
 
   @Test
-  void verify_returnsThePhotoWhenThereIsOne() {
-    ReportPhoto photo = ReportPhoto.attach(report.getId(), "reports/a.jpg", "image/jpeg", 10);
-    when(photos.findByReportId(report.getId())).thenReturn(Optional.of(photo));
-
-    assertThat(service.verify(report.getId(), OFFICER, null).photo()).isSameAs(photo);
+  void verify_returnsTheDetailViewForOfficers() {
+    assertThat(service.verify(report.getId(), OFFICER, null)).isSameAs(view);
   }
 
   @Test
@@ -218,9 +217,9 @@ class ReportVerificationServiceTest {
 
   @Test
   void requestInfo_movesToNeedsMoreInfoSavesAndPublishesNothing() {
-    ReportWithPhoto result = service.requestInfo(report.getId(), OFFICER, "Which side of the bridge?");
+    service.requestInfo(report.getId(), OFFICER, "Which side of the bridge?");
 
-    assertThat(result.report().getStatus()).isEqualTo(ReportStatus.NEEDS_MORE_INFO);
+    assertThat(report.getStatus()).isEqualTo(ReportStatus.NEEDS_MORE_INFO);
     assertThat(report.getReviewComment()).isEqualTo("Which side of the bridge?");
     verify(reports).save(report);
     verifyNoInteractions(events);

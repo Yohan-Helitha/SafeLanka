@@ -81,6 +81,13 @@ class LocalFileStorageTest {
   }
 
   @Test
+  void store_missingContentTypeIsRejected() {
+    assertThatThrownBy(() -> storage.store("reports", null, JPEG))
+        .isInstanceOf(AppException.class)
+        .hasMessageContaining("JPEG or PNG");
+  }
+
+  @Test
   void store_emptyFileIsRejected() {
     assertThatThrownBy(() -> storage.store("reports", "image/jpeg", new byte[0]))
         .isInstanceOf(AppException.class)

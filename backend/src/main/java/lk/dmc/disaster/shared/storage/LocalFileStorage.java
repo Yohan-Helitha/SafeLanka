@@ -65,7 +65,7 @@ class LocalFileStorage implements FileStorage {
     if (!FOLDER.matcher(folder).matches()) {
       throw new IllegalArgumentException("Invalid storage folder: " + folder);
     }
-    if (!EXTENSIONS.containsKey(contentType)) {
+    if (contentType == null || !EXTENSIONS.containsKey(contentType)) {
       throw invalid("The photo must be a JPEG or PNG image.");
     }
     if (content.length == 0) {

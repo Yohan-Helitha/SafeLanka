@@ -8,24 +8,24 @@ import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.entity.ReportDraft;
 
 /** Builds reports for service tests without a database. */
-final class ReportFixtures {
+public final class ReportFixtures {
 
-  static final Instant NOW = Instant.parse("2026-10-04T08:10:02Z");
-  static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
-  static final UUID FLOOD = UUID.randomUUID();
-  static final UUID DISTRICT = UUID.randomUUID();
+  public static final Instant NOW = Instant.parse("2026-10-04T08:10:02Z");
+  public static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
+  public static final UUID FLOOD = UUID.randomUUID();
+  public static final UUID DISTRICT = UUID.randomUUID();
 
   private ReportFixtures() {}
 
-  static HazardReport gps(UUID reporter, double lat, double lng, Instant capturedAt) {
+  public static HazardReport gps(UUID reporter, double lat, double lng, Instant capturedAt) {
     return report(reporter, FLOOD, lat, lng, null, capturedAt);
   }
 
-  static HazardReport manual(UUID reporter, Instant capturedAt) {
+  public static HazardReport manual(UUID reporter, Instant capturedAt) {
     return report(reporter, FLOOD, null, null, "Next to the old railway bridge", capturedAt);
   }
 
-  static HazardReport report(
+  public static HazardReport report(
       UUID reporter,
       UUID hazardType,
       Double lat,

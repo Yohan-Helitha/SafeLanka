@@ -15,6 +15,7 @@ import lk.dmc.disaster.reports.repository.ReportPhotoRepository;
 import lk.dmc.disaster.reports.repository.ReportSpecifications;
 import lk.dmc.disaster.shared.actor.ActingUser;
 import lk.dmc.disaster.shared.actor.UserDirectory;
+import lk.dmc.disaster.shared.actor.UserSummary;
 import lk.dmc.disaster.shared.domain.Role;
 import lk.dmc.disaster.shared.error.ForbiddenRoleException;
 import lk.dmc.disaster.shared.error.NotFoundException;
@@ -81,11 +82,17 @@ public class ReportQueryService {
    */
   @Transactional(readOnly = true)
   public ReportDetailView detail(UUID reportId, ActingUser actor) {
-    HazardReport report = findAccessible(reportId, actor);
-    ReportPhoto photo = photos.findByReportId(reportId).orElse(null);
-    List<DuplicateMatch> matches =
-        actor.hasRole(Role.DMC_OFFICER) ? duplicates.findDuplicates(report) : List.of();
-    return new ReportDetailView(report, photo, users.require(report.getReporterId()), matches);
+    return viewOf(findAccessible(reportId, actor), actor.hasRole(Role.DMC_OFFICER));
+  }
+
+  /** Builds the detail view; duplicates are looked up only for officers. */
+  ReportDetailView viewOf(HazardReport report, boolean forOfficer) {
+    ReportPhoto photo = photos.findByReportId(report.getId()).orElse(null);
+    List<DuplicateMatch> matches = forOfficer ? duplicates.findDuplicates(report) : List.of();
+    UserSummary reviewer =
+        report.getReviewedBy() == null ? null : users.find(report.getReviewedBy()).orElse(null);
+    return new ReportDetailView(
+        report, photo, users.require(report.getReporterId()), matches, reviewer);
   }
 
   /** The photo bytes, under the same access rule as {@link #detail}; 404 when there is none. */

@@ -6,7 +6,6 @@ import lk.dmc.disaster.reports.ReportVerifiedEvent;
 import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.entity.RejectionReason;
 import lk.dmc.disaster.reports.repository.HazardReportRepository;
-import lk.dmc.disaster.reports.repository.ReportPhotoRepository;
 import lk.dmc.disaster.shared.error.NotFoundException;
 import java.time.Clock;
 import lombok.extern.slf4j.Slf4j;
@@ -24,17 +23,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReportVerificationService {
 
   private final HazardReportRepository reports;
-  private final ReportPhotoRepository photos;
+  private final ReportQueryService queries;
   private final ApplicationEventPublisher events;
   private final Clock clock;
 
   public ReportVerificationService(
       HazardReportRepository reports,
-      ReportPhotoRepository photos,
+      ReportQueryService queries,
       ApplicationEventPublisher events,
       Clock clock) {
     this.reports = reports;
-    this.photos = photos;
+    this.queries = queries;
     this.events = events;
     this.clock = clock;
   }
@@ -47,7 +46,7 @@ public class ReportVerificationService {
    * @throws lk.dmc.disaster.shared.error.BusinessRuleException (422) for the officer's own report
    */
   @Transactional
-  public ReportWithPhoto verify(UUID reportId, UUID officerId, String comment) {
+  public ReportDetailView verify(UUID reportId, UUID officerId, String comment) {
     HazardReport report = load(reportId);
     report.verify(officerId, comment, clock);
     events.publishEvent(
@@ -67,7 +66,7 @@ public class ReportVerificationService {
    * required when the reason is OTHER.
    */
   @Transactional
-  public ReportWithPhoto reject(
+  public ReportDetailView reject(
       UUID reportId, UUID officerId, RejectionReason reason, String comment) {
     HazardReport report = load(reportId);
     report.reject(officerId, reason, comment, clock);
@@ -78,7 +77,7 @@ public class ReportVerificationService {
 
   /** Asks the reporter for more information; the report stays out of warnings until decided. */
   @Transactional
-  public ReportWithPhoto requestInfo(UUID reportId, UUID officerId, String comment) {
+  public ReportDetailView requestInfo(UUID reportId, UUID officerId, String comment) {
     HazardReport report = load(reportId);
     report.requestInfo(officerId, comment, clock);
     return saved(report, "needs more info", officerId);
@@ -90,9 +89,9 @@ public class ReportVerificationService {
         .orElseThrow(() -> new NotFoundException("Report not found."));
   }
 
-  private ReportWithPhoto saved(HazardReport report, String outcome, UUID officerId) {
+  private ReportDetailView saved(HazardReport report, String outcome, UUID officerId) {
     reports.save(report);
     log.info("Report {} {} by officer {}", report.getId(), outcome, officerId);
-    return new ReportWithPhoto(report, photos.findByReportId(report.getId()).orElse(null));
+    return queries.viewOf(report, true);
   }
 }
