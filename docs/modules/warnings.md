@@ -68,8 +68,8 @@ leave an entity are copies.
 
 ## Testing
 
-Unit tests need no database (`./mvnw test -Dtest='lk.dmc.disaster.warnings.**.*Test'` skips the
-three that need Docker). Line and branch coverage by package, measured with JaCoCo on those unit
+Unit tests need no database (they run with `./mvnw test`; the three database tests below are
+optional). Line and branch coverage by package, measured with JaCoCo on those unit
 tests alone:
 
 | Package | Line | Branch |
@@ -83,7 +83,7 @@ tests alone:
 | repository | 100% | 100% |
 | service | 100% | 98.9% |
 
-Docker tests (Testcontainers, real PostgreSQL with the Flyway schema and seed data) check the SQL
+Database tests (real PostgreSQL with the Flyway schema and seed data; the project does not use Docker, so run them against a local PostgreSQL with `-Dapp.test.use-testcontainers=false`) check the SQL
 itself: `WarningRepositoryTest`, `HazardRepositoryTest` and `JdbcDirectoriesTest`.
 
 ## Open items
@@ -91,5 +91,5 @@ itself: `WarningRepositoryTest`, `HazardRepositoryTest` and `JdbcDirectoriesTest
 - `@ApplicationModuleListener` on the reports module's verified-report event: the logic and tests
   are in `HazardEvidenceLinker`; the listener is a thin wrapper to add when that event is merged.
 - Replace the JDBC adapters with the real reports and user queries once they are merged.
-- Run `./mvnw verify` with Docker, including `ModularityTests`, and keep the screenshots and
+- Optionally run the database tests and `ModularityTests` against a local PostgreSQL; keep the screenshots and
   coverage page for the report.

@@ -21,8 +21,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Runs against a real PostgreSQL (Testcontainers) with the Flyway schema and seed data, so CHECK
- * and UNIQUE constraints are exercised for real. Each test rolls back.
+ * Runs against a real PostgreSQL (local, or Testcontainers when Docker is available) with the
+ * Flyway schema and seed data, so CHECK and UNIQUE constraints are exercised for real. Each test
+ * rolls back.
  */
 @SpringBootTest
 @ActiveProfiles("test")

@@ -15,7 +15,10 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Runs the two JDBC adapters against the real schema and seed data (Testcontainers). */
+/**
+ * Runs the two JDBC adapters against the real schema and seed data (local PostgreSQL, or
+ * Testcontainers when Docker is available).
+ */
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(TestcontainersConfiguration.class)
