@@ -8,5 +8,6 @@ public interface RescueTeamsService {
 
   List<RescueTeamDto> getTeams(UUID districtId, Boolean available);
 
-  RescueTeamDto updateTeamStatus(UUID teamId, String toStatus, java.time.Instant changedAt, boolean recordedOffline);
+  RescueTeamDto updateTeamStatus(
+      UUID teamId, String toStatus, java.time.Instant changedAt, boolean recordedOffline);
 }
