@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Attaches a newly verified report to the hazard it belongs to, or starts a new hazard for it. Safe
- * to run twice for the same report. The event listener that calls this is a thin wrapper added when
- * the reports module publishes its verified-report event.
+ * to run twice for the same report. {@link HazardEvidenceListener} calls it when the reports module
+ * publishes a verified report.
  */
 @Slf4j
 @Service

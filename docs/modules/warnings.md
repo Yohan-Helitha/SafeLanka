@@ -41,7 +41,7 @@ and 422 responses listed in the API file.
 | Strategy | `NotificationChannel`, one class per channel, injected as `List<NotificationChannel>` |
 | Adapter | The simulators stand in for FCM, an SMS provider and sirens. A real gateway is one new class |
 | State | `WarningStatusMachine`, `HazardStatusMachine` over one shared `StatusMachine` |
-| Observer | The publication service publishes three warning events; `HazardEvidenceLinker` is called when a report is verified |
+| Observer | The publication service publishes three warning events; `HazardEvidenceListener` (`@ApplicationModuleListener` on the reports module's `ReportVerifiedEvent`) calls `HazardEvidenceLinker` |
 | Single responsibility | Warning rules in `Warning`, pre-checks in `PublishPreconditions`, sending in `NotificationDispatchService`, ordering of steps in `WarningPublicationService`, read side in the `*QueryService` classes |
 | Open / Closed | A channel decides which levels it handles (`supports(level)`), so adding one changes no existing class |
 | Interface segregation | `ActiveWarningQuery` has two methods; each port (`CitizenDirectory`, `AreaReference`, `VerifiedReports`, `HazardTypeDirectory`, `GatewayFailureSwitch`) is small |
@@ -54,10 +54,10 @@ leave an entity are copies.
 
 ## Decisions worth knowing
 
-- **Local ports instead of other modules' classes.** Reports and the user directory belong to other
-  members. The module reads what it needs through small ports with read-only JDBC adapters, so it
-  works without their code. When their queries are merged, each adapter is replaced by a short class
-  that calls the real query.
+- **Ports instead of other modules' classes.** The module reads other modules through small ports.
+  Reports go through `VerifiedReportQueryAdapter`, which calls the reports module's public
+  `VerifiedReportQuery` and keeps only the evidence fields. Citizens, areas and hazard types are read
+  with short read-only JDBC adapters, because the shared kernel has no area queries.
 - **Views are built inside the transaction.** `spring.jpa.open-in-view` is `false`, so
   `WarningView` copies a warning's areas, evidence, resolved districts and delivery totals while the
   session is open.
@@ -88,8 +88,9 @@ itself: `WarningRepositoryTest`, `HazardRepositoryTest` and `JdbcDirectoriesTest
 
 ## Open items
 
-- `@ApplicationModuleListener` on the reports module's verified-report event: the logic and tests
-  are in `HazardEvidenceLinker`; the listener is a thin wrapper to add when that event is merged.
-- Replace the JDBC adapters with the real reports and user queries once they are merged.
-- Optionally run the database tests and `ModularityTests` against a local PostgreSQL; keep the screenshots and
+- Citizens are still read through a read-only JDBC adapter, because the shared `UserDirectory` has no
+  query by area. Replace it when one is added.
+- Lakni's dashboard should inject `ActiveWarningQuery` and listen for the three warning events;
+  test that once her part is merged.
+- Optionally run the database tests against a local PostgreSQL; keep the screenshots and
   coverage page for the report.
