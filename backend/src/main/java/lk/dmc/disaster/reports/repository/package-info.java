@@ -1,2 +1,2 @@
-/** persistence: Spring Data repositories. */
-package lk.dmc.disaster.reports.persistence;
+/** repository: Spring Data repositories for UC02. */
+package lk.dmc.disaster.reports.repository;
