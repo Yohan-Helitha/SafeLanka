@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import lk.dmc.disaster.shared.domain.WarningLevel;
@@ -18,6 +19,7 @@ import lk.dmc.disaster.warnings.entity.DeliveryStatus;
 import lk.dmc.disaster.warnings.entity.NotificationDelivery;
 import lk.dmc.disaster.warnings.entity.Warning;
 import lk.dmc.disaster.warnings.integration.AreaReference;
+import lk.dmc.disaster.warnings.integration.CitizenDirectory;
 import lk.dmc.disaster.warnings.repository.DeliveryCount;
 import lk.dmc.disaster.warnings.repository.DeliveryRepository;
 import lk.dmc.disaster.warnings.repository.WarningRepository;
@@ -43,6 +45,7 @@ class WarningReadServicesTest {
   @Mock private WarningRepository warnings;
   @Mock private DeliveryRepository deliveries;
   @Mock private AreaReference areas;
+  @Mock private CitizenDirectory citizens;
 
   // ---- ActiveWarningQueryImpl --------------------------------------------------------------
 
@@ -169,7 +172,8 @@ class WarningReadServicesTest {
                 new DeliveryCount(Channel.AUDIBLE, DeliveryStatus.DELIVERED, 24)));
     when(deliveries.countTargetedCitizens(warningId)).thenReturn(24L);
 
-    DeliveryOutcome outcome = new DeliveryQueryService(warnings, deliveries).summary(warningId);
+    DeliveryOutcome outcome =
+        new DeliveryQueryService(warnings, deliveries, citizens).summary(warningId);
 
     assertThat(outcome.targeted()).isEqualTo(24);
     assertThat(outcome.delivered()).isEqualTo(70);
@@ -188,34 +192,54 @@ class WarningReadServicesTest {
     when(deliveries.countByChannelAndStatus(warningId)).thenReturn(List.of());
     when(deliveries.countTargetedCitizens(warningId)).thenReturn(0L);
 
-    DeliveryOutcome outcome = new DeliveryQueryService(warnings, deliveries).summary(warningId);
+    DeliveryOutcome outcome =
+        new DeliveryQueryService(warnings, deliveries, citizens).summary(warningId);
 
     assertThat(outcome).isEqualTo(new DeliveryOutcome(0, 0, 0, List.of()));
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  void list_existingWarning_returnsTheRepositoryPage() {
+  void list_existingWarning_returnsTheDeliveriesWithEachPersonsDistrict() {
     UUID warningId = UUID.randomUUID();
+    UUID citizen = UUID.randomUUID();
     Pageable page = PageRequest.of(0, 20);
     NotificationDelivery delivery =
-        NotificationDelivery.queue(warningId, UUID.randomUUID(), Channel.SMS, NOW);
+        NotificationDelivery.queue(warningId, citizen, Channel.SMS, NOW);
     Page<NotificationDelivery> found = new PageImpl<>(List.of(delivery), page, 1);
     when(warnings.existsById(warningId)).thenReturn(true);
     when(deliveries.findAll(any(Specification.class), any(Pageable.class))).thenReturn(found);
+    when(citizens.districtsOf(List.of(citizen))).thenReturn(Map.of(citizen, COLOMBO));
 
-    Page<NotificationDelivery> result =
-        new DeliveryQueryService(warnings, deliveries)
+    Page<DeliveryItem> result =
+        new DeliveryQueryService(warnings, deliveries, citizens)
             .list(warningId, DeliveryStatus.QUEUED, Channel.SMS, page);
 
-    assertThat(result.getContent()).containsExactly(delivery);
+    assertThat(result.getContent()).containsExactly(new DeliveryItem(delivery, COLOMBO));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void list_personNoLongerKnown_hasNoDistrict() {
+    UUID warningId = UUID.randomUUID();
+    Pageable page = PageRequest.of(0, 20);
+    NotificationDelivery delivery =
+        NotificationDelivery.queue(warningId, UUID.randomUUID(), Channel.PUSH, NOW);
+    when(warnings.existsById(warningId)).thenReturn(true);
+    when(deliveries.findAll(any(Specification.class), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of(delivery), page, 1));
+
+    Page<DeliveryItem> result =
+        new DeliveryQueryService(warnings, deliveries, citizens).list(warningId, null, null, page);
+
+    assertThat(result.getContent().get(0).districtId()).isNull();
   }
 
   @Test
   void summaryAndList_unknownWarning_areNotFound() {
     UUID warningId = UUID.randomUUID();
     when(warnings.existsById(warningId)).thenReturn(false);
-    DeliveryQueryService service = new DeliveryQueryService(warnings, deliveries);
+    DeliveryQueryService service = new DeliveryQueryService(warnings, deliveries, citizens);
 
     assertThatThrownBy(() -> service.summary(warningId))
         .isInstanceOfSatisfying(

@@ -2,6 +2,7 @@ package lk.dmc.disaster.warnings.integration;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -15,4 +16,7 @@ public interface CitizenDirectory {
 
   /** How many people {@link #findCitizenIdsInAreas} would return. */
   long countCitizensInAreas(Collection<UUID> districtIds, Collection<UUID> riverBasinIds);
+
+  /** The home district of each person, keyed by person id. Unknown ids are left out. */
+  Map<UUID, UUID> districtsOf(Collection<UUID> citizenIds);
 }
