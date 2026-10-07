@@ -78,6 +78,30 @@ class WarningQueryServiceTest {
   }
 
   @Test
+  void listForHazard_returnsAViewForEachWarningOfTheHazard() {
+    UUID hazardId = UUID.randomUUID();
+    Warning warning =
+        ServiceFixtures.warning(
+            WarningLevel.WATCH, ServiceFixtures.districtTarget(COLOMBO), ServiceFixtures.NOW);
+    when(warnings.findByHazardIdOrderByIssuedAtDesc(hazardId)).thenReturn(List.of(warning));
+    when(audience.resolveDistricts(any(AudienceSelection.class))).thenReturn(Set.of(COLOMBO));
+    when(deliveries.outcomeOf(warning.getId())).thenReturn(OUTCOME);
+
+    List<WarningView> views = service.listForHazard(hazardId);
+
+    assertThat(views).hasSize(1);
+    assertThat(views.get(0).deliveries().targeted()).isEqualTo(24);
+  }
+
+  @Test
+  void listForHazard_noWarnings_isEmpty() {
+    UUID hazardId = UUID.randomUUID();
+    when(warnings.findByHazardIdOrderByIssuedAtDesc(hazardId)).thenReturn(List.of());
+
+    assertThat(service.listForHazard(hazardId)).isEmpty();
+  }
+
+  @Test
   @SuppressWarnings("unchecked")
   void list_buildsAViewForEveryWarningOnThePage() {
     Warning first =

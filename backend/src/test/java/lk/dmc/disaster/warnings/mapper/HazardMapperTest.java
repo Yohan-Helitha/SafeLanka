@@ -23,10 +23,12 @@ import lk.dmc.disaster.warnings.entity.WarningDraft;
 import lk.dmc.disaster.warnings.entity.WarningTarget;
 import lk.dmc.disaster.warnings.integration.HazardTypeDirectory;
 import lk.dmc.disaster.warnings.integration.VerifiedReportSummary;
+import lk.dmc.disaster.warnings.service.DeliveryOutcome;
 import lk.dmc.disaster.warnings.service.GaugeHistory;
 import lk.dmc.disaster.warnings.service.GaugeReading;
 import lk.dmc.disaster.warnings.service.HazardDetailView;
 import lk.dmc.disaster.warnings.service.HazardListEntry;
+import lk.dmc.disaster.warnings.service.WarningView;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +58,8 @@ class HazardMapperTest {
     Sensor sensor = BeanUtils.instantiateClass(Sensor.class);
     ReflectionTestUtils.setField(sensor, "id", UUID.randomUUID());
     ReflectionTestUtils.setField(sensor, "code", "KELANI-HANWELLA");
+    ReflectionTestUtils.setField(sensor, "districtId", DISTRICT);
+    ReflectionTestUtils.setField(sensor, "riverBasinId", UUID.randomUUID());
     ReflectionTestUtils.setField(sensor, "name", "Kelani at Hanwella");
     ReflectionTestUtils.setField(sensor, "alertLevel", new BigDecimal("1.20"));
     ReflectionTestUtils.setField(sensor, "majorFloodLevel", new BigDecimal("2.50"));
@@ -146,7 +150,13 @@ class HazardMapperTest {
                 new VerifiedReportSummary(
                     report, "RPT-2026-0001", "FLOOD", "Water over the road.", DISTRICT, NOW)),
             new GaugeHistory(sensor, List.of(reading)),
-            List.of(warning));
+            List.of(
+                new WarningView(
+                    warning,
+                    warning.target(),
+                    Set.of(),
+                    Set.of(DISTRICT),
+                    new DeliveryOutcome(24, 22, 2, List.of()))));
 
     HazardDetail detail = mapper.toDetail(view);
 
@@ -158,6 +168,11 @@ class HazardMapperTest {
     assertThat(detail.sensor().majorFloodLevel()).isEqualByComparingTo("2.50");
     assertThat(detail.warnings().get(0).id()).isEqualTo(warning.getId());
     assertThat(detail.warnings().get(0).level()).isEqualTo(WarningLevel.WATCH);
+    assertThat(detail.warnings().get(0).title()).isEqualTo("Kelani flood");
+    assertThat(detail.warnings().get(0).districtIds()).containsExactly(DISTRICT);
+    assertThat(detail.warnings().get(0).reached()).isEqualTo(24);
+    assertThat(detail.sensor().districtId()).isEqualTo(sensor.getDistrictId());
+    assertThat(detail.latestReading().sensorName()).isEqualTo("Kelani at Hanwella");
     assertThat(detail.latestReading().aboveAlert()).isTrue();
   }
 

@@ -35,7 +35,7 @@ public class CitizenAlertService {
     }
     return warnings.findActiveCovering(Set.of(districtId), basins).stream()
         .sorted(WarningOrdering.HIGHEST_LEVEL_FIRST)
-        .map(CitizenAlert::of)
+        .map(warning -> CitizenAlert.of(warning, districtId, riverBasinId))
         .toList();
   }
 }

@@ -170,6 +170,8 @@ class WarningReadControllersTest extends ControllerTestSupport {
             "Water is rising fast.",
             "Leave low-lying homes.",
             ControllerFixtures.NOW,
+            DISTRICT,
+            BASIN,
             true);
     when(alerts.alertsFor(DISTRICT, BASIN)).thenReturn(List.of(alert));
 
@@ -178,6 +180,8 @@ class WarningReadControllersTest extends ControllerTestSupport {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data[0].warningId").value(alert.warningId().toString()))
         .andExpect(jsonPath("$.data[0].level").value("EVACUATE"))
+        .andExpect(jsonPath("$.data[0].districtId").value(DISTRICT.toString()))
+        .andExpect(jsonPath("$.data[0].riverBasinId").value(BASIN.toString()))
         .andExpect(jsonPath("$.data[0].audible").value(true));
   }
 

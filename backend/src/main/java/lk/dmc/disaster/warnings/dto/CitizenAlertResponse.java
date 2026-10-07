@@ -8,6 +8,8 @@ import lk.dmc.disaster.warnings.service.CitizenAlert;
 /**
  * An alert as a citizen sees it.
  *
+ * @param districtId the citizen district the alert reached them in
+ * @param riverBasinId the citizen river basin, or null
  * @param audible true when the app should also sound the alarm
  */
 public record CitizenAlertResponse(
@@ -17,6 +19,8 @@ public record CitizenAlertResponse(
     String message,
     String instructions,
     Instant issuedAt,
+    UUID districtId,
+    UUID riverBasinId,
     boolean audible) {
 
   public static CitizenAlertResponse from(CitizenAlert alert) {
@@ -27,6 +31,8 @@ public record CitizenAlertResponse(
         alert.message(),
         alert.instructions(),
         alert.issuedAt(),
+        alert.districtId(),
+        alert.riverBasinId(),
         alert.audible());
   }
 }

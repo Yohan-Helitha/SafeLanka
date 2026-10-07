@@ -9,6 +9,8 @@ import lk.dmc.disaster.warnings.entity.WarningRules;
 /**
  * An alert as a citizen sees it.
  *
+ * @param districtId the citizen district
+ * @param riverBasinId the citizen river basin, or null
  * @param audible true when the app should also sound the alarm
  */
 public record CitizenAlert(
@@ -18,9 +20,11 @@ public record CitizenAlert(
     String message,
     String instructions,
     Instant issuedAt,
+    UUID districtId,
+    UUID riverBasinId,
     boolean audible) {
 
-  static CitizenAlert of(Warning warning) {
+  static CitizenAlert of(Warning warning, UUID districtId, UUID riverBasinId) {
     return new CitizenAlert(
         warning.getId(),
         warning.getLevel(),
@@ -28,6 +32,8 @@ public record CitizenAlert(
         warning.getMessage(),
         warning.getInstructions(),
         warning.getIssuedAt(),
+        districtId,
+        riverBasinId,
         WarningRules.audibleAllowedAt(warning.getLevel()));
   }
 }

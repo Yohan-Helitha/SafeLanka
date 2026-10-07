@@ -19,6 +19,7 @@ import lk.dmc.disaster.warnings.service.GaugeHistory;
 import lk.dmc.disaster.warnings.service.GaugeReading;
 import lk.dmc.disaster.warnings.service.HazardDetailView;
 import lk.dmc.disaster.warnings.service.HazardListEntry;
+import lk.dmc.disaster.warnings.service.WarningView;
 import org.springframework.stereotype.Component;
 
 /** Turns hazard service results into response shapes. Holds no business rules. */
@@ -79,6 +80,7 @@ public class HazardMapper {
       return null;
     }
     return new LatestReadingResponse(
+        gauge.sensor().getName(),
         gauge.reading().getValue(),
         gauge.sensor().getUnit(),
         gauge.aboveAlert(),
@@ -94,6 +96,8 @@ public class HazardMapper {
         sensor.getId(),
         sensor.getCode(),
         sensor.getName(),
+        sensor.getRiverBasinId(),
+        sensor.getDistrictId(),
         sensor.getAlertLevel(),
         sensor.getMajorFloodLevel(),
         sensor.getUnit(),
@@ -110,8 +114,17 @@ public class HazardMapper {
         report.capturedAt());
   }
 
-  private static HazardWarningRef toWarningRef(Warning warning) {
+  private static HazardWarningRef toWarningRef(WarningView view) {
+    Warning warning = view.warning();
     return new HazardWarningRef(
-        warning.getId(), warning.getLevel(), warning.getStatus(), warning.getIssuedAt());
+        warning.getId(),
+        warning.getHazardId(),
+        warning.getLevel(),
+        warning.getStatus(),
+        warning.getTitle(),
+        view.target().districtIds(),
+        view.target().riverBasinIds(),
+        warning.getIssuedAt(),
+        view.deliveries().targeted());
   }
 }

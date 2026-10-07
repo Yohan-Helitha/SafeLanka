@@ -134,6 +134,8 @@ class RequestDtoTest {
             "Water is high.",
             "Stay alert.",
             Instant.parse("2026-10-06T10:00:00Z"),
+            UUID.randomUUID(),
+            null,
             false);
 
     CitizenAlertResponse response = CitizenAlertResponse.from(alert);

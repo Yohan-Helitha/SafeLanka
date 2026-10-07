@@ -9,6 +9,8 @@ public record GaugeResponse(
     UUID id,
     String code,
     String name,
+    UUID riverBasinId,
+    UUID districtId,
     BigDecimal alertLevel,
     BigDecimal majorFloodLevel,
     String unit,

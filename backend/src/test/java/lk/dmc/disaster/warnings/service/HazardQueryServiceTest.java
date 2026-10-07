@@ -28,7 +28,6 @@ import lk.dmc.disaster.warnings.integration.VerifiedReports;
 import lk.dmc.disaster.warnings.repository.HazardEvidenceCount;
 import lk.dmc.disaster.warnings.repository.HazardEvidenceRepository;
 import lk.dmc.disaster.warnings.repository.HazardRepository;
-import lk.dmc.disaster.warnings.repository.WarningRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,7 +45,7 @@ class HazardQueryServiceTest {
 
   @Mock private HazardRepository hazards;
   @Mock private HazardEvidenceRepository evidence;
-  @Mock private WarningRepository warnings;
+  @Mock private WarningQueryService warnings;
   @Mock private GaugeReadings gauges;
   @Mock private VerifiedReports verifiedReports;
 
@@ -62,6 +61,15 @@ class HazardQueryServiceTest {
   @SuppressWarnings("unchecked")
   private void hazardsFound(Hazard... found) {
     when(hazards.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of(found));
+  }
+
+  private static WarningView view(Warning warning) {
+    return new WarningView(
+        warning,
+        warning.target(),
+        Set.of(),
+        Set.of(DISTRICT),
+        new DeliveryOutcome(0, 0, 0, List.of()));
   }
 
   // ---- list --------------------------------------------------------------------------------
@@ -138,13 +146,14 @@ class HazardQueryServiceTest {
     when(evidence.findByIdHazardId(hazard.getId()))
         .thenReturn(List.of(HazardEvidence.link(hazard.getId(), report, NOW)));
     when(verifiedReports.findVerified(List.of(report))).thenReturn(List.of(summary));
-    when(warnings.findByHazardIdOrderByIssuedAtDesc(hazard.getId())).thenReturn(List.of(warning));
+    WarningView warningView = view(warning);
+    when(warnings.listForHazard(hazard.getId())).thenReturn(List.of(warningView));
 
     HazardDetailView view = service.detail(hazard.getId());
 
     assertThat(view.evidence()).containsExactly(summary);
     assertThat(view.summary().verifiedReportCount()).isEqualTo(1);
-    assertThat(view.warnings()).containsExactly(warning);
+    assertThat(view.warnings()).containsExactly(warningView);
     assertThat(view.gauge()).isNull();
     assertThat(view.summary().latestReading()).isNull();
   }
@@ -158,7 +167,7 @@ class HazardQueryServiceTest {
     when(hazards.findById(hazard.getId())).thenReturn(Optional.of(hazard));
     when(evidence.findByIdHazardId(hazard.getId())).thenReturn(List.of());
     when(verifiedReports.findVerified(List.of())).thenReturn(List.of());
-    when(warnings.findByHazardIdOrderByIssuedAtDesc(hazard.getId())).thenReturn(List.of());
+    when(warnings.listForHazard(hazard.getId())).thenReturn(List.of());
     when(gauges.history(sensor.getId(), NOW.minus(WarningRules.CHART_WINDOW)))
         .thenReturn(Optional.of(new GaugeHistory(sensor, List.of(older, newest))));
 

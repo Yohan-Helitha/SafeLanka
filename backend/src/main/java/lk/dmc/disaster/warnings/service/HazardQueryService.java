@@ -21,7 +21,6 @@ import lk.dmc.disaster.warnings.repository.HazardEvidenceCount;
 import lk.dmc.disaster.warnings.repository.HazardEvidenceRepository;
 import lk.dmc.disaster.warnings.repository.HazardRepository;
 import lk.dmc.disaster.warnings.repository.HazardSpecifications;
-import lk.dmc.disaster.warnings.repository.WarningRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +38,7 @@ public class HazardQueryService {
 
   private final HazardRepository hazards;
   private final HazardEvidenceRepository evidence;
-  private final WarningRepository warnings;
+  private final WarningQueryService warnings;
   private final GaugeReadings gauges;
   private final VerifiedReports verifiedReports;
   private final Clock clock;
@@ -47,7 +46,7 @@ public class HazardQueryService {
   public HazardQueryService(
       HazardRepository hazards,
       HazardEvidenceRepository evidence,
-      WarningRepository warnings,
+      WarningQueryService warnings,
       GaugeReadings gauges,
       VerifiedReports verifiedReports,
       Clock clock) {
@@ -103,7 +102,7 @@ public class HazardQueryService {
         new HazardListEntry(hazard, reports.size(), latest),
         reports,
         gauge.orElse(null),
-        warnings.findByHazardIdOrderByIssuedAtDesc(hazardId));
+        warnings.listForHazard(hazardId));
   }
 
   private Map<UUID, Long> evidenceCounts(List<Hazard> found) {

@@ -1,5 +1,6 @@
 package lk.dmc.disaster.warnings.service;
 
+import java.util.List;
 import java.util.UUID;
 import lk.dmc.disaster.shared.error.AppException;
 import lk.dmc.disaster.shared.error.ErrorCode;
@@ -55,6 +56,12 @@ public class WarningQueryService {
             WarningSpecifications.withStatus(status).and(WarningSpecifications.forEvent(eventId)),
             pageable)
         .map(this::viewOf);
+  }
+
+  /** All warnings issued for the hazard, newest first. */
+  @Transactional(readOnly = true)
+  public List<WarningView> listForHazard(UUID hazardId) {
+    return warnings.findByHazardIdOrderByIssuedAtDesc(hazardId).stream().map(this::viewOf).toList();
   }
 
   private WarningView viewOf(Warning warning) {
