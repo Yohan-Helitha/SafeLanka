@@ -20,7 +20,6 @@ import lk.dmc.disaster.reports.ReportVerifiedEvent;
 import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.entity.RejectionReason;
 import lk.dmc.disaster.reports.entity.ReportDraft;
-import lk.dmc.disaster.reports.entity.ReportPhoto;
 import lk.dmc.disaster.reports.entity.ReportStatus;
 import lk.dmc.disaster.reports.repository.HazardReportRepository;
 import lk.dmc.disaster.shared.error.BusinessRuleException;
