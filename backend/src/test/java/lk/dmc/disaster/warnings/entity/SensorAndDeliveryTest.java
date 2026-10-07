@@ -24,6 +24,13 @@ class SensorAndDeliveryTest {
   }
 
   @Test
+  void sensorKind_hasTheTwoGaugeTypesThatMatchTheDatabaseValues() {
+    assertThat(SensorKind.values()).containsExactly(SensorKind.RIVER_GAUGE, SensorKind.RAIN_GAUGE);
+    assertThat(SensorKind.valueOf("RIVER_GAUGE")).isEqualTo(SensorKind.RIVER_GAUGE);
+    assertThat(SensorKind.valueOf("RAIN_GAUGE")).isEqualTo(SensorKind.RAIN_GAUGE);
+  }
+
+  @Test
   void simulationStep_isAnEighthOfTheGap() {
     Sensor sensor = EntityFixtures.sensor("1.20", "2.80");
 

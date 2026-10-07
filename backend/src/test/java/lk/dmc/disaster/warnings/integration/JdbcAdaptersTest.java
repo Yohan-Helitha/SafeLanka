@@ -132,6 +132,18 @@ class JdbcAdaptersTest {
   }
 
   @Test
+  void citizens_countWithOnlyDistrictsOrOnlyBasins_usesJustThatFilter() {
+    doReturn(resultOf(List.of(3L))).when(statement).query(Long.class);
+    JdbcCitizenDirectory directory = new JdbcCitizenDirectory(jdbc);
+
+    assertThat(directory.countCitizensInAreas(Set.of(COLOMBO), Set.of())).isEqualTo(3);
+    assertThat(directory.countCitizensInAreas(Set.of(), Set.of(KELANI))).isEqualTo(3);
+
+    verify(statement).param("districtIds", Set.of(COLOMBO));
+    verify(statement).param("basinIds", Set.of(KELANI));
+  }
+
+  @Test
   void citizens_noAreas_returnNothingWithoutAskingTheDatabase() {
     JdbcCitizenDirectory directory = new JdbcCitizenDirectory(jdbc);
 

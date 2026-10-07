@@ -95,11 +95,11 @@ tests alone:
 | root | 100% | n/a |
 | controller | 100% | n/a |
 | dto | 100% | 100% |
-| entity | 98.8% | 100% |
-| integration | 100% | 96.7% |
+| entity | 100% | 100% |
+| integration | 100% | 100% |
 | mapper | 100% | 100% |
 | repository | 100% | 100% |
-| service | 100% | 98.9% |
+| service | 100% | 100% |
 
 Database tests (real PostgreSQL with the Flyway schema and seed data; the project does not use Docker, so run them against a local PostgreSQL with `-Dapp.test.use-testcontainers=false`) check the SQL
 itself: `WarningRepositoryTest`, `HazardRepositoryTest` and `JdbcDirectoriesTest`.
