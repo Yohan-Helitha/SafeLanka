@@ -17,8 +17,14 @@ import org.springframework.data.repository.query.Param;
 public interface HazardRepository
     extends JpaRepository<Hazard, UUID>, JpaSpecificationExecutor<Hazard> {
 
-  /** True when the sensor already has a hazard that is not in the given status. */
-  boolean existsBySensorIdAndStatusNot(UUID sensorId, HazardStatus status);
+  /** The newest hazard of the sensor that is not in the given status, if any. */
+  Optional<Hazard> findFirstBySensorIdAndStatusNotOrderByDetectedAtDesc(
+      UUID sensorId, HazardStatus status);
+
+  /** The hazard a sensor opened that is still open (not RESOLVED), if any. */
+  default Optional<Hazard> findOpenForSensor(UUID sensorId) {
+    return findFirstBySensorIdAndStatusNotOrderByDetectedAtDesc(sensorId, HazardStatus.RESOLVED);
+  }
 
   @Query(
       """

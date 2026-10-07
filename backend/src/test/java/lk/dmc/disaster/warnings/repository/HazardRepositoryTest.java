@@ -91,19 +91,17 @@ class HazardRepositoryTest extends RepositoryTestSupport {
   }
 
   @Test
-  void existsBySensorIdAndStatusNot_trueOnlyWhileTheSensorHazardIsOpen() {
+  void findOpenForSensor_presentOnlyWhileTheSensorHazardIsOpen() {
     Sensor sensor = sensors.findAll().get(0);
     Hazard hazard =
         hazards.saveAndFlush(Hazard.fromSensor(sensor, type, "Gauge crossed alert level.", NOW));
 
-    assertThat(hazards.existsBySensorIdAndStatusNot(sensor.getId(), HazardStatus.RESOLVED))
-        .isTrue();
+    assertThat(hazards.findOpenForSensor(sensor.getId())).contains(hazard);
 
     hazard.assessAs(HazardStatus.RESOLVED);
     hazards.saveAndFlush(hazard);
 
-    assertThat(hazards.existsBySensorIdAndStatusNot(sensor.getId(), HazardStatus.RESOLVED))
-        .isFalse();
+    assertThat(hazards.findOpenForSensor(sensor.getId())).isEmpty();
   }
 
   @Test

@@ -63,32 +63,50 @@ class ChannelSettingsServiceTest {
   }
 
   @Test
-  void setEnabled_changesOnlyTheEnabledFlag() {
-    ChannelSetting sms = setting(Channel.SMS, true, false);
+  void change_onlyEnabledGiven_leavesTheFailureFlagAlone() {
+    ChannelSetting sms = setting(Channel.SMS, true, true);
     when(repository.findById(Channel.SMS)).thenReturn(Optional.of(sms));
 
-    ChannelSetting result = service.setEnabled(Channel.SMS, false);
+    ChannelSetting result = service.change(Channel.SMS, new ChannelSettingChange(false, null));
 
     assertThat(result.isEnabled()).isFalse();
-    assertThat(result.isSimulateFailure()).isFalse();
+    assertThat(result.isSimulateFailure()).isTrue();
   }
 
   @Test
-  void setSimulatedFailure_changesOnlyTheFailureFlag() {
+  void change_onlyFailureGiven_leavesEnabledAlone() {
     ChannelSetting sms = setting(Channel.SMS, true, false);
     when(repository.findById(Channel.SMS)).thenReturn(Optional.of(sms));
 
-    ChannelSetting result = service.setSimulatedFailure(Channel.SMS, true);
+    ChannelSetting result = service.change(Channel.SMS, new ChannelSettingChange(null, true));
 
     assertThat(result.isSimulateFailure()).isTrue();
     assertThat(result.isEnabled()).isTrue();
   }
 
   @Test
+  void change_bothGiven_changesBoth() {
+    ChannelSetting push = setting(Channel.PUSH, true, false);
+    when(repository.findById(Channel.PUSH)).thenReturn(Optional.of(push));
+
+    ChannelSetting result = service.change(Channel.PUSH, new ChannelSettingChange(false, true));
+
+    assertThat(result.isEnabled()).isFalse();
+    assertThat(result.isSimulateFailure()).isTrue();
+  }
+
+  @Test
+  void change_nothingGiven_isValidationError() {
+    assertThatThrownBy(() -> new ChannelSettingChange(null, null))
+        .isInstanceOfSatisfying(
+            AppException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.VALIDATION_ERROR));
+  }
+
+  @Test
   void unknownChannel_isNotFound() {
     when(repository.findById(Channel.PUSH)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service.setEnabled(Channel.PUSH, true))
+    assertThatThrownBy(() -> service.change(Channel.PUSH, new ChannelSettingChange(true, null)))
         .isInstanceOfSatisfying(
             AppException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.NOT_FOUND));
     assertThatThrownBy(() -> service.isEnabled(Channel.PUSH)).isInstanceOf(AppException.class);

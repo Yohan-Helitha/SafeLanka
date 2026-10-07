@@ -48,28 +48,24 @@ public class ChannelSettingsService implements GatewayFailureSwitch {
   }
 
   /**
-   * Switches a channel on or off.
+   * Applies the flags that were given and leaves the others as they are.
    *
    * @throws AppException NOT_FOUND when the channel has no setting row
    */
   @Transactional
-  public ChannelSetting setEnabled(Channel channel, boolean on) {
+  public ChannelSetting change(Channel channel, ChannelSettingChange change) {
     ChannelSetting setting = find(channel);
-    setting.switchEnabled(on);
-    log.info("Channel {} enabled={}", channel, on);
-    return setting;
-  }
-
-  /**
-   * Makes a channel's gateway fail, or work again.
-   *
-   * @throws AppException NOT_FOUND when the channel has no setting row
-   */
-  @Transactional
-  public ChannelSetting setSimulatedFailure(Channel channel, boolean on) {
-    ChannelSetting setting = find(channel);
-    setting.switchSimulatedFailure(on);
-    log.info("Channel {} simulateFailure={}", channel, on);
+    if (change.enabled() != null) {
+      setting.switchEnabled(change.enabled());
+    }
+    if (change.simulateFailure() != null) {
+      setting.switchSimulatedFailure(change.simulateFailure());
+    }
+    log.info(
+        "Channel {} now enabled={}, simulateFailure={}",
+        channel,
+        setting.isEnabled(),
+        setting.isSimulateFailure());
     return setting;
   }
 

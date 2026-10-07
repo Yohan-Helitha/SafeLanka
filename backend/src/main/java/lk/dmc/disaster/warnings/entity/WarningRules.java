@@ -48,6 +48,9 @@ public final class WarningRules {
   /** One simulated tick moves a gauge by (major - alert) divided by this value. */
   public static final int SENSOR_STEP_DIVISOR = 8;
 
+  /** A gauge with no readings yet starts this many steps below its alert level. */
+  public static final int SENSOR_START_STEPS_BELOW_ALERT = 4;
+
   public static final BigDecimal SENSOR_MIN_STEP = new BigDecimal("0.05");
 
   private WarningRules() {}
