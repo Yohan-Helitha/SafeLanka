@@ -15,6 +15,8 @@ public final class ReportRules {
   public static final double DUPLICATE_RADIUS_METRES = 500;
   public static final Duration DUPLICATE_WINDOW = Duration.ofHours(2);
   public static final Duration CLOCK_SKEW = Duration.ofMinutes(5);
+  public static final int MAX_PAGE_SIZE = 100;
+  public static final int VERIFIED_QUERY_LIMIT = 200;
   public static final String REFERENCE_FORMAT = "RPT-%d-%04d";
 
   private ReportRules() {}

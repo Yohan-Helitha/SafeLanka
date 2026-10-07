@@ -240,6 +240,43 @@ class HazardReportRepositoryTest {
     assertThat(queue(null, FLOOD, GAMPAHA)).containsExactly(floodGampaha);
   }
 
+  @Test
+  void verifiedSpecification_returnsOnlyVerifiedReportsMatchingTheFilters() {
+    HazardReport verifiedFlood = floodAt(reporter, T0);
+    verifiedFlood.verify(OFFICER, null, CLOCK);
+    reports.saveAndFlush(verifiedFlood);
+    HazardReport verifiedSlide = report(reporter, LANDSLIDE, GAMPAHA, 7.0, 80.0, T0);
+    verifiedSlide.verify(OFFICER, null, CLOCK);
+    reports.saveAndFlush(verifiedSlide);
+    floodAt(reporter, T0);
+    Instant decidedAt = CLOCK.instant();
+
+    assertThat(verified(null, null, null)).containsExactlyInAnyOrder(verifiedFlood, verifiedSlide);
+    assertThat(verified(FLOOD, null, null)).containsExactly(verifiedFlood);
+    assertThat(verified(null, GAMPAHA, null)).containsExactly(verifiedSlide);
+    assertThat(verified(null, null, decidedAt)).hasSize(2);
+    assertThat(verified(null, null, decidedAt.plusSeconds(1))).isEmpty();
+  }
+
+  private List<HazardReport> verified(UUID type, UUID district, Instant since) {
+    return reports.findAll(
+        ReportSpecifications.verified(type, district, since)
+            .and((root, q, cb) -> cb.equal(root.get("reporterId"), reporter)));
+  }
+
+  @Test
+  void photosByReportIds_returnsOnePhotoPerReportInOneQuery() {
+    HazardReport a = floodAt(reporter, T0);
+    HazardReport b = floodAt(reporter, T0);
+    HazardReport none = floodAt(reporter, T0);
+    photos.saveAndFlush(ReportPhoto.attach(a.getId(), "reports/a.jpg", "image/jpeg", 10));
+    photos.saveAndFlush(ReportPhoto.attach(b.getId(), "reports/b.png", "image/png", 20));
+
+    assertThat(photos.findByReportIdIn(List.of(a.getId(), b.getId(), none.getId())))
+        .extracting(ReportPhoto::getReportId)
+        .containsExactlyInAnyOrder(a.getId(), b.getId());
+  }
+
   // ---- duplicate candidates -----------------------------------------------------------------
 
   private List<HazardReport> candidates(HazardReport subject) {

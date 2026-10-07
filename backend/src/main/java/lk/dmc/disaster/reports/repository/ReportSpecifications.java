@@ -1,5 +1,6 @@
 package lk.dmc.disaster.reports.repository;
 
+import java.time.Instant;
 import java.util.UUID;
 import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.entity.ReportStatus;
@@ -16,6 +17,16 @@ public final class ReportSpecifications {
         .and(equalTo("status", status))
         .and(equalTo("hazardTypeId", hazardTypeId))
         .and(equalTo("districtId", districtId));
+  }
+
+  /** Verified reports only; each filter is optional and {@code since} is inclusive. */
+  public static Specification<HazardReport> verified(
+      UUID hazardTypeId, UUID districtId, Instant since) {
+    Specification<HazardReport> sinceSpec =
+        since == null
+            ? Specification.unrestricted()
+            : (root, query, cb) -> cb.greaterThanOrEqualTo(root.get("reviewedAt"), since);
+    return queue(ReportStatus.VERIFIED, hazardTypeId, districtId).and(sinceSpec);
   }
 
   private static Specification<HazardReport> equalTo(String field, Object value) {
