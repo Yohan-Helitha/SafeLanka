@@ -4,8 +4,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Read-only lookups into the shared reference tables, so modules never import each other's
- * entities or repositories.
+ * Read-only lookups into the shared reference tables, so modules never import each other's entities
+ * or repositories.
  */
 public interface ReferenceData {
 
