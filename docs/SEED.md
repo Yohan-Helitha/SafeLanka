@@ -14,3 +14,5 @@ Format: `00000000-0000-0000-TTTT-0000000000NN`
 - `0009` - Shelters
 - `0010` - Rescue Teams
 - `0011` - Relief Stock
+
+- 0000000 - Verified Reports (Yohan's module)
