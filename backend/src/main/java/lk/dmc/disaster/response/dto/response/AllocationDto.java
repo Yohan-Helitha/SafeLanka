@@ -20,9 +20,16 @@ public record AllocationDto(
 
   public static AllocationDto from(ResourceAllocation allocation) {
     return new AllocationDto(
-        allocation.getId(), allocation.getStockId(), allocation.getShelterId(),
-        allocation.getEventId(), allocation.getQuantity(), allocation.getStatus(),
-        allocation.getAllocatedBy(), allocation.getAllocatedAt(), allocation.getVersion(),
-        allocation.getCreatedAt(), allocation.getUpdatedAt());
+        allocation.getId(),
+        allocation.getStockId(),
+        allocation.getShelterId(),
+        allocation.getEventId(),
+        allocation.getQuantity(),
+        allocation.getStatus(),
+        allocation.getAllocatedBy(),
+        allocation.getAllocatedAt(),
+        allocation.getVersion(),
+        allocation.getCreatedAt(),
+        allocation.getUpdatedAt());
   }
 }
