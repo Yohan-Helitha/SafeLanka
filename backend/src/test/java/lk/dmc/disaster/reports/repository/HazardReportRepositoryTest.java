@@ -164,6 +164,14 @@ class HazardReportRepositoryTest {
   }
 
   @Test
+  void findWithLockById_returnsTheReportOrEmpty() {
+    HazardReport saved = floodAt(reporter, T0);
+
+    assertThat(reports.findWithLockById(saved.getId())).contains(saved);
+    assertThat(reports.findWithLockById(UUID.randomUUID())).isEmpty();
+  }
+
+  @Test
   void findByReporter_newestFirstAndOnlyThatReportersReports() {
     HazardReport older = floodAt(reporter, T0.minusSeconds(3600));
     HazardReport newer = floodAt(reporter, T0);

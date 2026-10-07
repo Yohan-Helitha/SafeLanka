@@ -4,11 +4,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import jakarta.persistence.LockModeType;
 import lk.dmc.disaster.reports.entity.HazardReport;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,6 +20,10 @@ public interface HazardReportRepository
 
   /** The report a phone already synced under this offline key, if any. */
   Optional<HazardReport> findByClientRef(UUID clientRef);
+
+  /** Loads a report and locks its row until the transaction ends, for decisions. */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  Optional<HazardReport> findWithLockById(UUID id);
 
   Page<HazardReport> findByReporterIdOrderByCapturedAtDesc(UUID reporterId, Pageable pageable);
 
