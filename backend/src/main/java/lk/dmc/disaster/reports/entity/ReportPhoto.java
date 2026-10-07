@@ -48,7 +48,9 @@ public class ReportPhoto {
   @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
 
-  /** @throws BusinessRuleException (422) for a type other than JPEG/PNG or a size outside 1 B-5 MB */
+  /**
+   * @throws BusinessRuleException (422) for a type other than JPEG/PNG or a size outside 1 B-5 MB
+   */
   public static ReportPhoto attach(UUID reportId, String filePath, String mimeType, int sizeBytes) {
     if (!MIME_TYPES.contains(mimeType)) {
       throw new BusinessRuleException("The photo must be a JPEG or PNG image.");
