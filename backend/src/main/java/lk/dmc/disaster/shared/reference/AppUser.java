@@ -1,5 +1,6 @@
 package lk.dmc.disaster.shared.reference;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,15 +17,22 @@ public class AppUser extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @Column(name = "full_name")
     private String fullName;
     private String phone;
     private String nic;
+    @Column(name = "home_address")
     private String homeAddress;
     
+    @Column(name = "district_id")
     private UUID districtId;
+    @Column(name = "river_basin_id")
     private UUID riverBasinId;
+    @Column(name = "preferred_language")
     private String preferredLanguage;
+    @Column(name = "organisation_id")
     private UUID organisationId;
+    @Column(name = "rescue_team_id")
     private UUID rescueTeamId;
 
     protected AppUser() {}
