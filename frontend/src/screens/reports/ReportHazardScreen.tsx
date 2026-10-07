@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiErrorNotice } from '@/components/domain'
 import { LocationPicker } from '@/components/reports/LocationPicker'
 import { PhotoPicker } from '@/components/reports/PhotoPicker'
@@ -9,8 +9,11 @@ import { CATEGORY_LABEL } from '@/constants/labels'
 import { paths } from '@/constants/routes'
 import { useCurrentUser } from '@/context/AuthContext'
 import { useDocumentTitle, useGeolocation, useReferenceData } from '@/hooks/shared'
+import { removeDraft, saveDraft, useReportDrafts } from '@/hooks/reports/useReportDrafts'
 import { useSubmitReport } from '@/hooks/reports/useReports'
-import type { ReportInput } from '@/types'
+import { draftStore } from '@/services/offline/drafts'
+import type { ReportDraft } from '@/services/offline/drafts'
+import type { LatLng, ReportInput } from '@/types'
 import { formatCoords, newClientRef } from '@/utils'
 import { compact, lengthError } from '@/utils/validation'
 
@@ -22,6 +25,16 @@ export function ReportHazardScreen() {
   const geo = useGeolocation()
   const submit = useSubmitReport()
 
+  const [searchParams] = useSearchParams()
+  const resumeId = searchParams.get('draft')
+  // The draft id is also the clientRef, so resending after a failure can never create a second report.
+  const [draftId] = useState(() => resumeId ?? newClientRef())
+  const [startedAt, setStartedAt] = useState(() => new Date().toISOString())
+  const sent = useRef(false)
+  const { drafts } = useReportDrafts()
+  const otherDrafts = drafts.filter((d) => d.id !== draftId)
+
+  const [loaded, setLoaded] = useState(!resumeId)
   const [step, setStep] = useState<'form' | 'review'>('form')
   const [attempted, setAttempted] = useState(false)
   const [hazardTypeId, setHazardTypeId] = useState<string | null>(null)
@@ -31,9 +44,76 @@ export function ReportHazardScreen() {
   const [manual, setManual] = useState(false)
   const [manualText, setManualText] = useState('')
   const [districtId, setDistrictId] = useState(user.districtId)
+  const [savedFix, setSavedFix] = useState<LatLng | null>(null)
 
   const type = ref.activeHazardTypes.find((t) => t.id === hazardTypeId)
   const useManual = manual || geo.status === 'unavailable'
+  // A location saved with the draft stays valid until the person asks for a new one.
+  const fix = geo.status === 'ok' && geo.fix ? geo.fix : savedFix
+  const geoView =
+    geo.status === 'idle' && savedFix && !manual
+      ? { ...geo, status: 'ok' as const, fix: savedFix, accuracyMetres: null }
+      : geo
+
+  // Opening a saved report from "My reports" fills the form with what was saved.
+  useEffect(() => {
+    if (!resumeId) return
+    let cancelled = false
+    draftStore
+      .get(resumeId)
+      .then((d) => {
+        if (cancelled || !d || d.ownerId !== user.id) return
+        setStartedAt(d.createdAt)
+        setHazardTypeId(d.hazardTypeId)
+        setCategory(d.category)
+        setDescription(d.description)
+        setPhoto(d.photo ? new File([d.photo], 'photo', { type: d.photo.type }) : null)
+        setManual(d.manual)
+        setManualText(d.manualText)
+        setDistrictId(d.districtId)
+        setSavedFix(d.latitude !== null && d.longitude !== null ? { latitude: d.latitude, longitude: d.longitude } : null)
+      })
+      .catch(() => undefined)
+      .finally(() => !cancelled && setLoaded(true))
+    return () => {
+      cancelled = true
+    }
+  }, [resumeId, user.id])
+
+  const hasContent = Boolean(hazardTypeId || description.trim() || photo || manualText.trim())
+  const snapshot = (): ReportDraft => ({
+    id: draftId,
+    ownerId: user.id,
+    hazardTypeId,
+    category,
+    description,
+    photo,
+    manual,
+    manualText,
+    districtId,
+    latitude: fix?.latitude ?? null,
+    longitude: fix?.longitude ?? null,
+    createdAt: startedAt,
+    updatedAt: new Date().toISOString(),
+  })
+  const latest = useRef({ snapshot, loaded, hasContent })
+  useEffect(() => {
+    latest.current = { snapshot, loaded, hasContent }
+  })
+
+  // Everything typed is kept on this device, so leaving the screen by mistake loses nothing.
+  useEffect(() => {
+    if (!loaded || sent.current || !hasContent) return
+    const timer = setTimeout(() => void saveDraft(latest.current.snapshot()), 500)
+    return () => clearTimeout(timer)
+  }, [loaded, hasContent, hazardTypeId, category, description, photo, manual, manualText, districtId, fix])
+  useEffect(
+    () => () => {
+      const { snapshot: take, loaded: ready, hasContent: filled } = latest.current
+      if (ready && filled && !sent.current) void saveDraft(take())
+    },
+    [],
+  )
 
   const errors = compact({
     hazardTypeId: hazardTypeId ? null : 'Choose what is happening.',
@@ -43,39 +123,45 @@ export function ReportHazardScreen() {
       ? manualText.trim().length >= 5
         ? null
         : 'Describe the place in at least 5 characters.'
-      : geo.fix
+      : fix
         ? null
         : 'Use your location or describe the place.',
     photo: photo && photo.size > LIMITS.photoBytes ? 'This photo is larger than 5 MB.' : null,
   })
   const show = (key: string) => (attempted ? (errors[key] ?? null) : null)
 
-  const review = () => {
+  /** Saves what was filled in first, then shows it for checking. */
+  const review = async () => {
     setAttempted(true)
-    if (Object.keys(errors).length === 0) setStep('review')
+    if (Object.keys(errors).length > 0) return
+    await saveDraft(snapshot())
+    setStep('review')
   }
 
   const send = () => {
     const input: ReportInput = {
-      clientRef: newClientRef(),
+      clientRef: draftId,
       hazardTypeId: hazardTypeId!,
       category: category!,
       description: description.trim(),
-      latitude: useManual ? null : geo.fix!.latitude,
-      longitude: useManual ? null : geo.fix!.longitude,
+      latitude: useManual ? null : fix!.latitude,
+      longitude: useManual ? null : fix!.longitude,
       isManualLocation: useManual,
       manualLocationText: useManual ? manualText.trim() : null,
       districtId,
-      capturedAt: new Date().toISOString(),
+      capturedAt: startedAt,
       photo,
     }
     submit.mutate(input, {
-      onSuccess: (result) =>
-        result.queued
-          ? navigate(paths.citizen.reportDone(result.clientRef), { state: { kind: 'queued' } })
-          : navigate(paths.citizen.reportDone(result.report.id), {
-              state: { kind: 'sent', referenceNo: result.report.referenceNo },
-            }),
+      onSuccess: (result) => {
+        sent.current = true
+        void removeDraft(draftId)
+        if (result.queued) navigate(paths.citizen.reportDone(result.clientRef), { state: { kind: 'queued' } })
+        else
+          navigate(paths.citizen.reportDone(result.report.id), {
+            state: { kind: 'sent', referenceNo: result.report.referenceNo },
+          })
+      },
     })
   }
 
@@ -89,7 +175,7 @@ export function ReportHazardScreen() {
           <Row label="Description" value={description.trim()} />
           <Row
             label="Location"
-            value={useManual ? manualText.trim() : geo.fix ? formatCoords(geo.fix.latitude, geo.fix.longitude) : undefined}
+            value={useManual ? manualText.trim() : fix ? formatCoords(fix.latitude, fix.longitude) : undefined}
           />
           <Row label="District" value={ref.districtName(districtId)} />
           <Row label="Photo" value={photo ? undefined : 'None'}>
@@ -97,6 +183,13 @@ export function ReportHazardScreen() {
           </Row>
         </dl>
         <div className="mt-4 space-y-3">
+          <p className="text-sm text-muted">
+            Saved on this device. If you leave now, you can send it later from{' '}
+            <Link to={paths.citizen.reports} className="text-signal underline">
+              My reports
+            </Link>
+            .
+          </p>
           <ApiErrorNotice error={submit.error} />
           <div className="grid grid-cols-2 gap-3">
             <Button variant="secondary" size="lg" onClick={() => setStep('form')}>
@@ -116,11 +209,20 @@ export function ReportHazardScreen() {
       noValidate
       onSubmit={(e) => {
         e.preventDefault()
-        review()
+        void review()
       }}
       className="space-y-5"
     >
       <PageHeader title="Report a hazard" subtitle="Tell the Disaster Management Centre what you see." />
+      {otherDrafts.length > 0 && (
+        <p className="rounded-control border border-signal/50 bg-panel px-3 py-2 text-sm text-ink">
+          You have {otherDrafts.length === 1 ? 'a saved report' : `${otherDrafts.length} saved reports`} that{' '}
+          {otherDrafts.length === 1 ? 'was' : 'were'} not sent.{' '}
+          <Link to={paths.citizen.reports} className="text-signal underline">
+            Open My reports
+          </Link>
+        </p>
+      )}
       <Segmented
         legend="What is happening?"
         value={hazardTypeId}
@@ -157,7 +259,7 @@ export function ReportHazardScreen() {
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium text-ink">Location</legend>
         <LocationPicker
-          geo={geo}
+          geo={geoView}
           manual={manual}
           onManualChange={setManual}
           manualText={manualText}
@@ -177,7 +279,7 @@ export function ReportHazardScreen() {
         )}
       </Field>
       <Button type="submit" size="lg" block>
-        Review report
+        Save and review
       </Button>
     </form>
   )

@@ -1,11 +1,13 @@
 import { CloudOff, Inbox } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { StatusChip } from '@/components/domain'
+import { DraftCard } from '@/components/reports/DraftCard'
 import { ReportCard } from '@/components/reports/ReportCard'
 import { Button, EmptyState, ErrorState, Loading, PageHeader } from '@/components/ui'
 import { CATEGORY_LABEL } from '@/constants/labels'
 import { paths } from '@/constants/routes'
 import { useOutbox } from '@/context/OutboxContext'
+import { useReportDrafts } from '@/hooks/reports/useReportDrafts'
 import { useMyReports } from '@/hooks/reports/useReports'
 import { useDocumentTitle, useReferenceData } from '@/hooks/shared'
 import { relativeTime } from '@/utils/format'
@@ -15,12 +17,16 @@ export function MyReportsScreen() {
   const reports = useMyReports()
   const { hazardTypeName } = useReferenceData()
   const { items, discard } = useOutbox()
+  const { drafts } = useReportDrafts()
   const queued = items.filter((i) => i.payload.kind === 'REPORT')
 
   return (
     <div>
       <PageHeader title="My reports" subtitle="Everything you have sent to the Disaster Management Centre." />
       <div className="space-y-3">
+        {drafts.map((draft) => (
+          <DraftCard key={draft.id} draft={draft} />
+        ))}
         {queued.map((item) => {
           const input = item.payload.kind === 'REPORT' ? item.payload.input : null
           const bad = item.state === 'NEEDS_ATTENTION'
@@ -57,7 +63,7 @@ export function MyReportsScreen() {
         {reports.data?.map((r) => (
           <ReportCard key={r.id} report={r} hazardTypeName={hazardTypeName(r.hazardTypeId)} />
         ))}
-        {reports.data?.length === 0 && queued.length === 0 && (
+        {reports.data?.length === 0 && queued.length === 0 && drafts.length === 0 && (
           <EmptyState
             icon={Inbox}
             title="No reports yet"
