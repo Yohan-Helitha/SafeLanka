@@ -38,6 +38,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @ExtendWith(MockitoExtension.class)
 class ReportSubmissionServiceTest {
@@ -53,6 +56,7 @@ class ReportSubmissionServiceTest {
   @Mock ReferenceNumberGenerator referenceNumbers;
   @Mock ReferenceData referenceData;
   @Mock FileStorage fileStorage;
+  @Mock PlatformTransactionManager transactionManager;
 
   private ReportSubmissionService service;
 
@@ -65,6 +69,7 @@ class ReportSubmissionServiceTest {
             referenceNumbers,
             referenceData,
             fileStorage,
+            new TransactionTemplate(transactionManager),
             Clock.fixed(NOW, ZoneOffset.UTC));
     lenient().when(reports.findByClientRef(any())).thenReturn(Optional.empty());
     lenient().when(reports.save(any(HazardReport.class))).thenAnswer(i -> i.getArgument(0));
@@ -322,5 +327,93 @@ class ReportSubmissionServiceTest {
             AppException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.VALIDATION_ERROR));
     verify(reports, never()).save(any());
     verify(photos, never()).save(any());
+  }
+
+  // ---- two requests with the same clientRef at the same moment -------------------------------
+
+  private HazardReport reportOf(SubmitReportCommand c, UUID reporter) {
+    return HazardReport.submit(
+        new ReportDraft(
+            c.clientRef(),
+            FLOOD,
+            "RISING_WATER",
+            c.description(),
+            6.9391,
+            79.8921,
+            null,
+            COLOMBO,
+            NOW),
+        reporter,
+        "RPT-2026-0001",
+        Clock.fixed(NOW, ZoneOffset.UTC));
+  }
+
+  private void givenStoredPhoto() {
+    when(fileStorage.store("reports", "image/jpeg", JPEG))
+        .thenReturn(new StoredFile("reports/abc.jpg", "image/jpeg", JPEG.length));
+  }
+
+  private static SubmitReportCommand withPhoto() {
+    return command(UUID.randomUUID(), NOW.minusSeconds(60), new PhotoUpload("image/jpeg", JPEG));
+  }
+
+  @Test
+  void submit_losingTheRaceReturnsTheWinnerAsAReplayAndRemovesItsOwnPhoto() {
+    SubmitReportCommand command = withPhoto();
+    HazardReport winner = reportOf(command, REPORTER);
+    givenStoredPhoto();
+    when(reports.findByClientRef(command.clientRef()))
+        .thenReturn(Optional.empty(), Optional.of(winner));
+    when(reports.save(any(HazardReport.class))).thenThrow(new DataIntegrityViolationException("dup"));
+
+    SubmissionResult result = service.submit(REPORTER, command);
+
+    assertThat(result.created()).isFalse();
+    assertThat(result.report()).isSameAs(winner);
+    verify(fileStorage).delete("reports/abc.jpg");
+  }
+
+  @Test
+  void submit_losingTheRaceToAnotherReportersKeyIsAConflict() {
+    SubmitReportCommand command = command();
+    HazardReport winner = reportOf(command, UUID.randomUUID());
+    when(reports.findByClientRef(command.clientRef()))
+        .thenReturn(Optional.empty(), Optional.of(winner));
+    when(reports.save(any(HazardReport.class))).thenThrow(new DataIntegrityViolationException("dup"));
+
+    assertThatThrownBy(() -> service.submit(REPORTER, command))
+        .isInstanceOf(ConflictException.class);
+  }
+
+  @Test
+  void submit_integrityViolationWithoutAWinnerIsRethrownAndThePhotoRemoved() {
+    SubmitReportCommand command = withPhoto();
+    givenStoredPhoto();
+    DataIntegrityViolationException failure = new DataIntegrityViolationException("other");
+    when(reports.save(any(HazardReport.class))).thenThrow(failure);
+
+    assertThatThrownBy(() -> service.submit(REPORTER, command)).isSameAs(failure);
+    verify(fileStorage).delete("reports/abc.jpg");
+  }
+
+  @Test
+  void submit_anyOtherFailureWhileSavingRemovesThePhotoAndPropagates() {
+    SubmitReportCommand command = withPhoto();
+    givenStoredPhoto();
+    when(photos.save(any(ReportPhoto.class))).thenThrow(new IllegalStateException("db down"));
+
+    assertThatThrownBy(() -> service.submit(REPORTER, command))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("db down");
+    verify(fileStorage).delete("reports/abc.jpg");
+  }
+
+  @Test
+  void submit_failureWithoutAPhotoNeverTouchesStorage() {
+    when(reports.save(any(HazardReport.class))).thenThrow(new IllegalStateException("db down"));
+
+    assertThatThrownBy(() -> service.submit(REPORTER, command()))
+        .isInstanceOf(IllegalStateException.class);
+    verifyNoInteractions(fileStorage);
   }
 }

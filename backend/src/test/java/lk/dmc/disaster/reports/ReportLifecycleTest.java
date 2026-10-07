@@ -13,6 +13,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import lk.dmc.disaster.TestcontainersConfiguration;
 import lk.dmc.disaster.auth.application.port.AccessTokenIssuer;
 import lk.dmc.disaster.auth.persistence.UserAccountRepository;
@@ -212,5 +218,44 @@ class ReportLifecycleTest {
     mvc.perform(get("/api/reports/mine")).andExpect(status().isUnauthorized());
     mvc.perform(as(OFFICER, get("/api/reports/mine"))).andExpect(status().isForbidden());
     mvc.perform(as(DISTRICT_OFFICER, get("/api/reports/mine"))).andExpect(status().isForbidden());
+  }
+
+  @Test
+  void twoSimultaneousSubmissionsOfTheSameClientRefCreateExactlyOneReport() throws Exception {
+    UUID clientRef = UUID.randomUUID();
+    String json = reportJson(clientRef, true);
+    String auth = bearer(CITIZEN);
+    CountDownLatch start = new CountDownLatch(1);
+    Callable<Integer> request =
+        () -> {
+          start.await();
+          return mvc.perform(
+                  multipart("/api/reports")
+                      .file(new MockMultipartFile("report", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes()))
+                      .file(new MockMultipartFile("photo", "p.jpg", "image/jpeg", JPEG))
+                      .header("Authorization", auth))
+              .andReturn()
+              .getResponse()
+              .getStatus();
+        };
+    ExecutorService pool = Executors.newFixedThreadPool(2);
+    try {
+      Future<Integer> first = pool.submit(request);
+      Future<Integer> second = pool.submit(request);
+      start.countDown();
+
+      List<Integer> statuses =
+          List.of(first.get(60, TimeUnit.SECONDS), second.get(60, TimeUnit.SECONDS)).stream()
+              .sorted()
+              .toList();
+
+      assertThat(statuses).containsExactly(200, 201);
+    } finally {
+      pool.shutdownNow();
+    }
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from hazard_reports where client_ref = ?", Integer.class, clientRef))
+        .isEqualTo(1);
   }
 }

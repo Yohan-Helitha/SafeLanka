@@ -15,8 +15,9 @@ import lk.dmc.disaster.shared.reference.ReferenceData;
 import lk.dmc.disaster.shared.storage.FileStorage;
 import lk.dmc.disaster.shared.storage.StoredFile;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /** UC02 main flow, steps 1-4: a citizen or volunteer submits a ground report. */
 @Slf4j
@@ -30,6 +31,7 @@ public class ReportSubmissionService {
   private final ReferenceNumberGenerator referenceNumbers;
   private final ReferenceData referenceData;
   private final FileStorage fileStorage;
+  private final TransactionTemplate transaction;
   private final Clock clock;
 
   public ReportSubmissionService(
@@ -38,24 +40,26 @@ public class ReportSubmissionService {
       ReferenceNumberGenerator referenceNumbers,
       ReferenceData referenceData,
       FileStorage fileStorage,
+      TransactionTemplate transaction,
       Clock clock) {
     this.reports = reports;
     this.photos = photos;
     this.referenceNumbers = referenceNumbers;
     this.referenceData = referenceData;
     this.fileStorage = fileStorage;
+    this.transaction = transaction;
     this.clock = clock;
   }
 
   /**
    * Saves a PENDING report. Sending the same {@code clientRef} again (offline sync) returns the
-   * report already stored instead of creating a duplicate.
+   * report already stored instead of creating a duplicate, even when both requests arrive at the
+   * same moment. A photo that ends up unused is removed from storage again.
    *
    * @throws ConflictException (409) when the {@code clientRef} belongs to another reporter
    * @throws BusinessRuleException (422) for an unknown or inactive hazard type, a category the type
    *     does not accept, an unknown district, or data that breaks a report rule
    */
-  @Transactional
   public SubmissionResult submit(UUID reporterId, SubmitReportCommand command) {
     var existing = reports.findByClientRef(command.clientRef());
     if (existing.isPresent()) {
@@ -65,7 +69,28 @@ public class ReportSubmissionService {
 
     HazardReport report =
         HazardReport.submit(toDraft(command), reporterId, referenceNumbers.next(), clock);
-    ReportPhoto photo = storePhoto(report, command.photo());
+    StoredFile stored = storePhoto(command.photo());
+    try {
+      return transaction.execute(status -> persist(report, stored));
+    } catch (DataIntegrityViolationException e) {
+      discard(stored);
+      // Another request with the same clientRef got in first: answer as a replay of that one.
+      return reports
+          .findByClientRef(command.clientRef())
+          .map(winner -> replay(winner, reporterId))
+          .orElseThrow(() -> e);
+    } catch (RuntimeException e) {
+      discard(stored);
+      throw e;
+    }
+  }
+
+  private SubmissionResult persist(HazardReport report, StoredFile stored) {
+    ReportPhoto photo =
+        stored == null
+            ? null
+            : ReportPhoto.attach(
+                report.getId(), stored.path(), stored.contentType(), (int) stored.sizeBytes());
     reports.save(report);
     if (photo != null) {
       photos.save(photo);
@@ -98,13 +123,17 @@ public class ReportSubmissionService {
     }
   }
 
-  private ReportPhoto storePhoto(HazardReport report, PhotoUpload upload) {
+  private StoredFile storePhoto(PhotoUpload upload) {
     if (upload == null) {
       return null;
     }
-    StoredFile stored = fileStorage.store(PHOTO_FOLDER, upload.contentType(), upload.content());
-    return ReportPhoto.attach(
-        report.getId(), stored.path(), stored.contentType(), (int) stored.sizeBytes());
+    return fileStorage.store(PHOTO_FOLDER, upload.contentType(), upload.content());
+  }
+
+  private void discard(StoredFile stored) {
+    if (stored != null) {
+      fileStorage.delete(stored.path());
+    }
   }
 
   private static ReportDraft toDraft(SubmitReportCommand c) {

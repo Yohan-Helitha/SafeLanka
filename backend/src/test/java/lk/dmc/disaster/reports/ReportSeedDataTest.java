@@ -29,20 +29,35 @@ class ReportSeedDataTest {
   @Autowired JdbcTemplate jdbc;
 
   @Test
-  void twelveDemoReportsWithTheAgreedStatusMix() {
-    Map<String, Long> byStatus =
+  void twelveDemoReportsExist() {
+    assertThat(
+            jdbc.queryForObject(
+                "select count(*) from hazard_reports where " + SEED_IDS, Integer.class))
+        .isEqualTo(12);
+  }
+
+  /**
+   * Pending demo reports can be decided in the app, so their status is not asserted. Verified and
+   * rejected ones are final and can never change.
+   */
+  @Test
+  void decidedDemoReportsKeepTheirFinalStatusAndReasons() {
+    Map<String, Long> finalByStatus =
         jdbc
             .queryForList(
-                "select status, count(*) c from hazard_reports where " + SEED_IDS + " group by status")
+                "select status, count(*) c from hazard_reports where " + SEED_IDS
+                    + " and id::text ~ '-00000000000[1-4]$|-00000000001[12]$' group by status")
             .stream()
             .collect(Collectors.toMap(r -> (String) r.get("status"), r -> (Long) r.get("c")));
 
-    assertThat(byStatus)
-        .containsEntry("PENDING", 5L)
-        .containsEntry("NEEDS_MORE_INFO", 1L)
-        .containsEntry("VERIFIED", 4L)
-        .containsEntry("REJECTED", 2L)
-        .hasSize(4);
+    assertThat(finalByStatus).containsEntry("VERIFIED", 4L).containsEntry("REJECTED", 2L).hasSize(2);
+    assertThat(
+            jdbc.queryForList(
+                "select rejection_reason from hazard_reports"
+                    + " where id in ('00000000-0000-0000-0012-000000000011',"
+                    + " '00000000-0000-0000-0012-000000000012') order by id",
+                String.class))
+        .containsExactly("INSUFFICIENT_EVIDENCE", "DUPLICATE");
   }
 
   @Test

@@ -48,4 +48,19 @@ Run the module's tests and coverage from `backend/` (PowerShell: put the `-D` op
 
 Open `backend/target/site/jacoco/index.html`. The Supabase session pooler allows about 15 connections for the whole team, so avoid several people running the full suite at the same moment; the test profile keeps each Spring context's pool small (`application-test.yml`).
 
-Known limitations: two simultaneous submissions with the same `clientRef` can return a 500 for the second one (a retry returns the normal 200 replay); the seed has no photos.
+Known limitations: the seed has no photos; the Duplicate flag in the officer queue costs one query per open report on the page.
+
+### Photo storage
+
+Photos are stored through the `FileStorage` interface. `STORAGE_PROVIDER` in `backend/.env` selects the implementation:
+
+| Value | Where photos go | Needs |
+| --- | --- | --- |
+| `local` (default) | `./uploads` on the machine running the backend; other machines cannot see them | nothing |
+| `supabase` | the private Supabase Storage bucket `evidence`, folder `reports/`, shared by the whole team | `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (secret key, backend only), `SUPABASE_STORAGE_BUCKET` |
+
+The bucket stays private. The backend uploads with the secret key and serves photos only through `GET /api/reports/{id}/photo` after the role check, so only the reporter and DMC officers can see them. The table `report_photos.file_path` holds the object path (`reports/<uuid>.jpg`). A photo whose report could not be saved is deleted again. Tests always use local storage.
+
+### Offline sync
+
+Two requests with the same `clientRef` at the same moment create exactly one report: the loser answers with the winner's report (HTTP 200) and removes its own uploaded photo.

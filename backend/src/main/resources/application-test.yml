@@ -20,6 +20,7 @@ app:
     sms:
       provider: mock      # tests never send real SMS, whatever backend/.env says
   storage:
+    provider: local     # tests never upload to Supabase, whatever backend/.env says
     root: ./target/test-uploads
   simulation:
     enabled: false

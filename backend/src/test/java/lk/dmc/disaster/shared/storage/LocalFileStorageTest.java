@@ -57,15 +57,15 @@ class LocalFileStorageTest {
 
   @Test
   void store_exactlyFiveMegabytesIsAccepted() {
-    byte[] content = Arrays.copyOf(JPEG, LocalFileStorage.MAX_BYTES);
+    byte[] content = Arrays.copyOf(JPEG, ImageRules.MAX_BYTES);
 
     assertThat(storage.store("reports", "image/jpeg", content).sizeBytes())
-        .isEqualTo(LocalFileStorage.MAX_BYTES);
+        .isEqualTo(ImageRules.MAX_BYTES);
   }
 
   @Test
   void store_overFiveMegabytesIsRejected() {
-    byte[] content = Arrays.copyOf(JPEG, LocalFileStorage.MAX_BYTES + 1);
+    byte[] content = Arrays.copyOf(JPEG, ImageRules.MAX_BYTES + 1);
 
     assertThatThrownBy(() -> storage.store("reports", "image/jpeg", content))
         .isInstanceOfSatisfying(
@@ -118,5 +118,30 @@ class LocalFileStorageTest {
   @Test
   void load_pathOutsideTheRootIsNotFound() {
     assertThatThrownBy(() -> storage.load("../outside.jpg")).isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  void delete_removesTheStoredFile() {
+    StoredFile stored = storage.store("reports", "image/jpeg", JPEG);
+
+    storage.delete(stored.path());
+
+    assertThat(Files.exists(root.resolve(stored.path()))).isFalse();
+    assertThatThrownBy(() -> storage.load(stored.path())).isInstanceOf(NotFoundException.class);
+  }
+
+  @Test
+  void delete_missingFileIsIgnored() {
+    storage.delete("reports/none.jpg");
+  }
+
+  @Test
+  void delete_pathOutsideTheRootIsIgnoredAndTheFileSurvives() throws Exception {
+    Path outside = Files.createTempFile("outside", ".jpg");
+
+    storage.delete("../" + outside.getFileName());
+
+    assertThat(Files.exists(outside)).isTrue();
+    Files.delete(outside);
   }
 }
