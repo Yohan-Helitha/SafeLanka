@@ -21,6 +21,7 @@ import lk.dmc.disaster.warnings.entity.WarningContent;
 import lk.dmc.disaster.warnings.entity.WarningDraft;
 import lk.dmc.disaster.warnings.entity.WarningStatus;
 import lk.dmc.disaster.warnings.entity.WarningTarget;
+import lk.dmc.disaster.warnings.integration.VerifiedReportSummary;
 import lk.dmc.disaster.warnings.integration.VerifiedReports;
 import lk.dmc.disaster.warnings.repository.HazardRepository;
 import lk.dmc.disaster.warnings.repository.WarningRepository;
@@ -63,6 +64,10 @@ class PublishPreconditionsTest {
         .thenReturn(List.of());
   }
 
+  private static VerifiedReportSummary summary(UUID id) {
+    return new VerifiedReportSummary(id, "RPT-1", "FLOOD", "Water over the road.", COLOMBO, NOW);
+  }
+
   private WarningDraft draft(Set<UUID> evidence) {
     WarningContent content =
         new WarningContent(
@@ -84,7 +89,7 @@ class PublishPreconditionsTest {
   @Test
   void check_allEvidenceVerified_passes() {
     UUID report = UUID.randomUUID();
-    when(verifiedReports.filterVerified(Set.of(report))).thenReturn(Set.of(report));
+    when(verifiedReports.findVerified(Set.of(report))).thenReturn(List.of(summary(report)));
 
     assertThat(preconditions.check(draft(Set.of(report)), Set.of(COLOMBO))).isSameAs(hazard);
   }
@@ -118,7 +123,8 @@ class PublishPreconditionsTest {
   void check_unverifiedEvidence_isBusinessRuleNamingTheReports() {
     UUID verified = UUID.randomUUID();
     UUID pending = UUID.randomUUID();
-    when(verifiedReports.filterVerified(Set.of(verified, pending))).thenReturn(Set.of(verified));
+    when(verifiedReports.findVerified(Set.of(verified, pending)))
+        .thenReturn(List.of(summary(verified)));
 
     assertThatThrownBy(() -> preconditions.check(draft(Set.of(verified, pending)), Set.of(COLOMBO)))
         .isInstanceOfSatisfying(

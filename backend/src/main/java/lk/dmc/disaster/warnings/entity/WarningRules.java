@@ -42,6 +42,9 @@ public final class WarningRules {
   /** How far back verified reports count as evidence for a hazard. */
   public static final Duration EVIDENCE_LOOKBACK = Duration.ofHours(72);
 
+  /** How much gauge history the hazard chart shows. */
+  public static final Duration CHART_WINDOW = Duration.ofHours(24);
+
   /** One simulated tick moves a gauge by (major - alert) divided by this value. */
   public static final int SENSOR_STEP_DIVISOR = 8;
 

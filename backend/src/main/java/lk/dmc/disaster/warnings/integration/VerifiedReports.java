@@ -1,7 +1,7 @@
 package lk.dmc.disaster.warnings.integration;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -10,6 +10,6 @@ import java.util.UUID;
  */
 public interface VerifiedReports {
 
-  /** The subset of the given report ids whose status is VERIFIED. */
-  Set<UUID> filterVerified(Collection<UUID> reportIds);
+  /** The given reports that are VERIFIED. Ids of reports that are not verified are left out. */
+  List<VerifiedReportSummary> findVerified(Collection<UUID> reportIds);
 }

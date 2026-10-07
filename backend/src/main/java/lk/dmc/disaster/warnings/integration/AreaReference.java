@@ -9,4 +9,11 @@ public interface AreaReference {
 
   /** Every district that lies in at least one of the basins. */
   Set<UUID> districtsInBasins(Collection<UUID> riverBasinIds);
+
+  /** Every basin the district lies in. */
+  Set<UUID> basinsOfDistrict(UUID districtId);
+
+  boolean districtExists(UUID districtId);
+
+  boolean riverBasinExists(UUID riverBasinId);
 }

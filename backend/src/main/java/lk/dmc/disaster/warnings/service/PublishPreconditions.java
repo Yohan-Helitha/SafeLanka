@@ -59,7 +59,7 @@ class PublishPreconditions {
 
   private void requireVerified(Set<UUID> reportIds) {
     Set<UUID> unverified = new HashSet<>(reportIds);
-    unverified.removeAll(verifiedReports.filterVerified(reportIds));
+    verifiedReports.findVerified(reportIds).forEach(report -> unverified.remove(report.id()));
     if (!unverified.isEmpty()) {
       throw new AppException(
           ErrorCode.BUSINESS_RULE,

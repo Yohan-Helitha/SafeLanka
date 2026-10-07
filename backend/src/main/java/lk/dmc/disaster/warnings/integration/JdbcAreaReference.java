@@ -29,4 +29,31 @@ class JdbcAreaReference implements AreaReference {
             .query(UUID.class)
             .list());
   }
+
+  @Override
+  public Set<UUID> basinsOfDistrict(UUID districtId) {
+    return Set.copyOf(
+        jdbc.sql("select river_basin_id from district_river_basins where district_id = :id")
+            .param("id", districtId)
+            .query(UUID.class)
+            .list());
+  }
+
+  @Override
+  public boolean districtExists(UUID districtId) {
+    return exists("districts", districtId);
+  }
+
+  @Override
+  public boolean riverBasinExists(UUID riverBasinId) {
+    return exists("river_basins", riverBasinId);
+  }
+
+  private boolean exists(String table, UUID id) {
+    return jdbc.sql("select count(*) from " + table + " where id = :id")
+            .param("id", id)
+            .query(Long.class)
+            .single()
+        > 0;
+  }
 }
