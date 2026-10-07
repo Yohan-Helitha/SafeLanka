@@ -1,7 +1,6 @@
 package lk.dmc.disaster.reports.service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -42,7 +41,9 @@ class VerifiedReportQueryImpl implements VerifiedReportQuery {
             .findAll(
                 ReportSpecifications.verified(f.hazardTypeId(), f.districtId(), f.since()),
                 PageRequest.of(
-                    0, ReportRules.VERIFIED_QUERY_LIMIT, Sort.by(Sort.Direction.DESC, "reviewedAt")))
+                    0,
+                    ReportRules.VERIFIED_QUERY_LIMIT,
+                    Sort.by(Sort.Direction.DESC, "reviewedAt")))
             .getContent();
     Set<UUID> withPhoto = idsWithPhoto(found);
     return found.stream().map(r -> summary(r, withPhoto.contains(r.getId()))).toList();

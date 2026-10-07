@@ -20,8 +20,7 @@ public class ReferenceNumberGenerator {
 
   /** The sequence never repeats a value, so two callers can never share a number. */
   public String next() {
-    long sequence =
-        jdbc.sql("select nextval('report_reference_seq')").query(Long.class).single();
+    long sequence = jdbc.sql("select nextval('report_reference_seq')").query(Long.class).single();
     return ReportRules.REFERENCE_FORMAT.formatted(Year.now(clock).getValue(), sequence);
   }
 }
