@@ -1,0 +1,482 @@
+openapi: "3.1.0"
+info:
+  title: "LankaGuard - Reports module (UC02)"
+  version: "1.0"
+  description: "Generated from the running Swagger UI (/v3/api-docs), filtered to /api/reports. Regenerate when the controllers change."
+paths:
+  /api/reports:
+    get:
+      tags:
+        - "Report review"
+      summary: "Ground reports queue"
+      description: "Role: DMC_OFFICER. Oldest first; filters status, hazardTypeId, districtId are optional."
+      operationId: "queue"
+      parameters:
+        - name: "status"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            enum:
+              - "PENDING"
+              - "NEEDS_MORE_INFO"
+              - "VERIFIED"
+              - "REJECTED"
+        - name: "hazardTypeId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            format: "uuid"
+        - name: "districtId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            format: "uuid"
+        - name: "page"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            format: "int32"
+            default: 0
+        - name: "size"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            format: "int32"
+            default: 20
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/ApiResponseListReportListItemResponse"
+    post:
+      tags:
+        - "Reports"
+      summary: "Submit a hazard report"
+      description: "Roles: CITIZEN, VOLUNTEER. Multipart: part `report` (JSON) and optional `photo` (JPEG/PNG, max 5 MB). Returns 201, or 200 with the existing report when the same clientRef was already synced."
+      operationId: "submit"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: "object"
+              properties:
+                report:
+                  $ref: "#/components/schemas/SubmitReportRequest"
+                photo:
+                  type: "string"
+                  format: "binary"
+              required:
+                - "report"
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/ApiResponseReportListItemResponse"
+  /api/reports/mine:
+    get:
+      tags:
+        - "Reports"
+      summary: "My reports, newest first"
+      description: "Roles: CITIZEN, VOLUNTEER."
+      operationId: "mine"
+      parameters:
+        - name: "page"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            format: "int32"
+            default: 0
+        - name: "size"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            format: "int32"
+            default: 20
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/ApiResponseListReportListItemResponse"
+  /api/reports/{id}:
+    get:
+      tags:
+        - "Reports"
+      summary: "One report in full"
+      description: "Roles: DMC_OFFICER, or the citizen or volunteer who reported it (otherwise 403). Possible duplicates are shown to officers only."
+      operationId: "detail"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/ApiResponseReportDetailResponse"
+  /api/reports/{id}/photo:
+    get:
+      tags:
+        - "Reports"
+      summary: "The report photo"
+      description: "Same access as the report itself; 404 when no photo was sent."
+      operationId: "photo"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                type: "string"
+                format: "byte"
+  /api/reports/{id}/reject:
+    patch:
+      tags:
+        - "Report review"
+      summary: "Reject a report"
+      description: "Role: DMC_OFFICER. A reason is required; the comment is required when the reason is OTHER."
+      operationId: "reject"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectRequest"
+        required: true
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/ApiResponseReportDetailResponse"
+  /api/reports/{id}/request-info:
+    patch:
+      tags:
+        - "Report review"
+      summary: "Ask the reporter for more information"
+      description: "Role: DMC_OFFICER. Only from PENDING; the comment (5-300 characters) says what is missing."
+      operationId: "requestInfo"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestInfoRequest"
+        required: true
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/ApiResponseReportDetailResponse"
+  /api/reports/{id}/verify:
+    patch:
+      tags:
+        - "Report review"
+      summary: "Verify a report"
+      description: "Role: DMC_OFFICER. Publishes ReportVerifiedEvent. 409 when already decided, 422 for your own report."
+      operationId: "verify"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyRequest"
+      responses:
+        200:
+          description: "OK"
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/ApiResponseReportDetailResponse"
+components:
+  schemas:
+    ApiResponseListReportListItemResponse:
+      type: "object"
+      properties:
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ReportListItemResponse"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    ApiResponseReportDetailResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/ReportDetailResponse"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    ApiResponseReportListItemResponse:
+      type: "object"
+      properties:
+        data:
+          $ref: "#/components/schemas/ReportListItemResponse"
+        meta:
+          $ref: "#/components/schemas/PageMeta"
+    Duplicate:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+        referenceNo:
+          type: "string"
+        distanceMetres:
+          type: "integer"
+          format: "int64"
+    PageMeta:
+      type: "object"
+      properties:
+        page:
+          type: "integer"
+          format: "int32"
+        size:
+          type: "integer"
+          format: "int32"
+        totalElements:
+          type: "integer"
+          format: "int64"
+        totalPages:
+          type: "integer"
+          format: "int32"
+    RejectRequest:
+      type: "object"
+      properties:
+        reason:
+          type: "string"
+          enum:
+            - "INSUFFICIENT_EVIDENCE"
+            - "DUPLICATE"
+            - "LOCATION_MISMATCH"
+            - "NOT_A_HAZARD"
+            - "OTHER"
+        comment:
+          type: "string"
+          maxLength: 300
+          minLength: 0
+      required:
+        - "reason"
+    ReportDetailResponse:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+        referenceNo:
+          type: "string"
+        hazardTypeId:
+          type: "string"
+          format: "uuid"
+        category:
+          type: "string"
+        description:
+          type: "string"
+        districtId:
+          type: "string"
+          format: "uuid"
+        status:
+          type: "string"
+          enum:
+            - "PENDING"
+            - "NEEDS_MORE_INFO"
+            - "VERIFIED"
+            - "REJECTED"
+        capturedAt:
+          type: "string"
+          format: "date-time"
+        syncedAt:
+          type: "string"
+          format: "date-time"
+        hasPhoto:
+          type: "boolean"
+        hasDuplicates:
+          type: "boolean"
+        rejectionReason:
+          type: "string"
+          enum:
+            - "INSUFFICIENT_EVIDENCE"
+            - "DUPLICATE"
+            - "LOCATION_MISMATCH"
+            - "NOT_A_HAZARD"
+            - "OTHER"
+        reviewComment:
+          type: "string"
+        latitude:
+          type: "number"
+          format: "double"
+        longitude:
+          type: "number"
+          format: "double"
+        isManualLocation:
+          type: "boolean"
+        manualLocationText:
+          type: "string"
+        photoUrl:
+          type: "string"
+        reporter:
+          $ref: "#/components/schemas/Reporter"
+        reviewedBy:
+          type: "string"
+        reviewedAt:
+          type: "string"
+          format: "date-time"
+        possibleDuplicates:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/Duplicate"
+    ReportListItemResponse:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+        referenceNo:
+          type: "string"
+        hazardTypeId:
+          type: "string"
+          format: "uuid"
+        category:
+          type: "string"
+        description:
+          type: "string"
+        districtId:
+          type: "string"
+          format: "uuid"
+        status:
+          type: "string"
+          enum:
+            - "PENDING"
+            - "NEEDS_MORE_INFO"
+            - "VERIFIED"
+            - "REJECTED"
+        capturedAt:
+          type: "string"
+          format: "date-time"
+        syncedAt:
+          type: "string"
+          format: "date-time"
+        hasPhoto:
+          type: "boolean"
+        hasDuplicates:
+          type: "boolean"
+        rejectionReason:
+          type: "string"
+          enum:
+            - "INSUFFICIENT_EVIDENCE"
+            - "DUPLICATE"
+            - "LOCATION_MISMATCH"
+            - "NOT_A_HAZARD"
+            - "OTHER"
+        reviewComment:
+          type: "string"
+    Reporter:
+      type: "object"
+      properties:
+        id:
+          type: "string"
+          format: "uuid"
+        fullName:
+          type: "string"
+        role:
+          type: "string"
+    RequestInfoRequest:
+      type: "object"
+      properties:
+        comment:
+          type: "string"
+          maxLength: 300
+          minLength: 5
+      required:
+        - "comment"
+    SubmitReportRequest:
+      type: "object"
+      properties:
+        clientRef:
+          type: "string"
+          format: "uuid"
+        hazardTypeId:
+          type: "string"
+          format: "uuid"
+        category:
+          type: "string"
+          maxLength: 40
+          minLength: 0
+        description:
+          type: "string"
+          maxLength: 500
+          minLength: 10
+        latitude:
+          type: "number"
+          format: "double"
+        longitude:
+          type: "number"
+          format: "double"
+        manualLocationText:
+          type: "string"
+          maxLength: 200
+          minLength: 0
+        districtId:
+          type: "string"
+          format: "uuid"
+        capturedAt:
+          type: "string"
+          format: "date-time"
+      required:
+        - "capturedAt"
+        - "category"
+        - "clientRef"
+        - "description"
+        - "districtId"
+        - "hazardTypeId"
+    VerifyRequest:
+      type: "object"
+      properties:
+        comment:
+          type: "string"
+          maxLength: 300
+          minLength: 0

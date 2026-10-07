@@ -58,7 +58,7 @@ export function LocationPicker({ geo, manual, onManualChange, manualText, onManu
           {geo.status === 'ok' && geo.fix ? (
             <p className="tabular font-medium text-ink">
               {formatCoords(geo.fix.latitude, geo.fix.longitude)}
-              <span className="ml-1 font-normal text-muted">± {geo.accuracyMetres} m</span>
+              {geo.accuracyMetres !== null && <span className="ml-1 font-normal text-muted">± {geo.accuracyMetres} m</span>}
             </p>
           ) : geo.status === 'locating' ? (
             <p className="text-muted">Finding your location…</p>
