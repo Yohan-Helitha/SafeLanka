@@ -40,6 +40,19 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method
+  group-configs:
+    - group: auth
+      paths-to-match: /api/auth/**
+    - group: reference
+      paths-to-match: /api/reference/**
+    - group: reports
+      paths-to-match: /api/reports/**
+    - group: warnings
+      paths-to-match: /api/hazards/**, /api/warnings/**, /api/simulation/**
+    - group: response
+      paths-to-match: /api/response/**, /api/rescue-teams/**, /api/assignments/**, /api/shelters/**, /api/relief-stocks/**, /api/allocations/**
+    - group: analytics
+      paths-to-match: /api/analytics/**
 
 management:
   endpoints:

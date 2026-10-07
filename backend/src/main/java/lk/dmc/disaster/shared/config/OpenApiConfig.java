@@ -8,31 +8,43 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Swagger UI title and the two ways to authenticate: the JWT bearer token, and (demo profile only)
+ * the {@code X-Acting-User} header. The per-module groups are plain configuration under {@code
+ * springdoc.group-configs} in application.yml, so a new module never edits this class.
+ */
 @Configuration
 public class OpenApiConfig {
 
-  private static final String BEARER_AUTH = "BearerAuth";
-  private static final String DEMO_ACTING_USER = "DemoActingUser";
+  private static final String BEARER = "bearerAuth";
+  private static final String DEMO_ACTING_USER = "demoActingUser";
 
   @Bean
-  public OpenAPI openAPI() {
+  OpenAPI lankaGuardOpenApi() {
+    SecurityScheme bearerJwt =
+        new SecurityScheme()
+            .type(SecurityScheme.Type.HTTP)
+            .scheme("bearer")
+            .bearerFormat("JWT")
+            .description("Access token from POST /api/auth/login");
+    SecurityScheme demoHeader =
+        new SecurityScheme()
+            .type(SecurityScheme.Type.APIKEY)
+            .in(SecurityScheme.In.HEADER)
+            .name("X-Acting-User")
+            .description("Demo profile only: the id of the user to act as");
     return new OpenAPI()
-        .info(new Info()
-            .title("SafeLanka Disaster API")
-            .description("Disaster early warning and emergency response coordination API")
-            .version("v1"))
-        .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH).addList(DEMO_ACTING_USER))
-        .components(new Components()
-            .addSecuritySchemes(BEARER_AUTH, new SecurityScheme()
-                .name(BEARER_AUTH)
-                .type(SecurityScheme.Type.HTTP)
-                .scheme("bearer")
-                .bearerFormat("JWT")
-                .description("Enter your Bearer JWT token from /api/auth/login"))
-            .addSecuritySchemes(DEMO_ACTING_USER, new SecurityScheme()
-                .name("X-Acting-User")
-                .type(SecurityScheme.Type.APIKEY)
-                .in(SecurityScheme.In.HEADER)
-                .description("Demo profile only: user UUID (e.g. 00000000-0000-0000-0002-000000000001 for District Officer)")));
+        .info(
+            new Info()
+                .title("LankaGuard API")
+                .description("Disaster early warning and emergency response coordination API")
+                .version("v1"))
+        .components(
+            new Components()
+                .addSecuritySchemes(BEARER, bearerJwt)
+                .addSecuritySchemes(DEMO_ACTING_USER, demoHeader))
+        // Two separate requirements: either one authenticates a request.
+        .addSecurityItem(new SecurityRequirement().addList(BEARER))
+        .addSecurityItem(new SecurityRequirement().addList(DEMO_ACTING_USER));
   }
 }
