@@ -12,7 +12,8 @@ export const warningsHttp: WarningsApi = {
   update: (id, input) => http.put(`/warnings/${id}`, input),
   escalate: (id, input) => http.post(`/warnings/${id}/escalate`, input),
   cancel: (id, reason) => http.post(`/warnings/${id}/cancel`, { reason }),
-  list: (status) => http.get('/warnings', { status: status === 'ALL' ? undefined : status }),
+  list: (status) =>
+    http.get<any[]>('/warnings', { status: status === 'ALL' ? undefined : status }).catch(() => []),
   get: (id) => http.get(`/warnings/${id}`),
   deliveries: (id, filter) =>
     http.get(`/warnings/${id}/deliveries`, {
@@ -21,7 +22,7 @@ export const warningsHttp: WarningsApi = {
       page: filter.page,
       size: filter.size,
     }),
-  myAlerts: () => http.get('/warnings/active/mine'),
+  myAlerts: () => http.get<any[]>('/warnings/active/mine').catch(() => []),
   simulation: {
     sensors: () => http.get('/simulation/sensors'),
     tick: (id) => http.post(`/simulation/sensors/${id}/tick`),

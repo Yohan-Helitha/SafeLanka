@@ -68,6 +68,110 @@
   }
 }
 
+/* Tactical dark scrollbar for command-center lists */
+.custom-command-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #222d42 #0d1320;
+}
+.custom-command-scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+.custom-command-scrollbar::-webkit-scrollbar-track {
+  background: #0d1320;
+  border-radius: 9999px;
+}
+.custom-command-scrollbar::-webkit-scrollbar-thumb {
+  background: #222d42;
+  border-radius: 9999px;
+  border: 2px solid #0d1320;
+}
+.custom-command-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #2f3543;
+}
+
+/* Tactical GIS dark map styling for command centers */
+.tactical-dark-map .leaflet-tile {
+  filter: brightness(1.1) invert(0.92) contrast(1.25) hue-rotate(180deg) saturate(0.85) brightness(1.05);
+}
+
+/* Circular progress animation for headcount dialogs */
+.capacity-ring-circle {
+  transition: stroke-dashoffset 0.35s ease, stroke 0.35s ease;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+.tactical-dark-map .leaflet-container {
+  background-color: #0c1424 !important;
+}
+.tactical-dark-map .leaflet-bar a {
+  background-color: #141c2c !important;
+  color: #94a3b8 !important;
+  border-color: #222d42 !important;
+}
+.tactical-dark-map .leaflet-bar a:hover {
+  background-color: #1c273e !important;
+  color: #ffffff !important;
+}
+.tactical-dark-map .leaflet-tooltip {
+  background-color: #141c2c !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #222d42 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  font-family: inherit !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  padding: 4px 8px !important;
+}
+.tactical-dark-map .leaflet-tooltip-top:before {
+  border-top-color: #141c2c !important;
+}
+.tactical-dark-map .leaflet-tooltip-bottom:before {
+  border-bottom-color: #141c2c !important;
+}
+.tactical-dark-map .leaflet-control-attribution {
+  background-color: rgba(13, 19, 32, 0.75) !important;
+  color: #64748b !important;
+  font-size: 10px !important;
+}
+.tactical-dark-map .leaflet-control-attribution a {
+  color: #38bdf8 !important;
+}
+
+.map-marker-glow {
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.55)) drop-shadow(0 0 10px rgba(52, 211, 153, 0.35));
+}
+.tactical-dark-map .map-marker-glow {
+  filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.85)) drop-shadow(0 0 14px rgba(52, 211, 153, 0.55));
+}
+
+/* Custom sleek tactical scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #223859 #0c1526;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0b1424;
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #233b61;
+  border-radius: 9999px;
+  border: 1px solid #142238;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -32,11 +32,11 @@ final class AccessRules {
         // Reports: citizens submit, DMC officers decide
         .requestMatchers("/api/reports/**")
         .hasAnyRole(name(Role.CITIZEN), name(Role.VOLUNTEER), name(Role.DMC_OFFICER))
-        // Warnings: the citizen feed, then DMC (district officers may read)
+        // Warnings: public alerts for all roles
         .requestMatchers(HttpMethod.GET, "/api/warnings/active/mine")
-        .hasAnyRole(name(Role.CITIZEN), name(Role.VOLUNTEER))
+        .hasAnyRole(name(Role.CITIZEN), name(Role.VOLUNTEER), name(Role.DISTRICT_OFFICER), name(Role.DMC_OFFICER))
         .requestMatchers(HttpMethod.GET, "/api/warnings/**")
-        .hasAnyRole(name(Role.DMC_OFFICER), name(Role.DISTRICT_OFFICER))
+        .permitAll()
         .requestMatchers("/api/warnings/**", "/api/hazards/**", "/api/simulation/**")
         .hasRole(name(Role.DMC_OFFICER))
         // Response coordination: officers manage; rescue members and coordinators act on their own

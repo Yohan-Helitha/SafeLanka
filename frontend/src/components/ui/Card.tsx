@@ -7,10 +7,11 @@ interface CardProps {
   actions?: ReactNode
   padded?: boolean
   className?: string
+  contentClassName?: string
   children?: ReactNode
 }
 
-export function Card({ title, description, actions, padded = true, className, children }: CardProps) {
+export function Card({ title, description, actions, padded = true, className, contentClassName, children }: CardProps) {
   return (
     <section className={clsx('rounded-card border border-line bg-panel', className)}>
       {(title || actions) && (
@@ -22,7 +23,11 @@ export function Card({ title, description, actions, padded = true, className, ch
           {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         </header>
       )}
-      {children !== undefined && <div className={clsx(padded && 'p-4', (title || actions) && padded && 'pt-3')}>{children}</div>}
+      {children !== undefined && (
+        <div className={clsx(padded && 'p-4', (title || actions) && padded && 'pt-3', contentClassName)}>
+          {children}
+        </div>
+      )}
     </section>
   )
 }
