@@ -1,5 +1,7 @@
 package lk.dmc.disaster.reports.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /** Citizen and volunteer endpoints of UC02: submit, my reports, one report, its photo. */
+@Tag(name = "Reports", description = "Submit ground reports and read your own (UC02)")
 @RestController
 @RequestMapping("/api/reports")
 class ReportController {
@@ -52,6 +55,11 @@ class ReportController {
   }
 
   /** 201 for a new report, 200 when the same {@code clientRef} had already been synced. */
+  @Operation(
+      summary = "Submit a hazard report",
+      description =
+          "Roles: CITIZEN, VOLUNTEER. Multipart: part `report` (JSON) and optional `photo` (JPEG/PNG, max 5 MB)."
+              + " Returns 201, or 200 with the existing report when the same clientRef was already synced.")
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @RequiresRole({Role.CITIZEN, Role.VOLUNTEER})
   ResponseEntity<ApiResponse<ReportListItemResponse>> submit(
@@ -63,6 +71,7 @@ class ReportController {
         .body(ApiResponse.of(mapper.toListItem(result)));
   }
 
+  @Operation(summary = "My reports, newest first", description = "Roles: CITIZEN, VOLUNTEER.")
   @GetMapping("/mine")
   @RequiresRole({Role.CITIZEN, Role.VOLUNTEER})
   ApiResponse<List<ReportListItemResponse>> mine(
@@ -72,6 +81,10 @@ class ReportController {
         queries.mine(actingUser.require().id(), page, size).map(mapper::toListItem));
   }
 
+  @Operation(
+      summary = "One report in full",
+      description = "Roles: DMC_OFFICER, or the citizen or volunteer who reported it (otherwise 403)."
+          + " Possible duplicates are shown to officers only.")
   @GetMapping("/{id}")
   @RequiresRole({Role.CITIZEN, Role.VOLUNTEER, Role.DMC_OFFICER})
   ApiResponse<ReportDetailResponse> detail(@PathVariable UUID id) {
@@ -79,6 +92,9 @@ class ReportController {
     return ApiResponse.of(mapper.toDetail(queries.detail(id, actor)));
   }
 
+  @Operation(
+      summary = "The report photo",
+      description = "Same access as the report itself; 404 when no photo was sent.")
   @GetMapping("/{id}/photo")
   @RequiresRole({Role.CITIZEN, Role.VOLUNTEER, Role.DMC_OFFICER})
   ResponseEntity<byte[]> photo(@PathVariable UUID id) {

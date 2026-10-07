@@ -35,3 +35,17 @@ Ground rules for every step
 8. **Web.** Exactly the 8 endpoints of the spec; controllers call one service method and return `ApiResponse`.
 9. **Seed and end-to-end.** 12 demo reports, role rules for `/api/reports/**`, and one test that walks submit → verify → event.
 10. **Gate and docs.** JaCoCo per package, Javadoc on public API of `service` and the root package, OpenAPI file matches Swagger, screenshots for the report.
+
+## Status and how to verify
+
+All ten steps are implemented. `docs/api/reports.yaml` is the OpenAPI description of the eight endpoints, generated from the running Swagger UI.
+
+Run the module's tests and coverage from `backend/` (PowerShell: put the `-D` options in quotes). With Docker off, point the tests at the shared database; they roll back or clean up after themselves:
+
+```
+./mvnw verify "-Dapp.test.use-testcontainers=false" "-Dtest=lk.dmc.disaster.reports.**.*Test" "-Dspotless.check.skip=true"
+```
+
+Open `backend/target/site/jacoco/index.html`. The Supabase session pooler allows about 15 connections for the whole team, so avoid several people running the full suite at the same moment; the test profile keeps each Spring context's pool small (`application-test.yml`).
+
+Known limitations: two simultaneous submissions with the same `clientRef` can return a 500 for the second one (a retry returns the normal 200 replay); the seed has no photos.

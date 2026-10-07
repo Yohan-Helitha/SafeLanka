@@ -1,5 +1,7 @@
 package lk.dmc.disaster.reports.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** DMC officer endpoints of UC02: the ground reports queue and the three decisions. */
+@Tag(name = "Report review", description = "DMC officer queue and decisions (UC02)")
 @RestController
 @RequestMapping("/api/reports")
 @RequiresRole(Role.DMC_OFFICER)
@@ -41,6 +44,9 @@ class ReportReviewController {
   }
 
   /** Oldest first; every filter is optional. */
+  @Operation(
+      summary = "Ground reports queue",
+      description = "Role: DMC_OFFICER. Oldest first; filters status, hazardTypeId, districtId are optional.")
   @GetMapping
   ApiResponse<List<ReportListItemResponse>> queue(
       @RequestParam(required = false) ReportStatus status,
@@ -52,6 +58,9 @@ class ReportReviewController {
         queries.queue(status, hazardTypeId, districtId, page, size).map(mapper::toListItem));
   }
 
+  @Operation(
+      summary = "Verify a report",
+      description = "Role: DMC_OFFICER. Publishes ReportVerifiedEvent. 409 when already decided, 422 for your own report.")
   @PatchMapping("/{id}/verify")
   ApiResponse<ReportDetailResponse> verify(
       @PathVariable UUID id, @RequestBody(required = false) @Valid VerifyRequest request) {
@@ -60,6 +69,9 @@ class ReportReviewController {
         mapper.toDetail(verification.verify(id, actingUser.require().id(), comment)));
   }
 
+  @Operation(
+      summary = "Reject a report",
+      description = "Role: DMC_OFFICER. A reason is required; the comment is required when the reason is OTHER.")
   @PatchMapping("/{id}/reject")
   ApiResponse<ReportDetailResponse> reject(
       @PathVariable UUID id, @RequestBody @Valid RejectRequest request) {
@@ -69,6 +81,9 @@ class ReportReviewController {
                 id, actingUser.require().id(), request.reason(), request.comment())));
   }
 
+  @Operation(
+      summary = "Ask the reporter for more information",
+      description = "Role: DMC_OFFICER. Only from PENDING; the comment (5-300 characters) says what is missing.")
   @PatchMapping("/{id}/request-info")
   ApiResponse<ReportDetailResponse> requestInfo(
       @PathVariable UUID id, @RequestBody @Valid RequestInfoRequest request) {

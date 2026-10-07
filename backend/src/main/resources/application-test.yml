@@ -4,6 +4,12 @@ spring:
     url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/disaster_test}
     username: ${TEST_DB_USERNAME:disaster}
     password: ${TEST_DB_PASSWORD:disaster}
+    hikari:
+      # A shared Supabase session pooler allows ~15 connections for the whole team, and every cached
+      # test context owns a pool: keep them small and let idle ones close.
+      maximum-pool-size: 3
+      minimum-idle: 0
+      idle-timeout: 10000
 
 logging:
   level:
