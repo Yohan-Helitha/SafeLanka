@@ -62,7 +62,12 @@ management:
 
 app:
   storage:
-    root: ./uploads
+    provider: ${STORAGE_PROVIDER:local}     # local (default, this machine's disk) | supabase (shared private bucket)
+    root: ./uploads                          # used by the local provider
+    supabase:
+      url: ${SUPABASE_URL:}                  # https://<project-ref>.supabase.co ("/rest/v1" at the end is ignored)
+      service-key: ${SUPABASE_SERVICE_KEY:}  # secret key, backend only: never in the frontend or in git
+      bucket: ${SUPABASE_STORAGE_BUCKET:evidence}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   auth:

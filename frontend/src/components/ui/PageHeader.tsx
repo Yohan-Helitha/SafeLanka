@@ -20,11 +20,11 @@ export function PageHeader({ title, subtitle, backTo, backLabel = 'Back', action
         </Link>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-display text-[28px] font-semibold leading-tight text-ink">{title}</h1>
-          {subtitle && <p className="mt-1 max-w-3xl text-muted">{subtitle}</p>}
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-2xl font-semibold leading-tight text-ink sm:text-[28px]">{title}</h1>
+          {subtitle && <p className="mt-1 max-w-3xl text-sm text-muted sm:text-base">{subtitle}</p>}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">{actions}</div>}
       </div>
     </header>
   )

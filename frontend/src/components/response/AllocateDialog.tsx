@@ -39,12 +39,14 @@ export function AllocateDialog({ stock, districtId, eventId, onClose }: Props) {
       onClose={onClose}
       title="Allocate stock"
       description={`${stock.itemName} from ${stock.organisationName} · ${stock.quantityAvailable} ${stock.unit} available`}
+      className="max-w-lg"
       footer={
         <>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" className="w-full sm:w-auto" onClick={onClose}>
             Cancel
           </Button>
           <Button
+            className="w-full sm:w-auto"
             disabled={!valid}
             loading={allocate.isPending}
             onClick={() =>
@@ -103,3 +105,4 @@ export function AllocateDialog({ stock, districtId, eventId, onClose }: Props) {
     </Dialog>
   )
 }
+
