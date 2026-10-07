@@ -14,8 +14,8 @@ import lk.dmc.disaster.reports.repository.HazardReportRepository;
 import lk.dmc.disaster.reports.repository.ReportPhotoRepository;
 import lk.dmc.disaster.reports.repository.ReportSpecifications;
 import lk.dmc.disaster.shared.actor.ActingUser;
-import lk.dmc.disaster.shared.actor.UserDirectory;
-import lk.dmc.disaster.shared.actor.UserSummary;
+import lk.dmc.disaster.shared.reference.UserDirectory;
+import lk.dmc.disaster.shared.reference.UserView;
 import lk.dmc.disaster.shared.domain.Role;
 import lk.dmc.disaster.shared.error.ForbiddenRoleException;
 import lk.dmc.disaster.shared.error.NotFoundException;
@@ -89,8 +89,8 @@ public class ReportQueryService {
   ReportDetailView viewOf(HazardReport report, boolean forOfficer) {
     ReportPhoto photo = photos.findByReportId(report.getId()).orElse(null);
     List<DuplicateMatch> matches = forOfficer ? duplicates.findDuplicates(report) : List.of();
-    UserSummary reviewer =
-        report.getReviewedBy() == null ? null : users.find(report.getReviewedBy()).orElse(null);
+    UserView reviewer =
+        report.getReviewedBy() == null ? null : users.findById(report.getReviewedBy()).orElse(null);
     return new ReportDetailView(
         report, photo, users.require(report.getReporterId()), matches, reviewer);
   }

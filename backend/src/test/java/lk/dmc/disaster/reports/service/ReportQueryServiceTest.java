@@ -18,8 +18,8 @@ import lk.dmc.disaster.reports.entity.ReportStatus;
 import lk.dmc.disaster.reports.repository.HazardReportRepository;
 import lk.dmc.disaster.reports.repository.ReportPhotoRepository;
 import lk.dmc.disaster.shared.actor.ActingUser;
-import lk.dmc.disaster.shared.actor.UserDirectory;
-import lk.dmc.disaster.shared.actor.UserSummary;
+import lk.dmc.disaster.shared.reference.UserDirectory;
+import lk.dmc.disaster.shared.reference.UserView;
 import lk.dmc.disaster.shared.domain.Role;
 import lk.dmc.disaster.shared.error.ForbiddenRoleException;
 import lk.dmc.disaster.shared.error.NotFoundException;
@@ -149,7 +149,7 @@ class ReportQueryServiceTest {
   @Test
   void detail_reporterSeesOwnReportWithoutDuplicates() {
     HazardReport report = report();
-    UserSummary summary = new UserSummary(REPORTER, "Ruwan Fernando", Role.CITIZEN);
+    UserView summary = new UserView(REPORTER, "Ruwan Fernando", Role.CITIZEN, null, null, null, null);
     when(reports.findById(report.getId())).thenReturn(Optional.of(report));
     when(photos.findByReportId(report.getId())).thenReturn(Optional.empty());
     when(users.require(REPORTER)).thenReturn(summary);
@@ -171,7 +171,7 @@ class ReportQueryServiceTest {
     when(reports.findById(report.getId())).thenReturn(Optional.of(report));
     when(photos.findByReportId(report.getId())).thenReturn(Optional.of(photoOf(report)));
     when(users.require(REPORTER))
-        .thenReturn(new UserSummary(REPORTER, "Ruwan Fernando", Role.CITIZEN));
+        .thenReturn(new UserView(REPORTER, "Ruwan Fernando", Role.CITIZEN, null, null, null, null));
     when(duplicates.findDuplicates(report)).thenReturn(matches);
 
     ReportDetailView view = service.detail(report.getId(), OFFICER);

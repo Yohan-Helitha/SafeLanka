@@ -28,7 +28,7 @@ import lk.dmc.disaster.shared.error.AppException;
 import lk.dmc.disaster.shared.error.BusinessRuleException;
 import lk.dmc.disaster.shared.error.ConflictException;
 import lk.dmc.disaster.shared.error.ErrorCode;
-import lk.dmc.disaster.shared.reference.HazardTypeInfo;
+import lk.dmc.disaster.shared.reference.HazardTypeView;
 import lk.dmc.disaster.shared.reference.ReferenceData;
 import lk.dmc.disaster.shared.storage.FileStorage;
 import lk.dmc.disaster.shared.storage.StoredFile;
@@ -82,9 +82,8 @@ class ReportSubmissionServiceTest {
     lenient()
         .when(referenceData.hazardType(FLOOD))
         .thenReturn(
-            Optional.of(
-                new HazardTypeInfo(
-                    FLOOD, "FLOOD", "Flood", active, List.of("RISING_WATER", "OTHER"))));
+            new HazardTypeView(
+                FLOOD, "FLOOD", "Flood", lk.dmc.disaster.shared.reference.OnsetSpeed.RAPID, List.of("RISING_WATER", "OTHER"), active));
   }
 
   private static SubmitReportCommand command(
@@ -238,7 +237,7 @@ class ReportSubmissionServiceTest {
 
   @Test
   void submit_unknownHazardTypeIsRejected() {
-    when(referenceData.hazardType(FLOOD)).thenReturn(Optional.empty());
+    when(referenceData.hazardType(FLOOD)).thenThrow(new lk.dmc.disaster.shared.error.NotFoundException("Unknown hazard type."));
 
     assertThatThrownBy(() -> service.submit(REPORTER, command()))
         .isInstanceOf(BusinessRuleException.class)
