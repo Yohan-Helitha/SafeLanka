@@ -4,10 +4,23 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-public record ShelterOccupancy(List<ShelterLog> logs) {
-    public record ShelterLog(
+public record ShelterOccupancy(
+    List<ShelterSeries> series,
+    List<ShelterPeak> peaks
+) {
+    public record ShelterSeries(
         UUID shelterId,
-        int occupancy,
-        Instant recordedAt
+        String shelterName,
+        UUID districtId,
+        int capacity,
+        List<OccupancyPoint> points
+    ) {}
+    public record OccupancyPoint(Instant recordedAt, int occupancy) {}
+    public record ShelterPeak(
+        UUID shelterId,
+        int peakOccupancy,
+        int capacity,
+        double peakRatio,
+        Instant peakAt
     ) {}
 }

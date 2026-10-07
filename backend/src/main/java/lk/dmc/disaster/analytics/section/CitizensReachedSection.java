@@ -1,30 +1,33 @@
 package lk.dmc.disaster.analytics.section;
 
+import lk.dmc.disaster.analytics.domain.CitizensReached;
 import lk.dmc.disaster.analytics.domain.ReportContext;
 import lk.dmc.disaster.analytics.domain.SectionKey;
 import lk.dmc.disaster.analytics.domain.SectionResult;
-import lk.dmc.disaster.analytics.query.CitizensReachedQuery;
+import lk.dmc.disaster.analytics.query.DeliveryStatsQuery;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CitizensReachedSection implements ReportSection {
-    private final CitizensReachedQuery query;
+    private final DeliveryStatsQuery query;
 
-    public CitizensReachedSection(CitizensReachedQuery query) {
-        this.query = query;
-    }
+    public CitizensReachedSection(DeliveryStatsQuery query) { this.query = query; }
 
     @Override
-    public SectionKey getKey() {
-        return SectionKey.CITIZENS_REACHED;
-    }
+    public SectionKey getKey() { return SectionKey.CITIZENS_REACHED; }
 
     @Override
     public SectionResult<?> generate(ReportContext context) {
-        try {
-            return query.execute(context);
-        } catch (Exception e) {
-            return SectionResult.unavailable(getKey(), "Internal error generating section data");
+        long targeted = query.getUniqueTargeted(context);
+        if (targeted == 0) {
+            return SectionResult.unavailable(getKey(), "No notification deliveries were recorded for this event.");
         }
+        long reached = query.getUniqueReached(context);
+        double rate = (double) reached / targeted;
+        // round to 2 decimals
+        rate = Math.round(rate * 100.0) / 100.0;
+        return SectionResult.success(getKey(), new CitizensReached(
+            targeted, reached, rate, query.getChannelStats(context), query.getDistrictStats(context)
+        ));
     }
 }
