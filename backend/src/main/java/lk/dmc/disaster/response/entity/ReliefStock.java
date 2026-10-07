@@ -49,10 +49,7 @@ public class ReliefStock {
   private Instant updatedAt;
 
   public static ReliefStock create(
-      UUID itemId,
-      UUID organisationId,
-      UUID districtId,
-      int quantityAvailable) {
+      UUID itemId, UUID organisationId, UUID districtId, int quantityAvailable) {
     ReliefStock s = new ReliefStock();
     s.id = UUID.randomUUID();
     s.itemId = itemId;
