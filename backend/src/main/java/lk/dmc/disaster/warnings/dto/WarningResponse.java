@@ -1,6 +1,7 @@
 package lk.dmc.disaster.warnings.dto;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lk.dmc.disaster.shared.domain.WarningLevel;
@@ -11,7 +12,9 @@ import lk.dmc.disaster.warnings.entity.WarningStatus;
  * A public warning.
  *
  * @param resolvedDistrictIds the districts reached, including those of the targeted basins
- * @param supersedesId the warning this one replaced when it was escalated, or null
+ * @param issuedAt when the warning was first issued
+ * @param levelChangedAt when its level last changed (the issue time until it is escalated)
+ * @param levelHistory every level it has had, oldest first
  */
 public record WarningResponse(
     UUID id,
@@ -29,7 +32,8 @@ public record WarningResponse(
     String instructions,
     Instant issuedAt,
     UUID issuedBy,
-    UUID supersedesId,
+    Instant levelChangedAt,
+    List<LevelChangeResponse> levelHistory,
     Instant cancelledAt,
     String cancelReason,
     Set<UUID> evidenceReportIds,

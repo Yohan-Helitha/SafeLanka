@@ -76,13 +76,14 @@ class WarningController {
 
   @Operation(
       summary = "Escalate to a higher level",
-      description = "Creates a new warning that supersedes this one and sends it again.")
+      description =
+          "Raises this warning to a higher level and sends it again. It stays the same warning;"
+              + " its levelHistory records the change.")
   @PostMapping("/{id}/escalate")
-  @ResponseStatus(HttpStatus.CREATED)
   ApiResponse<WarningResponse> escalate(
       @PathVariable UUID id, @Valid @RequestBody EscalateWarningRequest request) {
-    Warning next = publication.escalate(request.toCommand(id, actingUser.require().id()));
-    return respond(next.getId());
+    publication.escalate(request.toCommand(id, actingUser.require().id()));
+    return respond(id);
   }
 
   @Operation(summary = "Cancel an ACTIVE warning with a reason")

@@ -219,10 +219,11 @@ paths:
   /api/warnings/{id}/escalate:
     post:
       tags: [Warnings]
-      summary: Replace an ACTIVE warning with a higher-level one (DMC_OFFICER)
+      summary: Raise an ACTIVE warning to a higher level (DMC_OFFICER)
       description: |
-        Creates a new warning with `supersedesId` set and sends it again. Give all four texts or none
-        (none keeps the current texts). `confirm` must be true.
+        The warning stays the same warning: its level rises, the change is added to `levelHistory`
+        and it is sent again at the new level (the delivery totals then describe the new level).
+        Give all four texts or none (none keeps the current texts). `confirm` must be true.
       parameters: [{ $ref: '#/components/parameters/Id' }]
       requestBody:
         required: true
@@ -239,8 +240,8 @@ paths:
                 instructions: { type: string }
                 confirm: { type: boolean }
       responses:
-        '201':
-          description: The new warning
+        '200':
+          description: The same warning, at the new level
           content:
             application/json:
               schema:
@@ -472,7 +473,10 @@ components:
         totalPages: { type: integer }
 
     WarningLevel: { type: string, enum: [ADVISORY, WATCH, WARNING, EVACUATE] }
-    WarningStatus: { type: string, enum: [ACTIVE, ESCALATED, CANCELLED, EXPIRED] }
+    WarningStatus:
+      type: string
+      enum: [ACTIVE, ESCALATED, CANCELLED, EXPIRED]
+      description: ESCALATED only appears on warnings replaced before escalation raised the level of the same warning.
     HazardStatus: { type: string, enum: [UNDER_ASSESSMENT, WARNED, MONITORING, RESOLVED] }
     HazardSource: { type: string, enum: [MANUAL, SENSOR, REPORT] }
     TargetType: { type: string, enum: [DISTRICT, RIVER_BASIN] }
@@ -551,6 +555,8 @@ components:
                   districtIds: { type: array, items: { type: string, format: uuid } }
                   riverBasinIds: { type: array, items: { type: string, format: uuid } }
                   issuedAt: { type: string, format: date-time }
+                  levelChangedAt: { type: string, format: date-time }
+                  levelHistory: { type: array, items: { $ref: '#/components/schemas/LevelChange' } }
                   reached: { type: integer, format: int64 }
     CreateHazardRequest:
       type: object
@@ -604,6 +610,14 @@ components:
               channel: { $ref: '#/components/schemas/Channel' }
               delivered: { type: integer, format: int64 }
               failed: { type: integer, format: int64 }
+    LevelChange:
+      type: object
+      description: One step in a warning's level history, oldest first.
+      properties:
+        fromLevel: { allOf: [{ $ref: '#/components/schemas/WarningLevel' }], nullable: true, description: Null for the level it was issued at. }
+        toLevel: { $ref: '#/components/schemas/WarningLevel' }
+        changedBy: { type: string, format: uuid }
+        changedAt: { type: string, format: date-time }
     WarningResponse:
       allOf:
         - $ref: '#/components/schemas/WarningTexts'
@@ -618,9 +632,10 @@ components:
             districtIds: { type: array, items: { type: string, format: uuid } }
             riverBasinIds: { type: array, items: { type: string, format: uuid } }
             resolvedDistrictIds: { type: array, items: { type: string, format: uuid } }
-            issuedAt: { type: string, format: date-time }
+            issuedAt: { type: string, format: date-time, description: When it was first issued. }
             issuedBy: { type: string, format: uuid }
-            supersedesId: { type: string, format: uuid, nullable: true }
+            levelChangedAt: { type: string, format: date-time, description: When the level last changed (the issue time until it is escalated). }
+            levelHistory: { type: array, items: { $ref: '#/components/schemas/LevelChange' } }
             cancelledAt: { type: string, format: date-time, nullable: true }
             cancelReason: { type: string, nullable: true }
             evidenceReportIds: { type: array, items: { type: string, format: uuid } }

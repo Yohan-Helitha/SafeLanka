@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lk.dmc.disaster.shared.domain.WarningLevel;
@@ -159,11 +160,18 @@ class WarningReadServicesTest {
 
   // ---- DeliveryQueryService ----------------------------------------------------------------
 
+  private Warning foundWarning(WarningLevel level) {
+    Warning warning =
+        ServiceFixtures.warning(level, ServiceFixtures.districtTarget(COLOMBO), NOW);
+    when(warnings.findById(warning.getId())).thenReturn(Optional.of(warning));
+    return warning;
+  }
+
   @Test
   void summary_totalsOverallAndPerChannel() {
-    UUID warningId = UUID.randomUUID();
-    when(warnings.existsById(warningId)).thenReturn(true);
-    when(deliveries.countByChannelAndStatus(warningId))
+    Warning warning = foundWarning(WarningLevel.WARNING);
+    UUID warningId = warning.getId();
+    when(deliveries.countByChannelAndStatus(warningId, WarningLevel.WARNING))
         .thenReturn(
             List.of(
                 new DeliveryCount(Channel.SMS, DeliveryStatus.DELIVERED, 22),
@@ -187,9 +195,9 @@ class WarningReadServicesTest {
 
   @Test
   void summary_noDeliveries_isAllZero() {
-    UUID warningId = UUID.randomUUID();
-    when(warnings.existsById(warningId)).thenReturn(true);
-    when(deliveries.countByChannelAndStatus(warningId)).thenReturn(List.of());
+    UUID warningId = foundWarning(WarningLevel.WARNING).getId();
+    when(deliveries.countByChannelAndStatus(warningId, WarningLevel.WARNING))
+        .thenReturn(List.of());
     when(deliveries.countTargetedCitizens(warningId)).thenReturn(0L);
 
     DeliveryOutcome outcome =
@@ -201,13 +209,12 @@ class WarningReadServicesTest {
   @Test
   @SuppressWarnings("unchecked")
   void list_existingWarning_returnsTheDeliveriesWithEachPersonsDistrict() {
-    UUID warningId = UUID.randomUUID();
+    UUID warningId = foundWarning(WarningLevel.WARNING).getId();
     UUID citizen = UUID.randomUUID();
     Pageable page = PageRequest.of(0, 20);
     NotificationDelivery delivery =
-        NotificationDelivery.queue(warningId, citizen, Channel.SMS, NOW);
+        NotificationDelivery.queue(warningId, citizen, Channel.SMS, WarningLevel.WARNING, NOW);
     Page<NotificationDelivery> found = new PageImpl<>(List.of(delivery), page, 1);
-    when(warnings.existsById(warningId)).thenReturn(true);
     when(deliveries.findAll(any(Specification.class), any(Pageable.class))).thenReturn(found);
     when(citizens.districtsOf(List.of(citizen))).thenReturn(Map.of(citizen, COLOMBO));
 
@@ -221,11 +228,11 @@ class WarningReadServicesTest {
   @Test
   @SuppressWarnings("unchecked")
   void list_personNoLongerKnown_hasNoDistrict() {
-    UUID warningId = UUID.randomUUID();
+    UUID warningId = foundWarning(WarningLevel.WARNING).getId();
     Pageable page = PageRequest.of(0, 20);
     NotificationDelivery delivery =
-        NotificationDelivery.queue(warningId, UUID.randomUUID(), Channel.PUSH, NOW);
-    when(warnings.existsById(warningId)).thenReturn(true);
+        NotificationDelivery.queue(
+            warningId, UUID.randomUUID(), Channel.PUSH, WarningLevel.WARNING, NOW);
     when(deliveries.findAll(any(Specification.class), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(delivery), page, 1));
 
@@ -238,7 +245,7 @@ class WarningReadServicesTest {
   @Test
   void summaryAndList_unknownWarning_areNotFound() {
     UUID warningId = UUID.randomUUID();
-    when(warnings.existsById(warningId)).thenReturn(false);
+    when(warnings.findById(warningId)).thenReturn(Optional.empty());
     DeliveryQueryService service = new DeliveryQueryService(warnings, deliveries, citizens);
 
     assertThatThrownBy(() -> service.summary(warningId))

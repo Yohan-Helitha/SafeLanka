@@ -1,6 +1,7 @@
 package lk.dmc.disaster.warnings.repository;
 
 import java.util.UUID;
+import lk.dmc.disaster.shared.domain.WarningLevel;
 import lk.dmc.disaster.warnings.entity.Channel;
 import lk.dmc.disaster.warnings.entity.DeliveryStatus;
 import lk.dmc.disaster.warnings.entity.NotificationDelivery;
@@ -14,6 +15,11 @@ public final class DeliverySpecifications {
   /** Only deliveries of this warning. */
   public static Specification<NotificationDelivery> forWarning(UUID warningId) {
     return (root, query, cb) -> cb.equal(root.get("warningId"), warningId);
+  }
+
+  /** Only deliveries sent at this warning level. */
+  public static Specification<NotificationDelivery> atLevel(WarningLevel level) {
+    return (root, query, cb) -> cb.equal(root.get("level"), level);
   }
 
   /** Only deliveries with this status; null matches all. */

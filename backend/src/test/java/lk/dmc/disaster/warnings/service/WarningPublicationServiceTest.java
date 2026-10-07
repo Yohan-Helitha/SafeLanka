@@ -27,6 +27,7 @@ import lk.dmc.disaster.warnings.entity.TargetType;
 import lk.dmc.disaster.warnings.entity.Warning;
 import lk.dmc.disaster.warnings.entity.WarningContent;
 import lk.dmc.disaster.warnings.entity.WarningDraft;
+import lk.dmc.disaster.warnings.entity.WarningLevelChange;
 import lk.dmc.disaster.warnings.entity.WarningStatus;
 import lk.dmc.disaster.warnings.entity.WarningTarget;
 import lk.dmc.disaster.warnings.repository.WarningRepository;
@@ -226,46 +227,50 @@ class WarningPublicationServiceTest {
   // ---- escalate ----------------------------------------------------------------------------
 
   @Test
-  void escalate_higherLevel_savesNewWarningSendsItAgainAndAnnounces() {
-    Warning old = existing(activeWarning(WarningLevel.WATCH));
-    warningsSaveReturnsItsArgument();
+  void escalate_higherLevel_raisesTheSameWarningSendsItAgainAndAnnounces() {
+    Warning warning = existing(activeWarning(WarningLevel.WATCH));
+    WarningContent keptText = warning.content();
     when(audience.resolveDistricts(any(AudienceSelection.class))).thenReturn(Set.of(COLOMBO));
 
-    Warning next =
+    Warning result =
         service.escalate(
-            new EscalateCommand(old.getId(), WarningLevel.EVACUATE, null, true, OFFICER));
+            new EscalateCommand(warning.getId(), WarningLevel.EVACUATE, null, true, OFFICER));
 
-    assertThat(old.getStatus()).isEqualTo(WarningStatus.ESCALATED);
-    assertThat(next.getLevel()).isEqualTo(WarningLevel.EVACUATE);
-    assertThat(next.getSupersedesId()).isEqualTo(old.getId());
-    assertThat(next.content()).isEqualTo(old.content());
-    verify(dispatch).dispatch(next);
+    assertThat(result).isSameAs(warning);
+    assertThat(result.getStatus()).isEqualTo(WarningStatus.ACTIVE);
+    assertThat(result.getLevel()).isEqualTo(WarningLevel.EVACUATE);
+    assertThat(result.content()).isEqualTo(keptText);
+    assertThat(result.levelHistory())
+        .extracting(WarningLevelChange::getToLevel)
+        .containsExactly(WarningLevel.WATCH, WarningLevel.EVACUATE);
+    assertThat(result.levelChangedAt()).isEqualTo(NOW);
+    verify(dispatch).dispatch(warning);
+    verify(warnings, never()).save(any());
 
     ArgumentCaptor<WarningEscalatedEvent> captor =
         ArgumentCaptor.forClass(WarningEscalatedEvent.class);
     verify(events).publishEvent(captor.capture());
     WarningEscalatedEvent event = captor.getValue();
-    assertThat(event.previousWarningId()).isEqualTo(old.getId());
-    assertThat(event.newWarningId()).isEqualTo(next.getId());
+    assertThat(event.warningId()).isEqualTo(warning.getId());
     assertThat(event.oldLevel()).isEqualTo(WarningLevel.WATCH);
     assertThat(event.newLevel()).isEqualTo(WarningLevel.EVACUATE);
     assertThat(event.resolvedDistrictIds()).containsExactly(COLOMBO);
+    assertThat(event.escalatedAt()).isEqualTo(NOW);
   }
 
   @Test
   void escalate_withNewText_usesTheNewText() {
-    Warning old = existing(activeWarning(WarningLevel.WATCH));
-    warningsSaveReturnsItsArgument();
+    Warning warning = existing(activeWarning(WarningLevel.WATCH));
     when(audience.resolveDistricts(any(AudienceSelection.class))).thenReturn(Set.of(COLOMBO));
     WarningContent urgent =
         new WarningContent(
             "Evacuate now", "Leave the area immediately.", "Evacuate Kelani banks now.", "Go now.");
 
-    Warning next =
+    Warning result =
         service.escalate(
-            new EscalateCommand(old.getId(), WarningLevel.EVACUATE, urgent, true, OFFICER));
+            new EscalateCommand(warning.getId(), WarningLevel.EVACUATE, urgent, true, OFFICER));
 
-    assertThat(next.content()).isEqualTo(urgent);
+    assertThat(result.content()).isEqualTo(urgent);
   }
 
   @Test

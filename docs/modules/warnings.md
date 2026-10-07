@@ -40,7 +40,7 @@ and 422 responses listed in the API file.
 | --- | --- |
 | Strategy | `NotificationChannel`, one class per channel, injected as `List<NotificationChannel>` |
 | Adapter | The simulators stand in for FCM, an SMS provider and sirens. A real gateway is one new class |
-| State | `WarningStatusMachine`, `HazardStatusMachine` over one shared `StatusMachine` |
+| State | `WarningStatusMachine` (ACTIVE ends as CANCELLED or EXPIRED), `HazardStatusMachine`, over one shared `StatusMachine` |
 | Observer | The publication service publishes three warning events; `HazardEvidenceListener` (`@ApplicationModuleListener` on the reports module's `ReportVerifiedEvent`) calls `HazardEvidenceLinker` |
 | Single responsibility | Warning rules in `Warning`, pre-checks in `PublishPreconditions`, sending in `NotificationDispatchService`, ordering of steps in `WarningPublicationService`, read side in the `*QueryService` classes |
 | Open / Closed | A channel decides which levels it handles (`supports(level)`), so adding one changes no existing class |
@@ -61,6 +61,14 @@ leave an entity are copies.
 - **Views are built inside the transaction.** `spring.jpa.open-in-view` is `false`, so
   `WarningView` copies a warning's areas, evidence, resolved districts and delivery totals while the
   session is open.
+- **Escalation raises the same warning.** The original design created a new warning that superseded
+  the old one. With many disasters at once that filled the list with near-duplicate rows, so an
+  escalation now changes the level of the one warning and appends a step to its level history
+  (`warning_level_changes`, migration `V3_0_2`). The list shows one row per warning with the time of
+  its last change; the eye icon on a row opens the history (Advisory → Warning → Evacuate, each with
+  its time). A warning that is escalated is sent again, and each delivery records the level it was
+  sent at, so the delivery totals describe the current level while "people reached" counts everyone
+  the warning ever reached. Warnings escalated before this change keep the ESCALATED status.
 - **Hand-written mappers** instead of MapStruct: the mapping is nested and needs the hazard type
   code lookup.
 - **Simulation is dev-only.** `SimulationController` has `@Profile("dev")`. The simulator opens a

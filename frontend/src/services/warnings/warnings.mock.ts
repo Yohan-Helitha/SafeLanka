@@ -51,6 +51,8 @@ function warningItem(w: Warning): WarningListItem {
     districtIds: w.districtIds,
     riverBasinIds: w.riverBasinIds,
     issuedAt: w.issuedAt,
+    levelChangedAt: w.levelChangedAt,
+    levelHistory: w.levelHistory,
     reached: w.reached,
   }
 }
@@ -257,6 +259,7 @@ export const warningsMock: WarningsApi = {
         })
       }
 
+      const issuedAt = new Date().toISOString()
       const warning: Warning = {
         id: newId(),
         hazardId: hazard.id,
@@ -271,8 +274,9 @@ export const warningsMock: WarningsApi = {
         smsText: input.smsText.trim(),
         instructions: input.instructions.trim(),
         issuedBy: user.id,
-        issuedAt: new Date().toISOString(),
-        supersedesId: null,
+        issuedAt,
+        levelChangedAt: issuedAt,
+        levelHistory: [{ from: null, to: input.level, changedBy: user.id, changedAt: issuedAt }],
         cancelledAt: null,
         cancelReason: null,
         reportIds: input.reportIds,
@@ -304,32 +308,32 @@ export const warningsMock: WarningsApi = {
   escalate: (id, input) =>
     mockCall(() => {
       const user = requireRole('DMC_OFFICER')
-      const old = warningRow(id)
-      if (old.status !== 'ACTIVE') fail('INVALID_STATE_TRANSITION', 'Only an active warning can be escalated.')
-      if (LEVEL_ORDER.indexOf(input.level) <= LEVEL_ORDER.indexOf(old.level)) {
+      const warning = warningRow(id)
+      if (warning.status !== 'ACTIVE') fail('INVALID_STATE_TRANSITION', 'Only an active warning can be escalated.')
+      if (LEVEL_ORDER.indexOf(input.level) <= LEVEL_ORDER.indexOf(warning.level)) {
         fail('BUSINESS_RULE', 'Choose a level higher than the current one.')
       }
       validateText(input)
-      const next: Warning = {
-        ...old,
-        id: newId(),
+      // The warning stays the same warning: its level rises, the history records the step and it is sent again.
+      const changedAt = new Date().toISOString()
+      warning.levelHistory = [
+        ...warning.levelHistory,
+        { from: warning.level, to: input.level, changedBy: user.id, changedAt },
+      ]
+      warning.levelChangedAt = changedAt
+      Object.assign(warning, {
         level: input.level,
-        status: 'ACTIVE',
         title: input.title.trim(),
         message: input.message.trim(),
         smsText: input.smsText.trim(),
         instructions: input.instructions.trim(),
-        issuedBy: user.id,
-        issuedAt: new Date().toISOString(),
-        supersedesId: old.id,
-        reached: 0,
-        deliverySummary: summariseDeliveries([]),
+      })
+      for (let i = db.deliveries.length - 1; i >= 0; i -= 1) {
+        if (db.deliveries[i].warningId === warning.id) db.deliveries.splice(i, 1)
       }
-      old.status = 'ESCALATED'
-      broadcast(next)
-      db.warnings.push(next)
-      bus.emit({ type: 'WarningEscalated', warningId: next.id })
-      return next
+      broadcast(warning)
+      bus.emit({ type: 'WarningEscalated', warningId: warning.id })
+      return warning
     }),
 
   cancel: (id, reason) =>

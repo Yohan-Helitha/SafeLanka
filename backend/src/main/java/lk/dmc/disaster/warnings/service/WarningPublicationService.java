@@ -1,8 +1,10 @@
 package lk.dmc.disaster.warnings.service;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
+import lk.dmc.disaster.shared.domain.WarningLevel;
 import lk.dmc.disaster.shared.error.AppException;
 import lk.dmc.disaster.shared.error.ErrorCode;
 import lk.dmc.disaster.warnings.WarningCancelledEvent;
@@ -95,31 +97,29 @@ public class WarningPublicationService {
   }
 
   /**
-   * Replaces an ACTIVE warning with a higher-level one for the same areas and sends it again.
+   * Raises an ACTIVE warning to a higher level for the same areas and sends it again. The warning
+   * keeps its identity; its level history records the change.
    *
-   * @return the new warning, which supersedes the old one
+   * @return the same warning, now at the higher level
    * @throws AppException BUSINESS_RULE when not confirmed or the level is not higher; NOT_FOUND;
    *     INVALID_STATE_TRANSITION when the warning is not ACTIVE
    */
   @Transactional
   public Warning escalate(EscalateCommand command) {
     requireConfirmed(command.confirmed());
-    Warning old = find(command.warningId());
-    WarningContent content = command.newContent() == null ? old.content() : command.newContent();
+    Warning warning = find(command.warningId());
+    WarningLevel oldLevel = warning.getLevel();
+    WarningContent content =
+        command.newContent() == null ? warning.content() : command.newContent();
 
-    Warning next = old.escalateTo(command.level(), content, command.issuedBy(), clock.instant());
-    Warning saved = warnings.save(next);
-    dispatch.dispatch(saved);
+    Instant now = clock.instant();
+    warning.escalateTo(command.level(), content, command.issuedBy(), now);
+    dispatch.dispatch(warning);
     events.publishEvent(
         new WarningEscalatedEvent(
-            old.getId(),
-            saved.getId(),
-            old.getLevel(),
-            saved.getLevel(),
-            resolvedDistricts(saved),
-            saved.getIssuedAt()));
-    log.info("Warning {} escalated to {} as {}", old.getId(), saved.getLevel(), saved.getId());
-    return saved;
+            warning.getId(), oldLevel, warning.getLevel(), resolvedDistricts(warning), now));
+    log.info("Warning {} escalated from {} to {}", warning.getId(), oldLevel, warning.getLevel());
+    return warning;
   }
 
   /**

@@ -1,7 +1,8 @@
-import { Megaphone, Plus } from 'lucide-react'
+import { Eye, Megaphone, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SeverityBadge, StatusChip } from '@/components/domain'
+import { LevelHistoryDialog } from '@/components/warnings/LevelHistory'
 import { Button, DataTable, EmptyState, ErrorState, Loading, PageHeader, Segmented } from '@/components/ui'
 import { paths } from '@/constants/routes'
 import { useDocumentTitle, useReferenceData } from '@/hooks/shared'
@@ -16,6 +17,7 @@ export function WarningsScreen() {
   const navigate = useNavigate()
   const { districtName } = useReferenceData()
   const [filter, setFilter] = useState<Filter>('ACTIVE')
+  const [historyOf, setHistoryOf] = useState<WarningListItem | null>(null)
   const warnings = useWarningsList(filter)
 
   return (
@@ -32,13 +34,12 @@ export function WarningsScreen() {
       <Segmented<Filter>
         legend="Show warnings"
         hideLegend
-        columns={4}
+        columns={3}
         className="mb-4 max-w-xl"
         value={filter}
         onChange={setFilter}
         options={[
           { value: 'ACTIVE', label: 'Active' },
-          { value: 'ESCALATED', label: 'Escalated' },
           { value: 'CANCELLED', label: 'Cancelled' },
           { value: 'ALL', label: 'All' },
         ]}
@@ -57,11 +58,32 @@ export function WarningsScreen() {
             { key: 'title', header: 'Warning', cell: (w) => <span className="font-medium">{w.title}</span> },
             { key: 'districts', header: 'Districts', cell: (w) => <span className="text-muted">{w.districtIds.map(districtName).join(', ')}</span> },
             { key: 'reached', header: 'Reached', cell: (w) => <span className="tabular">{formatNumber(w.reached)} people</span> },
-            { key: 'issued', header: 'Issued', cell: (w) => <span className="text-muted">{formatDateTime(w.issuedAt)}</span> },
+            { key: 'updated', header: 'Last changed', cell: (w) => <span className="text-muted">{formatDateTime(w.levelChangedAt)}</span> },
             { key: 'status', header: 'Status', cell: (w) => <StatusChip status={w.status} /> },
+            {
+              key: 'history',
+              header: <span className="sr-only">Level history</span>,
+              align: 'right',
+              cell: (w) => (
+                <button
+                  type="button"
+                  aria-label={`Show level history of ${w.title}`}
+                  title="Level history"
+                  className="inline-flex size-8 items-center justify-center rounded-control text-muted hover:bg-raised hover:text-ink"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setHistoryOf(w)
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  <Eye className="size-4" aria-hidden />
+                </button>
+              ),
+            },
           ]}
         />
       )}
+      {historyOf && <LevelHistoryDialog warning={historyOf} onClose={() => setHistoryOf(null)} />}
     </div>
   )
 }
