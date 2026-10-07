@@ -106,11 +106,15 @@ export function DistrictSheltersScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [selectedShelterId, setSelectedShelterId] = useState<string | null>(null)
 
-  const rawData: Shelter[] = Array.isArray(shelters.data)
-    ? (shelters.data as Shelter[])
-    : Array.isArray((shelters.data as any)?.content)
-    ? ((shelters.data as any).content as Shelter[])
-    : []
+  const rawData: Shelter[] = useMemo(
+    () =>
+      Array.isArray(shelters.data)
+        ? (shelters.data as Shelter[])
+        : Array.isArray((shelters.data as any)?.content)
+        ? ((shelters.data as any).content as Shelter[])
+        : [],
+    [shelters.data],
+  )
 
   const data: Shelter[] = useMemo(() => {
     return rawData.map((s) => {
@@ -198,19 +202,16 @@ export function DistrictSheltersScreen() {
   return (
     <div className="space-y-6">
       {/* Top Header & Tactical KPI Summary */}
-      <header className="rounded-2xl border border-[#222d42] bg-[#0d1320]/80 p-5 shadow-lg backdrop-blur-sm sm:p-6">
+      <header>
         <div className="flex flex-col gap-4 w-full">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="flex items-center space-x-2.5 flex-wrap">
-                <h2 className="text-2xl font-bold text-white tracking-tight">Shelters</h2>
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-slate-300">
-                  {districtName(user.districtId)} District Command
-                </span>
+                <h1 className="font-display text-2xl font-semibold leading-tight text-ink sm:text-[28px]">Shelters</h1>
+                
               </div>
               <p className="text-xs lg:text-sm text-slate-400 mt-1">
                 Occupancy across the shelters in your district.{' '}
-                <span className="text-amber-400 font-medium">Amber starts at 90% full.</span>
               </p>
             </div>
             <div className="flex items-center space-x-2 text-xs font-medium text-slate-400 self-start sm:self-auto">

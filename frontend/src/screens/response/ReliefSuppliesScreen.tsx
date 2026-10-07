@@ -24,12 +24,19 @@ export function ReliefSuppliesScreen() {
   const getOrgName = (s: ReliefStock) => s.organisationName || organisations.find((o) => o.id === s.organisationId)?.name || 'DMC'
   const getUnit = (s: ReliefStock) => s.unit || reliefItems.find((ri) => ri.id === s.itemId)?.unit || 'units'
 
-  const stocksList: ReliefStock[] = Array.isArray(stocks.data) ? (stocks.data as ReliefStock[]) : []
-  const allocationsList: Allocation[] = Array.isArray(allocations.data)
-    ? (allocations.data as Allocation[])
-    : Array.isArray((allocations.data as any)?.content)
-    ? ((allocations.data as any).content as Allocation[])
-    : []
+  const stocksList: ReliefStock[] = useMemo(
+    () => (Array.isArray(stocks.data) ? (stocks.data as ReliefStock[]) : []),
+    [stocks.data],
+  )
+  const allocationsList: Allocation[] = useMemo(
+    () =>
+      Array.isArray(allocations.data)
+        ? (allocations.data as Allocation[])
+        : Array.isArray((allocations.data as any)?.content)
+        ? ((allocations.data as any).content as Allocation[])
+        : [],
+    [allocations.data],
+  )
 
   const shelterMap = useMemo(() => {
     const map = new Map<string, string>()
@@ -129,7 +136,7 @@ export function ReliefSuppliesScreen() {
       <section className="space-y-3 sm:space-y-4" data-purpose="page-header">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div className="space-y-1">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight text-white">Relief supplies</h2>
+            <h1 className="font-display text-2xl font-semibold leading-tight text-ink sm:text-[28px]">Relief supplies</h1>
             <p className="text-xs sm:text-sm text-slate-400">Stock held in your district, and what has been sent to shelters.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
