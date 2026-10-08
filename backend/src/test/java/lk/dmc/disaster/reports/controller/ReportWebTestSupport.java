@@ -11,7 +11,7 @@ import lk.dmc.disaster.reports.service.ReportFixtures;
 import lk.dmc.disaster.reports.service.ReportQueryService;
 import lk.dmc.disaster.reports.service.ReportSubmissionService;
 import lk.dmc.disaster.reports.service.ReportVerificationService;
-import lk.dmc.disaster.shared.actor.UserSummary;
+import lk.dmc.disaster.shared.reference.UserView;
 import lk.dmc.disaster.shared.domain.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -52,7 +52,7 @@ abstract class ReportWebTestSupport {
     return new ReportDetailView(
         report,
         null,
-        new UserSummary(report.getReporterId(), "Ruwan Fernando", Role.CITIZEN),
+        new UserView(report.getReporterId(), "Ruwan Fernando", Role.CITIZEN, null, null, null, null),
         List.of(),
         null);
   }

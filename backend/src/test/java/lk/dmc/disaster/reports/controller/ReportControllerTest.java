@@ -24,7 +24,7 @@ import lk.dmc.disaster.reports.service.ReportWithPhoto;
 import lk.dmc.disaster.reports.service.SubmissionResult;
 import lk.dmc.disaster.reports.service.SubmitReportCommand;
 import lk.dmc.disaster.shared.actor.ActingUser;
-import lk.dmc.disaster.shared.actor.UserSummary;
+import lk.dmc.disaster.shared.reference.UserView;
 import lk.dmc.disaster.shared.domain.Role;
 import lk.dmc.disaster.shared.error.BusinessRuleException;
 import lk.dmc.disaster.shared.error.ConflictException;
@@ -211,7 +211,7 @@ class ReportControllerTest extends ReportWebTestSupport {
         new ReportDetailView(
             report,
             ReportPhoto.attach(report.getId(), "reports/a.jpg", "image/jpeg", 9),
-            new UserSummary(report.getReporterId(), "Ruwan Fernando", Role.CITIZEN),
+            new UserView(report.getReporterId(), "Ruwan Fernando", Role.CITIZEN, null, null, null, null),
             List.of(new DuplicateMatch(other, 84.6)),
             null);
     when(queries.detail(eq(report.getId()), any(ActingUser.class))).thenReturn(view);

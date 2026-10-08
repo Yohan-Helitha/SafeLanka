@@ -4,7 +4,7 @@ import { ApiErrorNotice, StatusChip } from '@/components/domain'
 import { Button, Card, Checkbox, ErrorState, Field, Input, Loading } from '@/components/ui'
 import { useDocumentTitle, useReferenceData } from '@/hooks/shared'
 import { useAnalyticsEvents, useGenerateReport, useSavedReports } from '@/hooks/analytics/useAnalytics'
-import { formatDate, formatDateTime, fromLocalInput, plural } from '@/utils/format'
+import { formatDate, formatDateTime, fromLocalInput, toLocalInput, plural } from '@/utils/format'
 import {
   BarChart3,
   Calendar,
@@ -152,6 +152,8 @@ export function AnalyticsHomeScreen({ reportPath, canGenerate }: Props) {
                   onClick={() => {
                     setEventId(e.id)
                     setDistrictIds(null)
+                    setFrom(e.startedAt ? toLocalInput(e.startedAt) : '')
+                    setTo(e.endedAt ? toLocalInput(e.endedAt) : '')
                   }}
                   className="w-full text-left"
                 >

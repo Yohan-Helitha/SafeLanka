@@ -6,15 +6,15 @@ import { formatNumber, formatPercent } from '@/utils/format'
 import { Card, DataTable, Stat } from '../ui'
 
 export function CitizensReachedSection({ data, districtName }: { data: Data; districtName: (id: string) => string }) {
-  const chart = (Object.keys(data.byChannel) as Channel[])
-    .filter((c) => data.byChannel[c].delivered + data.byChannel[c].failed > 0)
-    .map((c) => ({ channel: CHANNEL_LABEL[c], Delivered: data.byChannel[c].delivered, Failed: data.byChannel[c].failed }))
+  const chart = (Object.keys(data?.byChannel ?? {}) as Channel[])
+    .filter((c) => (data.byChannel[c]?.delivered ?? 0) + (data.byChannel[c]?.failed ?? 0) > 0)
+    .map((c) => ({ channel: CHANNEL_LABEL[c], Delivered: data.byChannel[c]?.delivered ?? 0, Failed: data.byChannel[c]?.failed ?? 0 }))
   return (
     <Card title="2. Citizens reached">
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Stat label="Targeted" value={formatNumber(data.targeted)} />
-        <Stat label="Reached" value={formatNumber(data.reached)} tone="signal" />
-        <Stat label="Delivery rate" value={formatPercent(data.deliveryRate)} />
+        <Stat label="Targeted" value={formatNumber(data?.targeted ?? 0)} />
+        <Stat label="Reached" value={formatNumber(data?.reached ?? 0)} tone="signal" />
+        <Stat label="Delivery rate" value={formatPercent(data?.deliveryRate ?? 0)} />
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <div role="img" aria-label="Delivered and failed messages by channel">
@@ -33,7 +33,7 @@ export function CitizensReachedSection({ data, districtName }: { data: Data; dis
         <DataTable
           caption="Citizens targeted and reached by district"
           minWidth={0}
-          rows={data.byDistrict}
+          rows={data?.byDistrict ?? []}
           rowKey={(d) => d.districtId}
           columns={[
             { key: 'd', header: 'District', cell: (d) => districtName(d.districtId) },

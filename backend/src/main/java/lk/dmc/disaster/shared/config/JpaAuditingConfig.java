@@ -1,9 +1,18 @@
 package lk.dmc.disaster.shared.config;
 
+import java.time.OffsetDateTime;
+import java.util.Optional;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 /** Enables JPA auditing for {@code @CreatedDate} and {@code @LastModifiedDate} fields. */
 @Configuration
-@EnableJpaAuditing
-public class JpaAuditingConfig {}
+@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
+public class JpaAuditingConfig {
+    @Bean(name = "auditingDateTimeProvider")
+    public DateTimeProvider dateTimeProvider() {
+        return () -> Optional.of(OffsetDateTime.now());
+    }
+}

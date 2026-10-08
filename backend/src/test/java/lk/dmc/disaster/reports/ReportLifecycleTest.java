@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import lk.dmc.disaster.TestcontainersConfiguration;
 import lk.dmc.disaster.auth.application.port.AccessTokenIssuer;
 import lk.dmc.disaster.auth.persistence.UserAccountRepository;
+import lk.dmc.disaster.warnings.service.HazardEvidenceListener;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,7 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
@@ -63,6 +65,13 @@ class ReportLifecycleTest {
   @Autowired AccessTokenIssuer tokens;
   @Autowired VerifiedReportQuery verifiedReports;
   @Autowired ApplicationEvents events;
+
+  /**
+   * The warnings module reacts to ReportVerifiedEvent by linking the report to a hazard, which writes
+   * to its tables. This test is about reports only (the published event is asserted below), so that
+   * reaction is switched off: it would leave hazard links behind that block deleting the test report.
+   */
+  @MockitoBean HazardEvidenceListener hazardEvidenceListener;
 
   private final List<UUID> createdClientRefs = new ArrayList<>();
 

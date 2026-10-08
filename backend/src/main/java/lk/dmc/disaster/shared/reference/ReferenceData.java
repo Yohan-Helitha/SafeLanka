@@ -1,24 +1,24 @@
 package lk.dmc.disaster.shared.reference;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
-/**
- * Read-only lookups into the shared reference tables, so modules never import each other's entities
- * or repositories.
- */
+/** Reference data interface. */
 public interface ReferenceData {
-
-  Optional<HazardTypeInfo> hazardType(UUID id);
-
-  Optional<String> districtName(UUID id);
-
-  default boolean districtExists(UUID id) {
-    return districtName(id).isPresent();
-  }
-
-  /** True when the hazard type exists and lists the category (activity is checked separately). */
-  default boolean hazardTypeAcceptsCategory(UUID hazardTypeId, String category) {
-    return hazardType(hazardTypeId).map(t -> t.categories().contains(category)).orElse(false);
-  }
+    List<DistrictView> districts();
+    List<RiverBasinView> riverBasins();
+    List<HazardTypeView> hazardTypes(boolean activeOnly);
+    HazardTypeView hazardType(UUID id);
+    List<OrganisationView> organisations(Optional<OrganisationType> type);
+    List<ReliefItemView> reliefItems();
+    DisasterEventView event(UUID id);
+    List<DisasterEventView> events(Optional<EventStatus> status);
+    
+    boolean districtExists(UUID id);
+    boolean hazardTypeAcceptsCategory(UUID id, String category);
+    
+    List<DistrictView> districtsInBasins(Set<UUID> basinIds);
+    List<RiverBasinView> basinsOfDistrict(UUID districtId);
 }

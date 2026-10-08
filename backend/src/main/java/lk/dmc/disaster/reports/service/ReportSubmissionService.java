@@ -10,7 +10,7 @@ import lk.dmc.disaster.reports.repository.ReferenceNumberGenerator;
 import lk.dmc.disaster.reports.repository.ReportPhotoRepository;
 import lk.dmc.disaster.shared.error.BusinessRuleException;
 import lk.dmc.disaster.shared.error.ConflictException;
-import lk.dmc.disaster.shared.reference.HazardTypeInfo;
+import lk.dmc.disaster.shared.reference.HazardTypeView;
 import lk.dmc.disaster.shared.reference.ReferenceData;
 import lk.dmc.disaster.shared.storage.FileStorage;
 import lk.dmc.disaster.shared.storage.StoredFile;
@@ -108,14 +108,16 @@ public class ReportSubmissionService {
   }
 
   private void checkReferences(SubmitReportCommand command) {
-    HazardTypeInfo type =
-        referenceData
-            .hazardType(command.hazardTypeId())
-            .orElseThrow(() -> new BusinessRuleException("Unknown hazard type."));
+    HazardTypeView type;
+    try {
+      type = referenceData.hazardType(command.hazardTypeId());
+    } catch (lk.dmc.disaster.shared.error.NotFoundException e) {
+      throw new BusinessRuleException("Unknown hazard type.");
+    }
     if (!type.active()) {
       throw new BusinessRuleException(type.name() + " is not accepting reports right now.");
     }
-    if (!type.categories().contains(command.category())) {
+    if (!type.reportCategories().contains(command.category())) {
       throw new BusinessRuleException("That category is not available for " + type.name() + ".");
     }
     if (!referenceData.districtExists(command.districtId())) {

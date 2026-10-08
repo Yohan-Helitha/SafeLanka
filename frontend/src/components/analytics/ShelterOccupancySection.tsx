@@ -5,7 +5,7 @@ import { formatDateTime, formatShortDay } from '@/utils/format'
 import { Card, DataTable } from '../ui'
 
 export function ShelterOccupancySection({ data }: { data: Data }) {
-  const rows = data.series.map((p) => ({ at: p.recordedAt, ...p.values }))
+  const rows = (data?.series ?? []).map((p) => ({ at: p.recordedAt, ...p.values }))
   return (
     <Card title="3. Shelter occupancy over time">
       <div role="img" aria-label="Occupancy of each shelter over time">
@@ -19,7 +19,7 @@ export function ShelterOccupancySection({ data }: { data: Data }) {
               labelFormatter={(v) => formatDateTime(String(v))}
             />
             <Legend />
-            {data.shelters.map((s, i) => (
+            {(data?.shelters ?? []).map((s, i) => (
               <Line key={s.shelterId} type="stepAfter" name={s.name} dataKey={s.shelterId} stroke={CHART.series[i % CHART.series.length]} strokeWidth={2.5} dot={false} isAnimationActive={false} />
             ))}
           </LineChart>
@@ -29,7 +29,7 @@ export function ShelterOccupancySection({ data }: { data: Data }) {
         <DataTable
           caption="Peak occupancy by shelter"
           minWidth={0}
-          rows={data.peaks}
+          rows={data?.peaks ?? []}
           rowKey={(p) => p.shelterId}
           columns={[
             { key: 's', header: 'Shelter', cell: (p) => p.name },
