@@ -35,6 +35,5 @@ public interface TeamAssignmentService {
       int peopleEstimated,
       UUID destinationShelterId,
       UUID teamId,
-      UUID createdBy) {
-  }
+      UUID createdBy) {}
 }

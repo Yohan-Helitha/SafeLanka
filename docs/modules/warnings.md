@@ -40,8 +40,8 @@ and 422 responses listed in the API file.
 | --- | --- |
 | Strategy | `NotificationChannel`, one class per channel, injected as `List<NotificationChannel>` |
 | Adapter | The simulators stand in for FCM, an SMS provider and sirens. A real gateway is one new class |
-| State | `WarningStatusMachine`, `HazardStatusMachine` over one shared `StatusMachine` |
-| Observer | The publication service publishes three warning events; `HazardEvidenceLinker` is called when a report is verified |
+| State | `WarningStatusMachine` (ACTIVE ends as CANCELLED or EXPIRED), `HazardStatusMachine`, over one shared `StatusMachine` |
+| Observer | The publication service publishes three warning events; `HazardEvidenceListener` (`@ApplicationModuleListener` on the reports module's `ReportVerifiedEvent`) calls `HazardEvidenceLinker` |
 | Single responsibility | Warning rules in `Warning`, pre-checks in `PublishPreconditions`, sending in `NotificationDispatchService`, ordering of steps in `WarningPublicationService`, read side in the `*QueryService` classes |
 | Open / Closed | A channel decides which levels it handles (`supports(level)`), so adding one changes no existing class |
 | Interface segregation | `ActiveWarningQuery` has two methods; each port (`CitizenDirectory`, `AreaReference`, `VerifiedReports`, `HazardTypeDirectory`, `GatewayFailureSwitch`) is small |
@@ -54,13 +54,31 @@ leave an entity are copies.
 
 ## Decisions worth knowing
 
-- **Local ports instead of other modules' classes.** Reports and the user directory belong to other
-  members. The module reads what it needs through small ports with read-only JDBC adapters, so it
-  works without their code. When their queries are merged, each adapter is replaced by a short class
-  that calls the real query.
+- **Ports instead of other modules' classes.** The module reads other modules through small ports.
+  Reports go through `VerifiedReportQueryAdapter`, which calls the reports module's public
+  `VerifiedReportQuery` and keeps only the evidence fields. Citizens, areas and hazard types are read
+  with short read-only JDBC adapters, because the shared kernel has no area queries.
 - **Views are built inside the transaction.** `spring.jpa.open-in-view` is `false`, so
   `WarningView` copies a warning's areas, evidence, resolved districts and delivery totals while the
   session is open.
+- **Escalation raises the same warning.** The original design created a new warning that superseded
+  the old one. With many disasters at once that filled the list with near-duplicate rows, so an
+  escalation now changes the level of the one warning and appends a step to its level history
+  (`warning_level_changes`, migration `V3_0_2`). The list shows one row per warning with the time of
+  its last change; the eye icon on a row opens the history (Advisory → Warning → Evacuate, each with
+  its time). A warning that is escalated is sent again, and each delivery records the level it was
+  sent at, so the delivery totals describe the current level while "people reached" counts everyone
+  the warning ever reached. Warnings escalated before this change keep the ESCALATED status.
+- **Severity (how dangerous a hazard is, 1 to 5) comes from the officer and the evidence.** When
+  the officer verifies a ground report they choose a severity (default 2) on the report screen; it
+  travels in `ReportVerifiedEvent`. A hazard created from that report starts at that severity, and a
+  hazard the report is added to is raised to it if it is lower. Evidence also raises severity by
+  itself (3 verified reports give 3, 5 give 4, 8 or more give 5; the thresholds are in
+  `WarningRules`). Severity is never lowered automatically; the officer can set it up or down on the
+  hazard detail page (`PATCH /api/hazards/{id}/severity`) until the hazard is resolved. Severity
+  only orders the Hazards list; it does not decide the warning level, which the officer chooses.
+  The reports module change is small and optional: `VerifyRequest.severity`, passed on in the event,
+  not stored on the report.
 - **Hand-written mappers** instead of MapStruct: the mapping is nested and needs the hazard type
   code lookup.
 - **Simulation is dev-only.** `SimulationController` has `@Profile("dev")`. The simulator opens a
@@ -77,19 +95,20 @@ tests alone:
 | root | 100% | n/a |
 | controller | 100% | n/a |
 | dto | 100% | 100% |
-| entity | 98.8% | 100% |
-| integration | 100% | 96.7% |
+| entity | 100% | 100% |
+| integration | 100% | 100% |
 | mapper | 100% | 100% |
 | repository | 100% | 100% |
-| service | 100% | 98.9% |
+| service | 100% | 100% |
 
 Database tests (real PostgreSQL with the Flyway schema and seed data; the project does not use Docker, so run them against a local PostgreSQL with `-Dapp.test.use-testcontainers=false`) check the SQL
 itself: `WarningRepositoryTest`, `HazardRepositoryTest` and `JdbcDirectoriesTest`.
 
 ## Open items
 
-- `@ApplicationModuleListener` on the reports module's verified-report event: the logic and tests
-  are in `HazardEvidenceLinker`; the listener is a thin wrapper to add when that event is merged.
-- Replace the JDBC adapters with the real reports and user queries once they are merged.
-- Optionally run the database tests and `ModularityTests` against a local PostgreSQL; keep the screenshots and
+- Citizens are still read through a read-only JDBC adapter, because the shared `UserDirectory` has no
+  query by area. Replace it when one is added.
+- Lakni's dashboard should inject `ActiveWarningQuery` and listen for the three warning events;
+  test that once her part is merged.
+- Optionally run the database tests against a local PostgreSQL; keep the screenshots and
   coverage page for the report.

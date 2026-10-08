@@ -20,7 +20,6 @@ import lk.dmc.disaster.reports.ReportVerifiedEvent;
 import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.entity.RejectionReason;
 import lk.dmc.disaster.reports.entity.ReportDraft;
-import lk.dmc.disaster.reports.entity.ReportPhoto;
 import lk.dmc.disaster.reports.entity.ReportStatus;
 import lk.dmc.disaster.reports.repository.HazardReportRepository;
 import lk.dmc.disaster.shared.error.BusinessRuleException;
@@ -83,7 +82,7 @@ class ReportVerificationServiceTest {
 
   @Test
   void verify_marksVerifiedSavesAndPublishesEventWithTheReportDetails() {
-    service.verify(report.getId(), OFFICER, "Confirmed on site");
+    service.verify(report.getId(), OFFICER, "Confirmed on site", null);
 
     assertThat(report.getStatus()).isEqualTo(ReportStatus.VERIFIED);
     assertThat(report.getReviewedBy()).isEqualTo(OFFICER);
@@ -98,11 +97,20 @@ class ReportVerificationServiceTest {
   }
 
   @Test
+  void verify_passesTheOfficersSeverityOnInTheEvent() {
+    service.verify(report.getId(), OFFICER, null, 4);
+
+    ArgumentCaptor<ReportVerifiedEvent> event = ArgumentCaptor.forClass(ReportVerifiedEvent.class);
+    verify(events).publishEvent(event.capture());
+    assertThat(event.getValue().severity()).isEqualTo(4);
+  }
+
+  @Test
   void verify_eventForAReportWithoutGpsHasNoCoordinates() {
     HazardReport manual = newReport(null, null, "Next to the old railway bridge");
     when(reports.findWithLockById(manual.getId())).thenReturn(Optional.of(manual));
 
-    service.verify(manual.getId(), OFFICER, null);
+    service.verify(manual.getId(), OFFICER, null, null);
 
     ArgumentCaptor<ReportVerifiedEvent> event = ArgumentCaptor.forClass(ReportVerifiedEvent.class);
     verify(events).publishEvent(event.capture());
@@ -112,30 +120,30 @@ class ReportVerificationServiceTest {
 
   @Test
   void verify_returnsTheDetailViewForOfficers() {
-    assertThat(service.verify(report.getId(), OFFICER, null)).isSameAs(view);
+    assertThat(service.verify(report.getId(), OFFICER, null, null)).isSameAs(view);
   }
 
   @Test
   void verify_alsoWorksFromNeedsMoreInfo() {
     service.requestInfo(report.getId(), OFFICER, "Which side of the bridge?");
 
-    service.verify(report.getId(), OFFICER, "Clarified by phone");
+    service.verify(report.getId(), OFFICER, "Clarified by phone", null);
 
     assertThat(report.getStatus()).isEqualTo(ReportStatus.VERIFIED);
   }
 
   @Test
   void verify_alreadyVerifiedIsAConflictAndPublishesNothingMore() {
-    service.verify(report.getId(), OFFICER, null);
+    service.verify(report.getId(), OFFICER, null, null);
 
-    assertThatThrownBy(() -> service.verify(report.getId(), OFFICER, null))
+    assertThatThrownBy(() -> service.verify(report.getId(), OFFICER, null, null))
         .isInstanceOf(InvalidStateTransitionException.class);
     verify(events).publishEvent(any(ReportVerifiedEvent.class));
   }
 
   @Test
   void verify_ownReportIsRejectedWithoutSavingOrPublishing() {
-    assertThatThrownBy(() -> service.verify(report.getId(), REPORTER, null))
+    assertThatThrownBy(() -> service.verify(report.getId(), REPORTER, null, null))
         .isInstanceOf(BusinessRuleException.class);
 
     assertThat(report.getStatus()).isEqualTo(ReportStatus.PENDING);
@@ -148,7 +156,7 @@ class ReportVerificationServiceTest {
     UUID unknown = UUID.randomUUID();
     when(reports.findWithLockById(unknown)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> service.verify(unknown, OFFICER, null))
+    assertThatThrownBy(() -> service.verify(unknown, OFFICER, null, null))
         .isInstanceOf(NotFoundException.class);
     verifyNoInteractions(events);
   }
@@ -188,7 +196,7 @@ class ReportVerificationServiceTest {
 
   @Test
   void reject_afterVerifiedIsAConflict() {
-    service.verify(report.getId(), OFFICER, null);
+    service.verify(report.getId(), OFFICER, null, null);
 
     assertThatThrownBy(
             () -> service.reject(report.getId(), OFFICER, RejectionReason.DUPLICATE, null))
@@ -235,7 +243,7 @@ class ReportVerificationServiceTest {
 
   @Test
   void requestInfo_afterVerifiedIsAConflict() {
-    service.verify(report.getId(), OFFICER, null);
+    service.verify(report.getId(), OFFICER, null, null);
 
     assertThatThrownBy(() -> service.requestInfo(report.getId(), OFFICER, "Which side?"))
         .isInstanceOf(InvalidStateTransitionException.class);

@@ -13,7 +13,8 @@ import lk.dmc.disaster.shared.error.InvalidStateTransitionException;
 /** The only place that knows which status changes are allowed (State pattern). */
 public final class ReportStatusMachine {
 
-  private static final Map<ReportStatus, Set<ReportStatus>> ALLOWED = new EnumMap<>(ReportStatus.class);
+  private static final Map<ReportStatus, Set<ReportStatus>> ALLOWED =
+      new EnumMap<>(ReportStatus.class);
 
   static {
     ALLOWED.put(PENDING, Set.of(VERIFIED, REJECTED, NEEDS_MORE_INFO));

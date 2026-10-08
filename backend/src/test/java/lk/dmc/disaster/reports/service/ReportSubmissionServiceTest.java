@@ -291,8 +291,7 @@ class ReportSubmissionServiceTest {
   @Test
   void submit_captureTimeFourMinutesAheadIsAccepted() {
     SubmissionResult result =
-        service.submit(
-            REPORTER, command(UUID.randomUUID(), NOW.plus(Duration.ofMinutes(4)), null));
+        service.submit(REPORTER, command(UUID.randomUUID(), NOW.plus(Duration.ofMinutes(4)), null));
 
     assertThat(result.created()).isTrue();
   }
@@ -320,8 +319,7 @@ class ReportSubmissionServiceTest {
     assertThatThrownBy(
             () ->
                 service.submit(
-                    REPORTER,
-                    command(UUID.randomUUID(), NOW, new PhotoUpload("image/jpeg", JPEG))))
+                    REPORTER, command(UUID.randomUUID(), NOW, new PhotoUpload("image/jpeg", JPEG))))
         .isInstanceOfSatisfying(
             AppException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.VALIDATION_ERROR));
     verify(reports, never()).save(any());
@@ -363,7 +361,8 @@ class ReportSubmissionServiceTest {
     givenStoredPhoto();
     when(reports.findByClientRef(command.clientRef()))
         .thenReturn(Optional.empty(), Optional.of(winner));
-    when(reports.save(any(HazardReport.class))).thenThrow(new DataIntegrityViolationException("dup"));
+    when(reports.save(any(HazardReport.class)))
+        .thenThrow(new DataIntegrityViolationException("dup"));
 
     SubmissionResult result = service.submit(REPORTER, command);
 
@@ -378,7 +377,8 @@ class ReportSubmissionServiceTest {
     HazardReport winner = reportOf(command, UUID.randomUUID());
     when(reports.findByClientRef(command.clientRef()))
         .thenReturn(Optional.empty(), Optional.of(winner));
-    when(reports.save(any(HazardReport.class))).thenThrow(new DataIntegrityViolationException("dup"));
+    when(reports.save(any(HazardReport.class)))
+        .thenThrow(new DataIntegrityViolationException("dup"));
 
     assertThatThrownBy(() -> service.submit(REPORTER, command))
         .isInstanceOf(ConflictException.class);

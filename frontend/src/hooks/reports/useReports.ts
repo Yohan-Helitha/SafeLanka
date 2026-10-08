@@ -59,7 +59,10 @@ function useReviewInvalidation() {
 
 export function useVerifyReport() {
   const invalidate = useReviewInvalidation()
-  return useMutation({ mutationFn: (id: string) => api.reports.verify(id), onSuccess: invalidate })
+  return useMutation({
+    mutationFn: (v: { id: string; severity?: number }) => api.reports.verify(v.id, v.severity),
+    onSuccess: invalidate,
+  })
 }
 
 export function useRejectReport() {

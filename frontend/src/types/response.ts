@@ -79,6 +79,8 @@ export interface Shelter {
   level: OccupancyLevel
   status: ShelterStatus
   coordinatorId: Id | null
+  createdAt?: string
+  updatedAt?: string
 }
 
 export interface ShelterSuggestion extends Shelter {

@@ -54,7 +54,8 @@ public class ReportQueryService {
   @Transactional(readOnly = true)
   public Page<ReportWithPhoto> mine(UUID reporterId, int page, int size) {
     Page<HazardReport> found =
-        reports.findByReporterIdOrderByCapturedAtDesc(reporterId, pageable(page, size, Sort.unsorted()));
+        reports.findByReporterIdOrderByCapturedAtDesc(
+            reporterId, pageable(page, size, Sort.unsorted()));
     Map<UUID, ReportPhoto> photoByReport = photosOf(found.getContent());
     return found.map(r -> new ReportWithPhoto(r, photoByReport.get(r.getId())));
   }
@@ -69,9 +70,7 @@ public class ReportQueryService {
             pageable(page, size, Sort.by(Sort.Direction.ASC, "capturedAt")));
     Map<UUID, ReportPhoto> photoByReport = photosOf(found.getContent());
     return found.map(
-        r ->
-            new QueueItem(
-                r, photoByReport.containsKey(r.getId()), isOpenWithDuplicates(r)));
+        r -> new QueueItem(r, photoByReport.containsKey(r.getId()), isOpenWithDuplicates(r)));
   }
 
   /**

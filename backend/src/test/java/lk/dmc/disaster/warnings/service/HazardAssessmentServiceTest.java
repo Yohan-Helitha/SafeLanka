@@ -173,6 +173,39 @@ class HazardAssessmentServiceTest {
         .satisfies(e -> assertCode(e, ErrorCode.NOT_FOUND));
   }
 
+  // ---- setSeverity -------------------------------------------------------------------------
+
+  @Test
+  void setSeverity_changesTheSeverityUpOrDown() {
+    Hazard hazard = ServiceFixtures.manualHazard(DISTRICT);
+    when(hazards.findById(hazard.getId())).thenReturn(Optional.of(hazard));
+
+    assertThat(service.setSeverity(hazard.getId(), 5).getSeverity()).isEqualTo(5);
+    assertThat(service.setSeverity(hazard.getId(), 1).getSeverity()).isEqualTo(1);
+  }
+
+  @Test
+  void setSeverity_unknownHazard_isNotFound() {
+    UUID id = UUID.randomUUID();
+    when(hazards.findById(id)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> service.setSeverity(id, 3))
+        .satisfies(e -> assertCode(e, ErrorCode.NOT_FOUND));
+  }
+
+  @Test
+  void setSeverity_badValueOrResolvedHazard_isRejected() {
+    Hazard hazard = ServiceFixtures.manualHazard(DISTRICT);
+    when(hazards.findById(hazard.getId())).thenReturn(Optional.of(hazard));
+
+    assertThatThrownBy(() -> service.setSeverity(hazard.getId(), 9))
+        .satisfies(e -> assertCode(e, ErrorCode.VALIDATION_ERROR));
+
+    hazard.assessAs(HazardStatus.RESOLVED);
+    assertThatThrownBy(() -> service.setSeverity(hazard.getId(), 2))
+        .satisfies(e -> assertCode(e, ErrorCode.INVALID_STATE_TRANSITION));
+  }
+
   @Test
   void setStatus_resolvedHazard_cannotBeReopened() {
     Hazard hazard = ServiceFixtures.manualHazard(DISTRICT);

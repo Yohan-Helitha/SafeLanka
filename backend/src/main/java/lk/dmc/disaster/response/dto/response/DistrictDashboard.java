@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Response model for the District Officer Dashboard.
- * Matches frontend types: ResponseDashboard & ActivityEntry (frontend/src/types/response.ts).
+ * Response model for the District Officer Dashboard. Matches frontend types: ResponseDashboard &
+ * ActivityEntry (frontend/src/types/response.ts).
  */
 public record DistrictDashboard(
     UUID districtId,
@@ -22,9 +22,5 @@ public record DistrictDashboard(
     long activeWarnings,
     List<ActivityEntry> activity) {
 
-  public record ActivityEntry(
-      UUID id,
-      String type,
-      String message,
-      Instant occurredAt) {}
+  public record ActivityEntry(UUID id, String type, String message, Instant occurredAt) {}
 }

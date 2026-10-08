@@ -11,6 +11,6 @@ public class LatitudeValidator implements ConstraintValidator<ValidLatitude, Num
       return true;
     }
     double lat = value.doubleValue();
-    return lat >= -90.0 && lat <= 90.0 && !Double.isNaN(lat) && !Double.isInfinite(lat);
+    return lat >= -90.0 && lat <= 90.0;
   }
 }

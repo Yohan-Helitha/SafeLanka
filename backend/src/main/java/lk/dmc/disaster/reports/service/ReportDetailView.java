@@ -6,8 +6,8 @@ import lk.dmc.disaster.reports.entity.ReportPhoto;
 import lk.dmc.disaster.shared.reference.UserView;
 
 /**
- * A report with its reporter and, once decided, its reviewer (null before). {@code duplicates} is filled for officers only, so a citizen never
- * sees other people's reports.
+ * A report with its reporter and, once decided, its reviewer (null before). {@code duplicates} is
+ * filled for officers only, so a citizen never sees other people's reports.
  */
 public record ReportDetailView(
     HazardReport report,

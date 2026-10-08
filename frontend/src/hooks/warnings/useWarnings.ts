@@ -54,6 +54,14 @@ export function useSetHazardStatus() {
   })
 }
 
+export function useSetHazardSeverity() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { id: string; severity: number }) => api.warnings.setHazardSeverity(v.id, v.severity),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: warningKeys.all }),
+  })
+}
+
 export function useAudience(districtIds: string[], basinIds: string[]) {
   return useQuery({
     queryKey: warningKeys.audience(districtIds, basinIds),

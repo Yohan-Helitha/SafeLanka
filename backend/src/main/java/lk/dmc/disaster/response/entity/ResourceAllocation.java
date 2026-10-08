@@ -60,11 +60,7 @@ public class ResourceAllocation {
   private Instant updatedAt;
 
   public static ResourceAllocation create(
-      UUID stockId,
-      UUID shelterId,
-      UUID eventId,
-      int quantity,
-      UUID allocatedBy) {
+      UUID stockId, UUID shelterId, UUID eventId, int quantity, UUID allocatedBy) {
     ResourceAllocation a = new ResourceAllocation();
     a.id = UUID.randomUUID();
     a.stockId = stockId;

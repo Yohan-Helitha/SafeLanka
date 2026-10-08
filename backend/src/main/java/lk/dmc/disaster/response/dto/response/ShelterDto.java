@@ -22,9 +22,18 @@ public record ShelterDto(
 
   public static ShelterDto from(Shelter shelter) {
     return new ShelterDto(
-        shelter.getId(), shelter.getName(), shelter.getDistrictId(), shelter.getAddress(),
-        shelter.getLatitude(), shelter.getLongitude(), shelter.getCapacity(),
-        shelter.getCurrentOccupancy(), shelter.getStatus(), shelter.getCoordinatorId(),
-        shelter.getVersion(), shelter.getCreatedAt(), shelter.getUpdatedAt());
+        shelter.getId(),
+        shelter.getName(),
+        shelter.getDistrictId(),
+        shelter.getAddress(),
+        shelter.getLatitude(),
+        shelter.getLongitude(),
+        shelter.getCapacity(),
+        shelter.getCurrentOccupancy(),
+        shelter.getStatus(),
+        shelter.getCoordinatorId(),
+        shelter.getVersion(),
+        shelter.getCreatedAt(),
+        shelter.getUpdatedAt());
   }
 }

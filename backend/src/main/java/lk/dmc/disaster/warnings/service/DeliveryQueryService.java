@@ -10,6 +10,7 @@ import lk.dmc.disaster.shared.error.ErrorCode;
 import lk.dmc.disaster.warnings.entity.Channel;
 import lk.dmc.disaster.warnings.entity.DeliveryStatus;
 import lk.dmc.disaster.warnings.entity.NotificationDelivery;
+import lk.dmc.disaster.warnings.entity.Warning;
 import lk.dmc.disaster.warnings.integration.CitizenDirectory;
 import lk.dmc.disaster.warnings.repository.DeliveryCount;
 import lk.dmc.disaster.warnings.repository.DeliveryRepository;
@@ -36,20 +37,21 @@ public class DeliveryQueryService {
   }
 
   /**
-   * Totals for the warning, overall and per channel.
+   * Totals for the warning at its current level, overall and per channel. People reached counts
+   * everyone the warning was ever sent to.
    *
    * @throws AppException NOT_FOUND for an unknown warning
    */
   @Transactional(readOnly = true)
   public DeliveryOutcome summary(UUID warningId) {
-    requireWarning(warningId);
-    return outcomeOf(warningId);
+    return outcomeOf(requireWarning(warningId));
   }
 
-  /** Totals for a warning the caller has already loaded, so no existence check is repeated. */
+  /** Totals for a warning the caller has already loaded, so no lookup is repeated. */
   @Transactional(readOnly = true)
-  DeliveryOutcome outcomeOf(UUID warningId) {
-    List<DeliveryCount> counts = deliveries.countByChannelAndStatus(warningId);
+  DeliveryOutcome outcomeOf(Warning warning) {
+    UUID warningId = warning.getId();
+    List<DeliveryCount> counts = deliveries.countByChannelAndStatus(warningId, warning.getLevel());
     Map<Channel, List<DeliveryCount>> byChannel =
         counts.stream()
             .collect(
@@ -74,7 +76,7 @@ public class DeliveryQueryService {
   }
 
   /**
-   * One page of the warning's deliveries, each with the person's district.
+   * One page of the warning's deliveries at its current level, each with the person's district.
    *
    * @param status only this status, or null for all
    * @param channel only this channel, or null for all
@@ -83,10 +85,11 @@ public class DeliveryQueryService {
   @Transactional(readOnly = true)
   public Page<DeliveryItem> list(
       UUID warningId, DeliveryStatus status, Channel channel, Pageable pageable) {
-    requireWarning(warningId);
+    Warning warning = requireWarning(warningId);
     Page<NotificationDelivery> page =
         deliveries.findAll(
             DeliverySpecifications.forWarning(warningId)
+                .and(DeliverySpecifications.atLevel(warning.getLevel()))
                 .and(DeliverySpecifications.withStatus(status))
                 .and(DeliverySpecifications.onChannel(channel)),
             pageable);
@@ -96,10 +99,10 @@ public class DeliveryQueryService {
     return page.map(d -> new DeliveryItem(d, districts.get(d.getCitizenId())));
   }
 
-  private void requireWarning(UUID warningId) {
-    if (!warnings.existsById(warningId)) {
-      throw new AppException(ErrorCode.NOT_FOUND, "Warning not found.");
-    }
+  private Warning requireWarning(UUID warningId) {
+    return warnings
+        .findById(warningId)
+        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Warning not found."));
   }
 
   private static long total(List<DeliveryCount> counts, DeliveryStatus status) {

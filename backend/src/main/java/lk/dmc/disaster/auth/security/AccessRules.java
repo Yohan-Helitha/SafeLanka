@@ -34,7 +34,11 @@ final class AccessRules {
         .hasAnyRole(name(Role.CITIZEN), name(Role.VOLUNTEER), name(Role.DMC_OFFICER))
         // Warnings: public alerts for all roles
         .requestMatchers(HttpMethod.GET, "/api/warnings/active/mine")
-        .hasAnyRole(name(Role.CITIZEN), name(Role.VOLUNTEER), name(Role.DISTRICT_OFFICER), name(Role.DMC_OFFICER))
+        .hasAnyRole(
+            name(Role.CITIZEN),
+            name(Role.VOLUNTEER),
+            name(Role.DISTRICT_OFFICER),
+            name(Role.DMC_OFFICER))
         .requestMatchers(HttpMethod.GET, "/api/warnings/**")
         .permitAll()
         .requestMatchers("/api/warnings/**", "/api/hazards/**", "/api/simulation/**")

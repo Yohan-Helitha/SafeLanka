@@ -46,9 +46,7 @@ public class RescueTeamsServiceImpl implements RescueTeamsService {
             .map(RescueTeamDto::from)
             .toList();
       }
-      return teams.findByDistrictId(districtId).stream()
-          .map(RescueTeamDto::from)
-          .toList();
+      return teams.findByDistrictId(districtId).stream().map(RescueTeamDto::from).toList();
     }
 
     if (Boolean.TRUE.equals(available)) {
@@ -57,21 +55,22 @@ public class RescueTeamsServiceImpl implements RescueTeamsService {
           .map(RescueTeamDto::from)
           .toList();
     }
-    return teams.findAll().stream()
-        .map(RescueTeamDto::from)
-        .toList();
+    return teams.findAll().stream().map(RescueTeamDto::from).toList();
   }
 
   @Override
   public RescueTeamDto updateTeamStatus(
       UUID teamId, String toStatus, Instant changedAt, boolean recordedOffline) {
-    RescueTeam team = teams.findById(teamId)
-        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Team not found"));
+    RescueTeam team =
+        teams
+            .findById(teamId)
+            .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Team not found"));
 
     var user = actingUser != null ? actingUser.require() : null;
     validator.validateStatusUpdate(
         team,
-        new lk.dmc.disaster.response.dto.request.TeamStatusUpdateRequest(toStatus, null, changedAt, recordedOffline),
+        new lk.dmc.disaster.response.dto.request.TeamStatusUpdateRequest(
+            toStatus, null, changedAt, recordedOffline),
         user);
 
     RescueTeamStatus targetStatus = RescueTeamStatus.valueOf(toStatus);
@@ -79,22 +78,21 @@ public class RescueTeamsServiceImpl implements RescueTeamsService {
     team.updateStatus(targetStatus);
     RescueTeam saved = teams.save(team);
 
-    UUID changedBy = actingUser != null
-        ? actingUser.current().map(ActingUser::id).orElse(null)
-        : null;
+    UUID changedBy =
+        actingUser != null ? actingUser.current().map(ActingUser::id).orElse(null) : null;
 
-    TeamStatusLog log = TeamStatusLog.create(
-        teamId,
-        null,
-        fromStatus,
-        targetStatus.name(),
-        changedBy,
-        changedAt != null ? changedAt : Instant.now(),
-        recordedOffline,
-        null);
+    TeamStatusLog log =
+        TeamStatusLog.create(
+            teamId,
+            null,
+            fromStatus,
+            targetStatus.name(),
+            changedBy,
+            changedAt != null ? changedAt : Instant.now(),
+            recordedOffline,
+            null);
     statusLogs.save(log);
 
     return RescueTeamDto.from(saved);
   }
 }
-

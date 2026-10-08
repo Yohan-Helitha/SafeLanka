@@ -16,8 +16,14 @@ public record ShelterSuggestionDto(
 
   public static ShelterSuggestionDto from(Shelter shelter, double distanceKm) {
     return new ShelterSuggestionDto(
-        shelter.getId(), shelter.getName(), shelter.getAddress(),
-        shelter.getLatitude(), shelter.getLongitude(), shelter.getCapacity(),
-        shelter.getCurrentOccupancy(), shelter.getAvailableCapacity(), distanceKm);
+        shelter.getId(),
+        shelter.getName(),
+        shelter.getAddress(),
+        shelter.getLatitude(),
+        shelter.getLongitude(),
+        shelter.getCapacity(),
+        shelter.getCurrentOccupancy(),
+        shelter.getAvailableCapacity(),
+        distanceKm);
   }
 }

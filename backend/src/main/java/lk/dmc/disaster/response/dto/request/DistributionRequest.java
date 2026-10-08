@@ -9,5 +9,4 @@ public record DistributionRequest(
     @NotNull @Min(1) Integer quantityDistributed,
     Instant distributedAt,
     UUID clientRef,
-    boolean recordedOffline) {
-}
+    boolean recordedOffline) {}

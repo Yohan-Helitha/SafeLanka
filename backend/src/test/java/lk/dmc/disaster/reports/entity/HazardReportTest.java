@@ -100,7 +100,10 @@ class HazardReportTest {
 
   @Test
   void submit_noLocationAtAllIsRejected() {
-    assertThatThrownBy(() -> HazardReport.submit(draft(DESCRIPTION, null, null, null, NOW), REPORTER, "R", CLOCK))
+    assertThatThrownBy(
+            () ->
+                HazardReport.submit(
+                    draft(DESCRIPTION, null, null, null, NOW), REPORTER, "R", CLOCK))
         .isInstanceOf(BusinessRuleException.class);
   }
 
@@ -138,19 +141,25 @@ class HazardReportTest {
 
     assertThat(r.getDescription()).isEqualTo("0123456789");
     assertThatThrownBy(
-            () -> HazardReport.submit(draft("   012345678   ", 6.9, 79.9, null, NOW), REPORTER, "R", CLOCK))
+            () ->
+                HazardReport.submit(
+                    draft("   012345678   ", 6.9, 79.9, null, NOW), REPORTER, "R", CLOCK))
         .isInstanceOf(BusinessRuleException.class);
   }
 
   @Test
   void submit_nullDescriptionIsRejected() {
-    assertThatThrownBy(() -> HazardReport.submit(draft(null, 6.9, 79.9, null, NOW), REPORTER, "R", CLOCK))
+    assertThatThrownBy(
+            () -> HazardReport.submit(draft(null, 6.9, 79.9, null, NOW), REPORTER, "R", CLOCK))
         .isInstanceOf(BusinessRuleException.class);
   }
 
   @Test
   void submit_coordinatesOutsideSriLankaAreRejected() {
-    assertThatThrownBy(() -> HazardReport.submit(draft(DESCRIPTION, 51.5, -0.12, null, NOW), REPORTER, "R", CLOCK))
+    assertThatThrownBy(
+            () ->
+                HazardReport.submit(
+                    draft(DESCRIPTION, 51.5, -0.12, null, NOW), REPORTER, "R", CLOCK))
         .isInstanceOf(BusinessRuleException.class)
         .hasMessageContaining("Sri Lanka");
   }
@@ -159,7 +168,9 @@ class HazardReportTest {
   void submit_captureTimeUpToFiveMinutesAheadIsAccepted() {
     Instant ahead = NOW.plus(Duration.ofMinutes(5));
 
-    assertThat(HazardReport.submit(draft(DESCRIPTION, 6.9, 79.9, null, ahead), REPORTER, "R", CLOCK).getCapturedAt())
+    assertThat(
+            HazardReport.submit(draft(DESCRIPTION, 6.9, 79.9, null, ahead), REPORTER, "R", CLOCK)
+                .getCapturedAt())
         .isEqualTo(ahead);
   }
 
@@ -167,7 +178,10 @@ class HazardReportTest {
   void submit_captureTimeMoreThanFiveMinutesAheadIsRejected() {
     Instant ahead = NOW.plus(Duration.ofMinutes(5)).plusSeconds(1);
 
-    assertThatThrownBy(() -> HazardReport.submit(draft(DESCRIPTION, 6.9, 79.9, null, ahead), REPORTER, "R", CLOCK))
+    assertThatThrownBy(
+            () ->
+                HazardReport.submit(
+                    draft(DESCRIPTION, 6.9, 79.9, null, ahead), REPORTER, "R", CLOCK))
         .isInstanceOf(BusinessRuleException.class)
         .hasMessageContaining("future");
   }
@@ -176,7 +190,10 @@ class HazardReportTest {
   void submit_oldCaptureTimeFromOfflineQueueIsAccepted() {
     Instant yesterday = NOW.minus(Duration.ofHours(20));
 
-    assertThat(HazardReport.submit(draft(DESCRIPTION, 6.9, 79.9, null, yesterday), REPORTER, "R", CLOCK).getSyncedAt())
+    assertThat(
+            HazardReport.submit(
+                    draft(DESCRIPTION, 6.9, 79.9, null, yesterday), REPORTER, "R", CLOCK)
+                .getSyncedAt())
         .isEqualTo(NOW);
   }
 
@@ -222,7 +239,8 @@ class HazardReportTest {
 
     assertThatThrownBy(() -> r.verify(REPORTER, null, CLOCK))
         .isInstanceOfSatisfying(
-            BusinessRuleException.class, e -> assertThat(e.code()).isEqualTo(ErrorCode.BUSINESS_RULE));
+            BusinessRuleException.class,
+            e -> assertThat(e.code()).isEqualTo(ErrorCode.BUSINESS_RULE));
     assertThat(r.getStatus()).isEqualTo(ReportStatus.PENDING);
     assertThat(r.getReviewedBy()).isNull();
   }
@@ -262,10 +280,7 @@ class HazardReportTest {
   }
 
   @ParameterizedTest
-  @EnumSource(
-      value = RejectionReason.class,
-      mode = EnumSource.Mode.EXCLUDE,
-      names = "OTHER")
+  @EnumSource(value = RejectionReason.class, mode = EnumSource.Mode.EXCLUDE, names = "OTHER")
   void reject_commentIsOptionalForNamedReasons(RejectionReason reason) {
     HazardReport r = pending();
 
@@ -285,7 +300,9 @@ class HazardReportTest {
   }
 
   @ParameterizedTest
-  @CsvSource(value = {"null", "''", "'   '"}, nullValues = "null")
+  @CsvSource(
+      value = {"null", "''", "'   '"},
+      nullValues = "null")
   void reject_otherWithoutCommentIsRejected(String comment) {
     HazardReport r = pending();
 

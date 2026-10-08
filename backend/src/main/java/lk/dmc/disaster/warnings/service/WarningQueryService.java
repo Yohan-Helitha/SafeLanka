@@ -71,6 +71,6 @@ public class WarningQueryService {
         target,
         warning.evidenceReportIds(),
         audience.resolveDistricts(AudienceSelection.of(target)),
-        deliveries.outcomeOf(warning.getId()));
+        deliveries.outcomeOf(warning));
   }
 }

@@ -23,7 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 /**
  * Real web stack, real role checks (demo-auth: the {@code X-Acting-User} header names a seeded
- * user), mocked services. The context starts against the configured database but nothing is written.
+ * user), mocked services. The context starts against the configured database but nothing is
+ * written.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

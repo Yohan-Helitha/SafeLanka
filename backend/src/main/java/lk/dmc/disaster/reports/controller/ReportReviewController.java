@@ -46,7 +46,8 @@ class ReportReviewController {
   /** Oldest first; every filter is optional. */
   @Operation(
       summary = "Ground reports queue",
-      description = "Role: DMC_OFFICER. Oldest first; filters status, hazardTypeId, districtId are optional.")
+      description =
+          "Role: DMC_OFFICER. Oldest first; filters status, hazardTypeId, districtId are optional.")
   @GetMapping
   ApiResponse<List<ReportListItemResponse>> queue(
       @RequestParam(required = false) ReportStatus status,
@@ -60,18 +61,21 @@ class ReportReviewController {
 
   @Operation(
       summary = "Verify a report",
-      description = "Role: DMC_OFFICER. Publishes ReportVerifiedEvent. 409 when already decided, 422 for your own report.")
+      description =
+          "Role: DMC_OFFICER. Publishes ReportVerifiedEvent. 409 when already decided, 422 for your own report.")
   @PatchMapping("/{id}/verify")
   ApiResponse<ReportDetailResponse> verify(
       @PathVariable UUID id, @RequestBody(required = false) @Valid VerifyRequest request) {
     String comment = request == null ? null : request.comment();
+    Integer severity = request == null ? null : request.severity();
     return ApiResponse.of(
-        mapper.toDetail(verification.verify(id, actingUser.require().id(), comment)));
+        mapper.toDetail(verification.verify(id, actingUser.require().id(), comment, severity)));
   }
 
   @Operation(
       summary = "Reject a report",
-      description = "Role: DMC_OFFICER. A reason is required; the comment is required when the reason is OTHER.")
+      description =
+          "Role: DMC_OFFICER. A reason is required; the comment is required when the reason is OTHER.")
   @PatchMapping("/{id}/reject")
   ApiResponse<ReportDetailResponse> reject(
       @PathVariable UUID id, @RequestBody @Valid RejectRequest request) {
@@ -83,11 +87,13 @@ class ReportReviewController {
 
   @Operation(
       summary = "Ask the reporter for more information",
-      description = "Role: DMC_OFFICER. Only from PENDING; the comment (5-300 characters) says what is missing.")
+      description =
+          "Role: DMC_OFFICER. Only from PENDING; the comment (5-300 characters) says what is missing.")
   @PatchMapping("/{id}/request-info")
   ApiResponse<ReportDetailResponse> requestInfo(
       @PathVariable UUID id, @RequestBody @Valid RequestInfoRequest request) {
     return ApiResponse.of(
-        mapper.toDetail(verification.requestInfo(id, actingUser.require().id(), request.comment())));
+        mapper.toDetail(
+            verification.requestInfo(id, actingUser.require().id(), request.comment())));
   }
 }

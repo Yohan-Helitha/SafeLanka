@@ -202,19 +202,26 @@ class WarningControllerTest extends ControllerTestSupport {
   }
 
   @Test
-  void escalate_higherLevel_is201WithTheNewWarning() throws Exception {
+  void escalate_higherLevel_is200WithTheSameWarningAtTheNewLevelAndItsHistory() throws Exception {
     ActingUser officer = signedInAs(Role.DMC_OFFICER);
-    Warning next = ControllerFixtures.warning(WarningLevel.EVACUATE);
-    queryReturns(next);
-    when(publication.escalate(any(EscalateCommand.class))).thenReturn(next);
+    warning.escalateTo(
+        WarningLevel.EVACUATE, warning.content(), officer.id(), ControllerFixtures.NOW);
+    when(publication.escalate(any(EscalateCommand.class))).thenReturn(warning);
 
     mvc.perform(
             post("/api/warnings/{id}/escalate", warning.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"level\": \"EVACUATE\", \"confirm\": true}"))
-        .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.data.id").value(next.getId().toString()))
-        .andExpect(jsonPath("$.data.level").value("EVACUATE"));
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.id").value(warning.getId().toString()))
+        .andExpect(jsonPath("$.data.level").value("EVACUATE"))
+        .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+        .andExpect(jsonPath("$.data.levelHistory.length()").value(2))
+        .andExpect(jsonPath("$.data.levelHistory[0].fromLevel").doesNotExist())
+        .andExpect(jsonPath("$.data.levelHistory[0].toLevel").value("WARNING"))
+        .andExpect(jsonPath("$.data.levelHistory[1].fromLevel").value("WARNING"))
+        .andExpect(jsonPath("$.data.levelHistory[1].toLevel").value("EVACUATE"))
+        .andExpect(jsonPath("$.data.levelChangedAt").exists());
 
     ArgumentCaptor<EscalateCommand> command = ArgumentCaptor.forClass(EscalateCommand.class);
     verify(publication).escalate(command.capture());

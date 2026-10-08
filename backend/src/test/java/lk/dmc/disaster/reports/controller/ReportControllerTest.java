@@ -55,7 +55,8 @@ class ReportControllerTest extends ReportWebTestSupport {
   }
 
   private static MockMultipartFile photoPart() {
-    return new MockMultipartFile("photo", "p.jpg", "image/jpeg", new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 1});
+    return new MockMultipartFile(
+        "photo", "p.jpg", "image/jpeg", new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, 1});
   }
 
   // ---- submit -------------------------------------------------------------------------------
@@ -66,7 +67,10 @@ class ReportControllerTest extends ReportWebTestSupport {
     when(submission.submit(any(), any())).thenReturn(new SubmissionResult(report, null, true));
 
     mvc.perform(
-            multipart("/api/reports").file(reportPart(body())).file(photoPart()).header(HEADER, CITIZEN))
+            multipart("/api/reports")
+                .file(reportPart(body()))
+                .file(photoPart())
+                .header(HEADER, CITIZEN))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.data.id").value(report.getId().toString()))
         .andExpect(jsonPath("$.data.referenceNo").value(report.getReferenceNo()))
@@ -74,7 +78,8 @@ class ReportControllerTest extends ReportWebTestSupport {
         .andExpect(jsonPath("$.data.hasPhoto").value(false))
         .andExpect(jsonPath("$.meta").doesNotExist());
 
-    ArgumentCaptor<SubmitReportCommand> command = ArgumentCaptor.forClass(SubmitReportCommand.class);
+    ArgumentCaptor<SubmitReportCommand> command =
+        ArgumentCaptor.forClass(SubmitReportCommand.class);
     verify(submission).submit(eq(UUID.fromString(CITIZEN)), command.capture());
     assertThat(command.getValue().category()).isEqualTo("RISING_WATER");
     assertThat(command.getValue().latitude()).isEqualTo(6.9391);
@@ -89,7 +94,8 @@ class ReportControllerTest extends ReportWebTestSupport {
     mvc.perform(multipart("/api/reports").file(reportPart(body())).header(HEADER, VOLUNTEER))
         .andExpect(status().isCreated());
 
-    ArgumentCaptor<SubmitReportCommand> command = ArgumentCaptor.forClass(SubmitReportCommand.class);
+    ArgumentCaptor<SubmitReportCommand> command =
+        ArgumentCaptor.forClass(SubmitReportCommand.class);
     verify(submission).submit(any(), command.capture());
     assertThat(command.getValue().photo()).isNull();
   }
@@ -220,7 +226,8 @@ class ReportControllerTest extends ReportWebTestSupport {
         .andExpect(jsonPath("$.data.reporter.role").value("CITIZEN"))
         .andExpect(jsonPath("$.data.reviewedBy").isEmpty())
         .andExpect(jsonPath("$.data.hasDuplicates").value(true))
-        .andExpect(jsonPath("$.data.possibleDuplicates[0].referenceNo").value(other.getReferenceNo()))
+        .andExpect(
+            jsonPath("$.data.possibleDuplicates[0].referenceNo").value(other.getReferenceNo()))
         .andExpect(jsonPath("$.data.possibleDuplicates[0].distanceMetres").value(85));
   }
 
@@ -292,7 +299,8 @@ class ReportControllerTest extends ReportWebTestSupport {
 
   @Test
   void photo_districtOfficerRoleIs403() throws Exception {
-    mvc.perform(get("/api/reports/" + UUID.randomUUID() + "/photo").header(HEADER, DISTRICT_OFFICER))
+    mvc.perform(
+            get("/api/reports/" + UUID.randomUUID() + "/photo").header(HEADER, DISTRICT_OFFICER))
         .andExpect(status().isForbidden());
   }
 }

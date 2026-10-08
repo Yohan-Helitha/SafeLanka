@@ -11,6 +11,7 @@ import lk.dmc.disaster.shared.domain.Role;
 import lk.dmc.disaster.warnings.dto.CreateHazardRequest;
 import lk.dmc.disaster.warnings.dto.HazardDetail;
 import lk.dmc.disaster.warnings.dto.HazardListItem;
+import lk.dmc.disaster.warnings.dto.HazardSeverityRequest;
 import lk.dmc.disaster.warnings.dto.HazardStatusRequest;
 import lk.dmc.disaster.warnings.entity.Hazard;
 import lk.dmc.disaster.warnings.entity.HazardStatus;
@@ -80,6 +81,18 @@ class HazardController {
   ApiResponse<HazardDetail> setStatus(
       @PathVariable UUID id, @Valid @RequestBody HazardStatusRequest request) {
     assessment.setStatus(id, request.status());
+    return ApiResponse.of(mapper.toDetail(query.detail(id)));
+  }
+
+  @Operation(
+      summary = "Set how dangerous a hazard is (1 to 5)",
+      description =
+          "Verified reports raise the severity by themselves as they arrive; the officer can set"
+              + " it up or down. A resolved hazard cannot be changed (409).")
+  @PatchMapping("/{id}/severity")
+  ApiResponse<HazardDetail> setSeverity(
+      @PathVariable UUID id, @Valid @RequestBody HazardSeverityRequest request) {
+    assessment.setSeverity(id, request.severity());
     return ApiResponse.of(mapper.toDetail(query.detail(id)));
   }
 }

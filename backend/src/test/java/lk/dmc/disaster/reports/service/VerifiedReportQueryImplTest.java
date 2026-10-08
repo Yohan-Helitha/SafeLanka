@@ -51,7 +51,8 @@ class VerifiedReportQueryImplTest {
     when(reports.findAll(any(Specification.class), any(Pageable.class)))
         .thenReturn(new PageImpl<>(List.of(withPhoto, without)));
     when(photos.findByReportIdIn(any()))
-        .thenReturn(List.of(ReportPhoto.attach(withPhoto.getId(), "reports/a.jpg", "image/jpeg", 9)));
+        .thenReturn(
+            List.of(ReportPhoto.attach(withPhoto.getId(), "reports/a.jpg", "image/jpeg", 9)));
 
     List<VerifiedReportSummary> result = query.findVerified(VerifiedReportFilter.any());
 
@@ -72,20 +73,21 @@ class VerifiedReportQueryImplTest {
 
   @Test
   void findVerified_asksNewestVerificationFirstWithATwoHundredRowCap() {
-    when(reports.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+    when(reports.findAll(any(Specification.class), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of()));
 
     query.findVerified(VerifiedReportFilter.any());
 
     ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
     verify(reports).findAll(any(Specification.class), pageable.capture());
     assertThat(pageable.getValue().getPageSize()).isEqualTo(200);
-    assertThat(pageable.getValue().getSort())
-        .isEqualTo(Sort.by(Sort.Direction.DESC, "reviewedAt"));
+    assertThat(pageable.getValue().getSort()).isEqualTo(Sort.by(Sort.Direction.DESC, "reviewedAt"));
   }
 
   @Test
   void findVerified_nothingFoundMeansEmptyListAndNoPhotoQuery() {
-    when(reports.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+    when(reports.findAll(any(Specification.class), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of()));
 
     assertThat(query.findVerified(VerifiedReportFilter.any())).isEmpty();
     verifyNoInteractions(photos);
@@ -93,7 +95,8 @@ class VerifiedReportQueryImplTest {
 
   @Test
   void findVerified_nullFilterMeansAny() {
-    when(reports.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+    when(reports.findAll(any(Specification.class), any(Pageable.class)))
+        .thenReturn(new PageImpl<>(List.of()));
 
     assertThat(query.findVerified(null)).isEmpty();
   }

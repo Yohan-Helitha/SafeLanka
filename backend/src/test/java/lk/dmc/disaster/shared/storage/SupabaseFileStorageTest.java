@@ -90,7 +90,9 @@ class SupabaseFileStorageTest {
 
   @Test
   void store_serverErrorBecomesAnUnavailableError() {
-    server.expect(requestTo(matchesPattern(ROOT + "/object/evidence/.*"))).andRespond(withServerError());
+    server
+        .expect(requestTo(matchesPattern(ROOT + "/object/evidence/.*")))
+        .andRespond(withServerError());
 
     assertThatThrownBy(() -> storage.store("reports", "image/jpeg", JPEG))
         .isInstanceOfSatisfying(
@@ -143,8 +145,10 @@ class SupabaseFileStorageTest {
 
   @Test
   void load_pathsThatWereNeverStoredAreNotFoundWithoutAnyRequest() {
-    assertThatThrownBy(() -> storage.load("../secrets/key.jpg")).isInstanceOf(NotFoundException.class);
-    assertThatThrownBy(() -> storage.load("reports/not-a-uuid.jpg")).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> storage.load("../secrets/key.jpg"))
+        .isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> storage.load("reports/not-a-uuid.jpg"))
+        .isInstanceOf(NotFoundException.class);
     assertThatThrownBy(() -> storage.load("other/" + UUID.randomUUID() + ".gif"))
         .isInstanceOf(NotFoundException.class);
     server.verify();
@@ -194,18 +198,21 @@ class SupabaseFileStorageTest {
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("SUPABASE_URL");
     assertThatThrownBy(
-            () -> new SupabaseFileStorage(RestClient.builder(), "https://abc.supabase.co", " ", "evidence"))
+            () ->
+                new SupabaseFileStorage(
+                    RestClient.builder(), "https://abc.supabase.co", " ", "evidence"))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("SUPABASE_SERVICE_KEY");
-    assertThatThrownBy(
-            () -> new SupabaseFileStorage(RestClient.builder(), null, null, "evidence"))
+    assertThatThrownBy(() -> new SupabaseFileStorage(RestClient.builder(), null, null, "evidence"))
         .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
   void construction_withAnUnsafeBucketNameIsRejected() {
     assertThatThrownBy(
-            () -> new SupabaseFileStorage(RestClient.builder(), "https://abc.supabase.co", KEY, "a/b"))
+            () ->
+                new SupabaseFileStorage(
+                    RestClient.builder(), "https://abc.supabase.co", KEY, "a/b"))
         .isInstanceOf(IllegalArgumentException.class);
   }
 }

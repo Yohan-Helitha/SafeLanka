@@ -96,7 +96,11 @@ class SupabaseFileStorage implements FileStorage {
     }
     try {
       byte[] bytes =
-          client.get().uri("/object/authenticated/" + bucket + "/" + path).retrieve().body(byte[].class);
+          client
+              .get()
+              .uri("/object/authenticated/" + bucket + "/" + path)
+              .retrieve()
+              .body(byte[].class);
       if (bytes == null) {
         throw new NotFoundException("File not found.");
       }

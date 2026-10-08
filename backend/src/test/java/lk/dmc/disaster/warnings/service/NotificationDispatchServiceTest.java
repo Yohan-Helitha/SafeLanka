@@ -112,12 +112,28 @@ class NotificationDispatchServiceTest {
         .allSatisfy(
             d -> {
               assertThat(d.getWarningId()).isEqualTo(warning.getId());
+              assertThat(d.getLevel()).isEqualTo(WarningLevel.WARNING);
               assertThat(d.getAttemptedAt()).isEqualTo(NOW);
               assertThat(d.getDeliveredAt()).isEqualTo(NOW);
               assertThat(d.getStatus()).isEqualTo(DeliveryStatus.DELIVERED);
             })
         .extracting(NotificationDelivery::getCitizenId)
         .containsOnly(citizens.toArray(UUID[]::new));
+  }
+
+  @Test
+  void dispatch_afterEscalation_recordsTheNewLevelAndAddsTheAudibleChannel() {
+    audienceIs(citizens);
+    allChannelsEnabled();
+    Warning warning = warning(WarningLevel.WATCH);
+    warning.escalateTo(WarningLevel.EVACUATE, warning.content(), UUID.randomUUID(), NOW);
+
+    serviceWithAllSimulators(NO_FAILURES).dispatch(warning);
+
+    assertThat(savedDeliveries())
+        .hasSize(9)
+        .extracting(NotificationDelivery::getLevel)
+        .containsOnly(WarningLevel.EVACUATE);
   }
 
   @Test

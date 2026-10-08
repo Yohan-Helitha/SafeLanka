@@ -68,6 +68,14 @@ export interface DeliverySummary {
   byChannel: Record<Channel, { delivered: number; failed: number }>
 }
 
+/** One step of a warning's level history; `from` is null for the level it was issued at. */
+export interface LevelChange {
+  from: WarningLevel | null
+  to: WarningLevel
+  changedBy: Id
+  changedAt: string
+}
+
 export interface WarningListItem {
   id: Id
   hazardId: Id
@@ -77,6 +85,10 @@ export interface WarningListItem {
   districtIds: Id[]
   riverBasinIds: Id[]
   issuedAt: string
+  /** When the level last changed: the issue time until the warning is escalated. */
+  levelChangedAt: string
+  /** Every level the warning has had, oldest first. */
+  levelHistory: LevelChange[]
   reached: number
 }
 
@@ -87,7 +99,6 @@ export interface Warning extends WarningListItem {
   smsText: string
   instructions: string
   issuedBy: Id
-  supersedesId: Id | null
   cancelledAt: string | null
   cancelReason: string | null
   reportIds: Id[]

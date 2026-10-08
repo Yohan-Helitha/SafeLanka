@@ -14,7 +14,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidTeamStatus {
 
-  String message() default "Invalid team status. Must be one of: AVAILABLE, DISPATCHED, EN_ROUTE, ACTIVE, OFFLINE_UNKNOWN";
+  String message() default
+      "Invalid team status. Must be one of: AVAILABLE, DISPATCHED, EN_ROUTE, ACTIVE, OFFLINE_UNKNOWN";
 
   Class<?>[] groups() default {};
 

@@ -81,7 +81,8 @@ public class NotificationDispatchService {
   private NotificationDelivery sendOne(
       NotificationChannel channel, Warning warning, UUID citizenId) {
     NotificationDelivery delivery =
-        NotificationDelivery.queue(warning.getId(), citizenId, channel.channel(), clock.instant());
+        NotificationDelivery.queue(
+            warning.getId(), citizenId, channel.channel(), warning.getLevel(), clock.instant());
     DeliveryResult result = sendSafely(channel, DeliveryRequest.of(warning, citizenId));
     if (result.success()) {
       delivery.delivered(clock.instant());

@@ -39,12 +39,7 @@ public class OccupancyLog {
   private Instant recordedAt;
 
   public static OccupancyLog create(
-      UUID shelterId,
-      UUID eventId,
-      int occupancy,
-      int delta,
-      UUID recordedBy,
-      Instant recordedAt) {
+      UUID shelterId, UUID eventId, int occupancy, int delta, UUID recordedBy, Instant recordedAt) {
     OccupancyLog log = new OccupancyLog();
     log.id = UUID.randomUUID();
     log.shelterId = shelterId;

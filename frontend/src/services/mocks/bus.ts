@@ -1,6 +1,6 @@
 /** Tiny in-browser event bus mirroring the Spring Modulith events between modules. */
 export type MockEvent =
-  | { type: 'ReportVerified'; reportId: string }
+  | { type: 'ReportVerified'; reportId: string; severity?: number }
   | { type: 'WarningPublished'; warningId: string }
   | { type: 'WarningEscalated'; warningId: string }
   | { type: 'WarningCancelled'; warningId: string }

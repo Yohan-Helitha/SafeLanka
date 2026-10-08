@@ -1,4 +1,3 @@
-import type { AnalyticsEvent, DisasterReport, ReportSummary } from '@/types'
 import { http } from '../http'
 import type { AnalyticsApi } from './analyticsApi'
 
