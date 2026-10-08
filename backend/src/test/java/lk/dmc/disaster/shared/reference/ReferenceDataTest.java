@@ -18,7 +18,8 @@ class ReferenceDataTest {
         @Override
         public Optional<HazardTypeInfo> hazardType(UUID id) {
           return FLOOD.equals(id)
-              ? Optional.of(new HazardTypeInfo(FLOOD, "FLOOD", "Flood", true, List.of("RISING_WATER")))
+              ? Optional.of(
+                  new HazardTypeInfo(FLOOD, "FLOOD", "Flood", true, List.of("RISING_WATER")))
               : Optional.empty();
         }
 

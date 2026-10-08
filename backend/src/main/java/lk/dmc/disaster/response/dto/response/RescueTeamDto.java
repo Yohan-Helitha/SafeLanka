@@ -18,8 +18,14 @@ public record RescueTeamDto(
 
   public static RescueTeamDto from(RescueTeam team) {
     return new RescueTeamDto(
-        team.getId(), team.getName(), team.getOrganisationId(), team.getDistrictId(),
-        team.getTeamType(), team.getCapacity(), team.getStatus(),
-        team.getLastStatusAt(), team.getVersion());
+        team.getId(),
+        team.getName(),
+        team.getOrganisationId(),
+        team.getDistrictId(),
+        team.getTeamType(),
+        team.getCapacity(),
+        team.getStatus(),
+        team.getLastStatusAt(),
+        team.getVersion());
   }
 }

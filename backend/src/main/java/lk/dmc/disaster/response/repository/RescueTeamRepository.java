@@ -8,10 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RescueTeamRepository extends JpaRepository<RescueTeam, UUID> {
 
-  List<RescueTeam> findByDistrictIdAndStatus(UUID districtId, lk.dmc.disaster.response.entity.RescueTeamStatus status);
+  List<RescueTeam> findByDistrictIdAndStatus(
+      UUID districtId, lk.dmc.disaster.response.entity.RescueTeamStatus status);
 
   List<RescueTeam> findByDistrictId(UUID districtId);
 
-  Optional<RescueTeam> findByIdAndStatusNotIn(
-      UUID id, List<String> excludedStatuses);
+  Optional<RescueTeam> findByIdAndStatusNotIn(UUID id, List<String> excludedStatuses);
 }

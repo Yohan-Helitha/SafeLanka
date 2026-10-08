@@ -3,12 +3,12 @@ package lk.dmc.disaster.reports.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import jakarta.persistence.EntityManager;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
-import jakarta.persistence.EntityManager;
 import lk.dmc.disaster.TestcontainersConfiguration;
 import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.entity.RejectionReason;
@@ -86,7 +86,8 @@ class HazardReportRepositoryTest {
             district,
             capturedAt);
     return reports.saveAndFlush(
-        HazardReport.submit(draft, by, "TST-" + UUID.randomUUID().toString().substring(0, 8), CLOCK));
+        HazardReport.submit(
+            draft, by, "TST-" + UUID.randomUUID().toString().substring(0, 8), CLOCK));
   }
 
   private HazardReport floodAt(UUID by, Instant capturedAt) {
@@ -204,8 +205,9 @@ class HazardReportRepositoryTest {
   // ---- queue specifications -----------------------------------------------------------------
 
   private List<HazardReport> queue(ReportStatus status, UUID type, UUID district) {
-    var onlyMine = ReportSpecifications.queue(status, type, district)
-        .and((root, q, cb) -> cb.equal(root.get("reporterId"), reporter));
+    var onlyMine =
+        ReportSpecifications.queue(status, type, district)
+            .and((root, q, cb) -> cb.equal(root.get("reporterId"), reporter));
     return reports.findAll(onlyMine, Sort.by("capturedAt").ascending());
   }
 

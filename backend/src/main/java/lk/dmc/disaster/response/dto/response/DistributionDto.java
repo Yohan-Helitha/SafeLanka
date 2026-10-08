@@ -17,9 +17,14 @@ public record DistributionDto(
 
   public static DistributionDto from(ReliefDistribution distribution) {
     return new DistributionDto(
-        distribution.getId(), distribution.getAllocationId(), distribution.getQuantityDistributed(),
-        distribution.getDistributedBy(), distribution.getDistributedAt(),
-        distribution.isRecordedOffline(), distribution.getClientRef(),
-        distribution.getSyncedAt(), distribution.getSyncedAt());
+        distribution.getId(),
+        distribution.getAllocationId(),
+        distribution.getQuantityDistributed(),
+        distribution.getDistributedBy(),
+        distribution.getDistributedAt(),
+        distribution.isRecordedOffline(),
+        distribution.getClientRef(),
+        distribution.getSyncedAt(),
+        distribution.getSyncedAt());
   }
 }

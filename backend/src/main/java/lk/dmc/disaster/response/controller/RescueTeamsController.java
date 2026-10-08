@@ -38,9 +38,9 @@ public class RescueTeamsController {
   @PatchMapping("/{id}/status")
   @RequiresRole({Role.DISTRICT_OFFICER, Role.RESCUE_MEMBER})
   ApiResponse<RescueTeamDto> updateStatus(
-      @PathVariable UUID id,
-      @Valid @RequestBody TeamStatusUpdateRequest request) {
-    return ApiResponse.of(rescueTeamService.updateTeamStatus(
-        id, request.toStatus(), request.changedAt(), request.recordedOffline()));
+      @PathVariable UUID id, @Valid @RequestBody TeamStatusUpdateRequest request) {
+    return ApiResponse.of(
+        rescueTeamService.updateTeamStatus(
+            id, request.toStatus(), request.changedAt(), request.recordedOffline()));
   }
 }

@@ -241,12 +241,19 @@ export function RescueTeamsScreen() {
   const cancel = useCancelAssignment()
   const [assigning, setAssigning] = useState<Assignment | null>(null)
 
-  const teamsList: RescueTeam[] = Array.isArray(teams.data) ? (teams.data as RescueTeam[]) : []
-  const assignmentsList: Assignment[] = Array.isArray(assignments.data)
-    ? (assignments.data as Assignment[])
-    : Array.isArray((assignments.data as any)?.content)
-    ? ((assignments.data as any).content as Assignment[])
-    : []
+  const teamsList: RescueTeam[] = useMemo(
+    () => (Array.isArray(teams.data) ? (teams.data as RescueTeam[]) : []),
+    [teams.data],
+  )
+  const assignmentsList: Assignment[] = useMemo(
+    () =>
+      Array.isArray(assignments.data)
+        ? (assignments.data as Assignment[])
+        : Array.isArray((assignments.data as any)?.content)
+        ? ((assignments.data as any).content as Assignment[])
+        : [],
+    [assignments.data],
+  )
 
   const teamMap = useMemo(() => {
     const map = new Map<string, RescueTeam>()
@@ -318,7 +325,7 @@ export function RescueTeamsScreen() {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-3">
-               <h2 className="text-2xl lg:text-3xl font-bold tracking-tight text-white">Rescue teams</h2>
+              <h1 className="font-display text-2xl font-semibold leading-tight text-ink sm:text-[28px]">Rescue teams</h1>
               <span className="rounded-full border border-cyan-500/30 bg-cyan-950/60 px-2.5 py-0.5 font-mono text-xs font-semibold text-cyan-400">
                 {districtName(user.districtId)} Sector
               </span>

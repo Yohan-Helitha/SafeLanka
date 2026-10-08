@@ -13,32 +13,38 @@ import lk.dmc.disaster.shared.error.ErrorCode;
 import org.springframework.stereotype.Component;
 
 /**
- * Validation logic corresponding to frontend screen:
- * TeamAssignmentScreen (frontend/src/screens/response/TeamAssignmentScreen.tsx).
+ * Validation logic corresponding to frontend screen: TeamAssignmentScreen
+ * (frontend/src/screens/response/TeamAssignmentScreen.tsx).
  *
- * Handles:
- * - Rescue team responding to an assignment (accept / decline).
- * - Rescue team status progression (EN_ROUTE, ACTIVE, AVAILABLE/COMPLETED).
+ * <p>Handles: - Rescue team responding to an assignment (accept / decline). - Rescue team status
+ * progression (EN_ROUTE, ACTIVE, AVAILABLE/COMPLETED).
  */
 @Component
 public class TeamAssignmentScreenValidator {
 
-  public void validateRespond(RescueAssignment assignment, RespondRequest request, ActingUser user) {
+  public void validateRespond(
+      RescueAssignment assignment, RespondRequest request, ActingUser user) {
     if (request == null) {
       throw new AppException(ErrorCode.VALIDATION_ERROR, "Respond request body is required");
     }
 
-    if (user == null || user.rescueTeamId() == null || !user.rescueTeamId().equals(assignment.getTeamId())) {
-      throw new AppException(ErrorCode.FORBIDDEN_ROLE, "Not authorized to respond to this assignment");
+    if (user == null
+        || user.rescueTeamId() == null
+        || !user.rescueTeamId().equals(assignment.getTeamId())) {
+      throw new AppException(
+          ErrorCode.FORBIDDEN_ROLE, "Not authorized to respond to this assignment");
     }
 
     if (assignment.getStatus() != AssignmentStatus.PENDING_ACK) {
       throw new AppException(
           ErrorCode.CONFLICT,
-          "Assignment is in status " + assignment.getStatus().name() + " and cannot be acknowledged/declined");
+          "Assignment is in status "
+              + assignment.getStatus().name()
+              + " and cannot be acknowledged/declined");
     }
 
-    if (!request.accept() && (request.declineReason() == null || request.declineReason().trim().isEmpty())) {
+    if (!request.accept()
+        && (request.declineReason() == null || request.declineReason().trim().isEmpty())) {
       throw new AppException(
           ErrorCode.VALIDATION_ERROR,
           "Decline reason is required when declining an assignment",
@@ -46,9 +52,13 @@ public class TeamAssignmentScreenValidator {
     }
   }
 
-  public void validateStatusUpdate(RescueTeam team, TeamStatusUpdateRequest request, ActingUser user) {
+  public void validateStatusUpdate(
+      RescueTeam team, TeamStatusUpdateRequest request, ActingUser user) {
     if (request == null || request.toStatus() == null || request.toStatus().trim().isEmpty()) {
-      throw new AppException(ErrorCode.VALIDATION_ERROR, "Target status is required", Map.of("toStatus", "Must not be blank"));
+      throw new AppException(
+          ErrorCode.VALIDATION_ERROR,
+          "Target status is required",
+          Map.of("toStatus", "Must not be blank"));
     }
 
     try {
@@ -57,7 +67,9 @@ public class TeamAssignmentScreenValidator {
       throw new AppException(
           ErrorCode.VALIDATION_ERROR,
           "Invalid rescue team status: " + request.toStatus(),
-          Map.of("toStatus", "Must be one of AVAILABLE, DISPATCHED, EN_ROUTE, ACTIVE, OFFLINE_UNKNOWN"));
+          Map.of(
+              "toStatus",
+              "Must be one of AVAILABLE, DISPATCHED, EN_ROUTE, ACTIVE, OFFLINE_UNKNOWN"));
     }
   }
 }

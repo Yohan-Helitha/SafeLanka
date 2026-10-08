@@ -42,11 +42,15 @@ export function DistrictDashboardScreen() {
   const allocations = useAllocations({ districtId: user.districtId })
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all')
 
-  const assignmentList: Assignment[] = Array.isArray(assignments.data)
-    ? (assignments.data as Assignment[])
-    : Array.isArray((assignments.data as any)?.content)
-    ? ((assignments.data as any).content as Assignment[])
-    : []
+  const assignmentList: Assignment[] = useMemo(
+    () =>
+      Array.isArray(assignments.data)
+        ? (assignments.data as Assignment[])
+        : Array.isArray((assignments.data as any)?.content)
+        ? ((assignments.data as any).content as Assignment[])
+        : [],
+    [assignments.data],
+  )
 
   const openAssignments = assignmentList.filter(
     (a) =>
@@ -165,7 +169,7 @@ export function DistrictDashboardScreen() {
             id: `shelter-${s.id}`,
             type: 'SHELTER',
             message: `${s.name} shelter operating at ${occPct}% capacity (${s.currentOccupancy}/${s.capacity} persons accommodated)`,
-            occurredAt: (s as any).updatedAt || (s as any).createdAt || new Date(Date.now() - 3600000).toISOString(),
+            occurredAt: s.updatedAt || s.createdAt || new Date().toISOString(),
             tone: occPct >= 85 ? 'caution' : 'signal',
           })
         }

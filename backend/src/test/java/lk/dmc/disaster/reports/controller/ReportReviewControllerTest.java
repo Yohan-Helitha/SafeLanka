@@ -166,7 +166,8 @@ class ReportReviewControllerTest extends ReportWebTestSupport {
 
   @Test
   void verify_unknownReportIs404() throws Exception {
-    when(verification.verify(any(), any(), any(), any())).thenThrow(new NotFoundException("Report not found."));
+    when(verification.verify(any(), any(), any()))
+        .thenThrow(new NotFoundException("Report not found."));
 
     mvc.perform(patch("/api/reports/" + UUID.randomUUID() + "/verify").header(HEADER, OFFICER))
         .andExpect(status().isNotFound());

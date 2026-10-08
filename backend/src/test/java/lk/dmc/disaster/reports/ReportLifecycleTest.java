@@ -99,13 +99,13 @@ class ReportLifecycleTest {
       throws Exception {
     var request =
         multipart("/api/reports")
-            .file(new MockMultipartFile("report", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes()));
+            .file(
+                new MockMultipartFile(
+                    "report", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes()));
     if (withPhoto) {
       request.file(new MockMultipartFile("photo", "p.jpg", "image/jpeg", JPEG));
     }
-    return mvc.perform(as(userId, request))
-        .andExpect(status().is(expectedStatus))
-        .andReturn();
+    return mvc.perform(as(userId, request)).andExpect(status().is(expectedStatus)).andReturn();
   }
 
   private static String idOf(MvcResult result) throws Exception {
@@ -120,11 +120,17 @@ class ReportLifecycleTest {
     // submit, then the phone retries after a lost response
     MvcResult created = submit(CITIZEN, json, true, 201);
     String id = idOf(created);
-    assertThat(JsonPath.<String>read(created.getResponse().getContentAsString(), "$.data.referenceNo"))
+    assertThat(
+            JsonPath.<String>read(created.getResponse().getContentAsString(), "$.data.referenceNo"))
         .matches("RPT-\\d{4}-\\d{4,}");
     assertThat(idOf(submit(CITIZEN, json, true, 200))).isEqualTo(id);
-    mvc.perform(as(VOLUNTEER, multipart("/api/reports")
-            .file(new MockMultipartFile("report", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes()))))
+    mvc.perform(
+            as(
+                VOLUNTEER,
+                multipart("/api/reports")
+                    .file(
+                        new MockMultipartFile(
+                            "report", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes()))))
         .andExpect(status().isConflict());
 
     // the reporter sees it; others do not
@@ -140,7 +146,8 @@ class ReportLifecycleTest {
         .andExpect(status().isOk())
         .andExpect(content().contentType("image/jpeg"))
         .andExpect(content().bytes(JPEG));
-    mvc.perform(as(VOLUNTEER, get("/api/reports/" + id + "/photo"))).andExpect(status().isForbidden());
+    mvc.perform(as(VOLUNTEER, get("/api/reports/" + id + "/photo")))
+        .andExpect(status().isForbidden());
 
     // the officer queue
     mvc.perform(as(OFFICER, get("/api/reports?status=PENDING&size=100")))
@@ -231,7 +238,9 @@ class ReportLifecycleTest {
           start.await();
           return mvc.perform(
                   multipart("/api/reports")
-                      .file(new MockMultipartFile("report", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes()))
+                      .file(
+                          new MockMultipartFile(
+                              "report", "", MediaType.APPLICATION_JSON_VALUE, json.getBytes()))
                       .file(new MockMultipartFile("photo", "p.jpg", "image/jpeg", JPEG))
                       .header("Authorization", auth))
               .andReturn()
@@ -255,7 +264,9 @@ class ReportLifecycleTest {
     }
     assertThat(
             jdbc.queryForObject(
-                "select count(*) from hazard_reports where client_ref = ?", Integer.class, clientRef))
+                "select count(*) from hazard_reports where client_ref = ?",
+                Integer.class,
+                clientRef))
         .isEqualTo(1);
   }
 }

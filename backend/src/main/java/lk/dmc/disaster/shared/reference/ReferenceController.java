@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Public reference data including districts, river basins, hazard types,
- * organisations, relief items, and disaster events.
+ * Public reference data including districts, river basins, hazard types, organisations, relief
+ * items, and disaster events.
  */
 @RestController
 @RequestMapping("/api/reference")
@@ -61,7 +61,8 @@ class ReferenceController {
 
   @GetMapping("/river-basins")
   ApiResponse<List<RiverBasinDto>> riverBasins() {
-    String sql = """
+    String sql =
+        """
         select rb.id, rb.code, rb.name,
                coalesce(array_agg(drb.district_id) filter (where drb.district_id is not null), '{}') as district_ids
         from river_basins rb
@@ -71,38 +72,42 @@ class ReferenceController {
         """;
     List<RiverBasinDto> basins =
         jdbc.sql(sql)
-            .query((rs, rowNum) -> {
-              java.sql.Array arr = rs.getArray("district_ids");
-              List<UUID> districtIds = parseUuidArray(arr);
-              return new RiverBasinDto(
-                  rs.getObject("id", UUID.class),
-                  rs.getString("code"),
-                  rs.getString("name"),
-                  districtIds);
-            })
+            .query(
+                (rs, rowNum) -> {
+                  java.sql.Array arr = rs.getArray("district_ids");
+                  List<UUID> districtIds = parseUuidArray(arr);
+                  return new RiverBasinDto(
+                      rs.getObject("id", UUID.class),
+                      rs.getString("code"),
+                      rs.getString("name"),
+                      districtIds);
+                })
             .list();
     return ApiResponse.of(basins);
   }
 
   @GetMapping("/hazard-types")
   ApiResponse<List<HazardTypeDto>> hazardTypes(
-      @RequestParam(name = "activeOnly", required = false, defaultValue = "false") boolean activeOnly) {
-    String sql = activeOnly
-        ? "select id, code, name, onset_speed, report_categories, active from hazard_types where active = true order by name"
-        : "select id, code, name, onset_speed, report_categories, active from hazard_types order by name";
+      @RequestParam(name = "activeOnly", required = false, defaultValue = "false")
+          boolean activeOnly) {
+    String sql =
+        activeOnly
+            ? "select id, code, name, onset_speed, report_categories, active from hazard_types where active = true order by name"
+            : "select id, code, name, onset_speed, report_categories, active from hazard_types order by name";
     List<HazardTypeDto> hazardTypes =
         jdbc.sql(sql)
-            .query((rs, rowNum) -> {
-              java.sql.Array arr = rs.getArray("report_categories");
-              List<String> categories = parseStringArray(arr);
-              return new HazardTypeDto(
-                  rs.getObject("id", UUID.class),
-                  rs.getString("code"),
-                  rs.getString("name"),
-                  rs.getString("onset_speed"),
-                  categories,
-                  rs.getBoolean("active"));
-            })
+            .query(
+                (rs, rowNum) -> {
+                  java.sql.Array arr = rs.getArray("report_categories");
+                  List<String> categories = parseStringArray(arr);
+                  return new HazardTypeDto(
+                      rs.getObject("id", UUID.class),
+                      rs.getString("code"),
+                      rs.getString("name"),
+                      rs.getString("onset_speed"),
+                      categories,
+                      rs.getBoolean("active"));
+                })
             .list();
     return ApiResponse.of(hazardTypes);
   }
@@ -135,7 +140,9 @@ class ReferenceController {
   @GetMapping("/events")
   ApiResponse<List<DisasterEventDto>> events(
       @RequestParam(name = "status", required = false) String status) {
-    StringBuilder sql = new StringBuilder("""
+    StringBuilder sql =
+        new StringBuilder(
+            """
         select de.id, de.name, de.hazard_type_id, de.status, de.started_at, de.ended_at,
                coalesce(array_agg(ed.district_id) filter (where ed.district_id is not null), '{}') as district_ids
         from disaster_events de
@@ -145,7 +152,8 @@ class ReferenceController {
     if (filterStatus) {
       sql.append(" where de.status = :status");
     }
-    sql.append("""
+    sql.append(
+        """
         group by de.id, de.name, de.hazard_type_id, de.status, de.started_at, de.ended_at
         order by de.started_at desc
         """);
@@ -154,22 +162,24 @@ class ReferenceController {
     if (filterStatus) {
       client = client.param("status", status);
     }
-    List<DisasterEventDto> events = client
-        .query((rs, rowNum) -> {
-          java.sql.Array arr = rs.getArray("district_ids");
-          List<UUID> districtIds = parseUuidArray(arr);
-          var started = rs.getTimestamp("started_at");
-          var ended = rs.getTimestamp("ended_at");
-          return new DisasterEventDto(
-              rs.getObject("id", UUID.class),
-              rs.getString("name"),
-              rs.getObject("hazard_type_id", UUID.class),
-              rs.getString("status"),
-              started != null ? started.toInstant() : null,
-              ended != null ? ended.toInstant() : null,
-              districtIds);
-        })
-        .list();
+    List<DisasterEventDto> events =
+        client
+            .query(
+                (rs, rowNum) -> {
+                  java.sql.Array arr = rs.getArray("district_ids");
+                  List<UUID> districtIds = parseUuidArray(arr);
+                  var started = rs.getTimestamp("started_at");
+                  var ended = rs.getTimestamp("ended_at");
+                  return new DisasterEventDto(
+                      rs.getObject("id", UUID.class),
+                      rs.getString("name"),
+                      rs.getObject("hazard_type_id", UUID.class),
+                      rs.getString("status"),
+                      started != null ? started.toInstant() : null,
+                      ended != null ? ended.toInstant() : null,
+                      districtIds);
+                })
+            .list();
     return ApiResponse.of(events);
   }
 

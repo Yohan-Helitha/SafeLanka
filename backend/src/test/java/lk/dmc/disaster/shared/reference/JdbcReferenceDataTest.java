@@ -33,7 +33,9 @@ class JdbcReferenceDataTest {
 
   @Test
   void hazardType_inactiveTypeIsStillReturnedAsInactive() {
-    assertThat(referenceData.hazardType(DROUGHT)).get().extracting(HazardTypeInfo::active)
+    assertThat(referenceData.hazardType(DROUGHT))
+        .get()
+        .extracting(HazardTypeInfo::active)
         .isEqualTo(false);
   }
 

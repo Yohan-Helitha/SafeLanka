@@ -1,5 +1,6 @@
 package lk.dmc.disaster.reports.service;
 
+import java.time.Clock;
 import java.util.UUID;
 import lk.dmc.disaster.reports.ReportRejectedEvent;
 import lk.dmc.disaster.reports.ReportVerifiedEvent;
@@ -7,7 +8,6 @@ import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.entity.RejectionReason;
 import lk.dmc.disaster.reports.repository.HazardReportRepository;
 import lk.dmc.disaster.shared.error.NotFoundException;
-import java.time.Clock;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;

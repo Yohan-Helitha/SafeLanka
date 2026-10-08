@@ -61,11 +61,7 @@ public class RescueTeam {
   private Instant updatedAt;
 
   public static RescueTeam create(
-      String name,
-      UUID organisationId,
-      UUID districtId,
-      TeamType teamType,
-      int capacity) {
+      String name, UUID organisationId, UUID districtId, TeamType teamType, int capacity) {
     RescueTeam team = new RescueTeam();
     team.id = UUID.randomUUID();
     team.name = name;

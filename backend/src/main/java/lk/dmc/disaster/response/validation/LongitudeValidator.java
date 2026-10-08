@@ -11,6 +11,6 @@ public class LongitudeValidator implements ConstraintValidator<ValidLongitude, N
       return true;
     }
     double lng = value.doubleValue();
-    return lng >= -180.0 && lng <= 180.0 && !Double.isNaN(lng) && !Double.isInfinite(lng);
+    return lng >= -180.0 && lng <= 180.0;
   }
 }

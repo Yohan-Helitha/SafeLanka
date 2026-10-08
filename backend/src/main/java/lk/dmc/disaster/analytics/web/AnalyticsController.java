@@ -24,11 +24,7 @@ public class AnalyticsController {
       long warningCount,
       long linkedReportCount) {}
 
-  public record ReportSummaryDto(
-      UUID id,
-      UUID eventId,
-      Instant generatedAt,
-      UUID generatedBy) {}
+  public record ReportSummaryDto(UUID id, UUID eventId, Instant generatedAt, UUID generatedBy) {}
 
   private final JdbcClient jdbc;
 
@@ -38,7 +34,8 @@ public class AnalyticsController {
 
   @GetMapping("/events")
   public ApiResponse<List<AnalyticsEventDto>> events() {
-    String sql = """
+    String sql =
+        """
         SELECT de.id, de.name, de.status, de.started_at, de.ended_at,
                coalesce(array_agg(ed.district_id) filter (where ed.district_id is not null), '{}') as district_ids,
                (select count(*) from warnings w where w.event_id = de.id) as warning_count,
@@ -50,41 +47,44 @@ public class AnalyticsController {
         """;
     List<AnalyticsEventDto> list =
         jdbc.sql(sql)
-            .query((rs, rowNum) -> {
-              List<UUID> districtIds = parseUuidArray(rs.getArray("district_ids"));
-              var started = rs.getTimestamp("started_at");
-              var ended = rs.getTimestamp("ended_at");
-              return new AnalyticsEventDto(
-                  rs.getObject("id", UUID.class),
-                  rs.getString("name"),
-                  rs.getString("status"),
-                  started != null ? started.toInstant() : null,
-                  ended != null ? ended.toInstant() : null,
-                  districtIds,
-                  rs.getLong("warning_count"),
-                  rs.getLong("linked_report_count"));
-            })
+            .query(
+                (rs, rowNum) -> {
+                  List<UUID> districtIds = parseUuidArray(rs.getArray("district_ids"));
+                  var started = rs.getTimestamp("started_at");
+                  var ended = rs.getTimestamp("ended_at");
+                  return new AnalyticsEventDto(
+                      rs.getObject("id", UUID.class),
+                      rs.getString("name"),
+                      rs.getString("status"),
+                      started != null ? started.toInstant() : null,
+                      ended != null ? ended.toInstant() : null,
+                      districtIds,
+                      rs.getLong("warning_count"),
+                      rs.getLong("linked_report_count"));
+                })
             .list();
     return ApiResponse.of(list);
   }
 
   @GetMapping("/reports")
   public ApiResponse<List<ReportSummaryDto>> reports() {
-    String sql = """
+    String sql =
+        """
         SELECT id, event_id, generated_at, generated_by
         FROM disaster_reports
         ORDER BY generated_at DESC
         """;
     List<ReportSummaryDto> list =
         jdbc.sql(sql)
-            .query((rs, rowNum) -> {
-              var genAt = rs.getTimestamp("generated_at");
-              return new ReportSummaryDto(
-                  rs.getObject("id", UUID.class),
-                  rs.getObject("event_id", UUID.class),
-                  genAt != null ? genAt.toInstant() : Instant.now(),
-                  rs.getObject("generated_by", UUID.class));
-            })
+            .query(
+                (rs, rowNum) -> {
+                  var genAt = rs.getTimestamp("generated_at");
+                  return new ReportSummaryDto(
+                      rs.getObject("id", UUID.class),
+                      rs.getObject("event_id", UUID.class),
+                      genAt != null ? genAt.toInstant() : Instant.now(),
+                      rs.getObject("generated_by", UUID.class));
+                })
             .list();
     return ApiResponse.of(list);
   }
@@ -109,4 +109,3 @@ public class AnalyticsController {
     return list;
   }
 }
-

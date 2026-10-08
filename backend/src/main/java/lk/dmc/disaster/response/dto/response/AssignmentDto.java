@@ -27,13 +27,23 @@ public record AssignmentDto(
 
   public static AssignmentDto from(RescueAssignment assignment) {
     return new AssignmentDto(
-        assignment.getId(), assignment.getEventId(), assignment.getWarningId(),
-        assignment.getTeamId(), assignment.getCreatedBy(),
-        assignment.getLatitude(), assignment.getLongitude(), assignment.getLocationText(),
-        assignment.getTask(), assignment.getPriority(), assignment.getPeopleEstimated(),
-        assignment.getDestinationShelterId(), assignment.getStatus(),
-        assignment.getDeclineReason(), assignment.getAssignedAt(),
-        assignment.getAcknowledgedAt(), assignment.getCompletedAt(),
+        assignment.getId(),
+        assignment.getEventId(),
+        assignment.getWarningId(),
+        assignment.getTeamId(),
+        assignment.getCreatedBy(),
+        assignment.getLatitude(),
+        assignment.getLongitude(),
+        assignment.getLocationText(),
+        assignment.getTask(),
+        assignment.getPriority(),
+        assignment.getPeopleEstimated(),
+        assignment.getDestinationShelterId(),
+        assignment.getStatus(),
+        assignment.getDeclineReason(),
+        assignment.getAssignedAt(),
+        assignment.getAcknowledgedAt(),
+        assignment.getCompletedAt(),
         assignment.getVersion());
   }
 }

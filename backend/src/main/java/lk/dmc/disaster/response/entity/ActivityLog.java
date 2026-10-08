@@ -38,11 +38,7 @@ public class ActivityLog {
   private Instant occurredAt;
 
   public static ActivityLog create(
-      UUID districtId,
-      UUID eventId,
-      ActivityType type,
-      String message,
-      Instant occurredAt) {
+      UUID districtId, UUID eventId, ActivityType type, String message, Instant occurredAt) {
     ActivityLog log = new ActivityLog();
     log.id = UUID.randomUUID();
     log.districtId = districtId;

@@ -12,16 +12,12 @@ import lk.dmc.disaster.shared.error.ErrorCode;
 import org.springframework.stereotype.Component;
 
 /**
- * Validation logic corresponding to frontend screen:
- * NewAssignmentScreen (frontend/src/screens/response/NewAssignmentScreen.tsx)
+ * Validation logic corresponding to frontend screen: NewAssignmentScreen
+ * (frontend/src/screens/response/NewAssignmentScreen.tsx)
  *
- * Handles creation validations:
- * - Event ID requirement
- * - Location text bounds (3-200 chars)
- * - Task description bounds (5-500 chars)
- * - Priority bounds (1-3)
- * - Estimated people count (>= 0)
- * - Team availability verification with candidate alternatives if team is unavailable.
+ * <p>Handles creation validations: - Event ID requirement - Location text bounds (3-200 chars) -
+ * Task description bounds (5-500 chars) - Priority bounds (1-3) - Estimated people count (>= 0) -
+ * Team availability verification with candidate alternatives if team is unavailable.
  */
 @Component
 public class NewAssignmentScreenValidator {
@@ -38,23 +34,40 @@ public class NewAssignmentScreenValidator {
     }
 
     if (request.eventId() == null) {
-      throw new AppException(ErrorCode.VALIDATION_ERROR, "Disaster event ID is required", Map.of("eventId", "Event ID must not be null"));
+      throw new AppException(
+          ErrorCode.VALIDATION_ERROR,
+          "Disaster event ID is required",
+          Map.of("eventId", "Event ID must not be null"));
     }
 
     if (request.locationText() == null || request.locationText().trim().length() < 3) {
-      throw new AppException(ErrorCode.VALIDATION_ERROR, "Add a valid place name (minimum 3 characters)", Map.of("locationText", "Minimum 3 characters"));
+      throw new AppException(
+          ErrorCode.VALIDATION_ERROR,
+          "Add a valid place name (minimum 3 characters)",
+          Map.of("locationText", "Minimum 3 characters"));
     }
 
-    if (request.task() == null || request.task().trim().length() < 5 || request.task().trim().length() > 500) {
-      throw new AppException(ErrorCode.VALIDATION_ERROR, "Task description must be between 5 and 500 characters", Map.of("task", "Must be 5-500 characters"));
+    if (request.task() == null
+        || request.task().trim().length() < 5
+        || request.task().trim().length() > 500) {
+      throw new AppException(
+          ErrorCode.VALIDATION_ERROR,
+          "Task description must be between 5 and 500 characters",
+          Map.of("task", "Must be 5-500 characters"));
     }
 
     if (request.priority() < 1 || request.priority() > 3) {
-      throw new AppException(ErrorCode.VALIDATION_ERROR, "Priority must be between 1 and 3", Map.of("priority", "Must be 1, 2, or 3"));
+      throw new AppException(
+          ErrorCode.VALIDATION_ERROR,
+          "Priority must be between 1 and 3",
+          Map.of("priority", "Must be 1, 2, or 3"));
     }
 
     if (request.peopleEstimated() < 0) {
-      throw new AppException(ErrorCode.VALIDATION_ERROR, "Estimated people count cannot be negative", Map.of("peopleEstimated", "Must be 0 or more"));
+      throw new AppException(
+          ErrorCode.VALIDATION_ERROR,
+          "Estimated people count cannot be negative",
+          Map.of("peopleEstimated", "Must be 0 or more"));
     }
 
     if (request.teamId() != null) {
@@ -63,23 +76,35 @@ public class NewAssignmentScreenValidator {
   }
 
   public RescueTeam validateTeamAvailability(UUID teamId, UUID districtId) {
-    RescueTeam team = teams.findById(teamId)
-        .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Rescue team not found"));
+    RescueTeam team =
+        teams
+            .findById(teamId)
+            .orElseThrow(() -> new AppException(ErrorCode.NOT_FOUND, "Rescue team not found"));
 
     if (team.getStatus() != RescueTeamStatus.AVAILABLE) {
       List<Map<String, Object>> alternatives = List.of();
       if (districtId != null) {
-        alternatives = teams.findByDistrictIdAndStatus(districtId, RescueTeamStatus.AVAILABLE).stream()
-            .map(t -> Map.<String, Object>of("id", t.getId().toString(), "name", t.getName()))
-            .toList();
+        alternatives =
+            teams.findByDistrictIdAndStatus(districtId, RescueTeamStatus.AVAILABLE).stream()
+                .map(t -> Map.<String, Object>of("id", t.getId().toString(), "name", t.getName()))
+                .toList();
       }
       throw new AppException(
           ErrorCode.TEAM_NOT_AVAILABLE,
-          "Rescue team '" + team.getName() + "' is currently " + team.getStatus().name() + " and not available for assignment",
-          Map.of("alternatives", alternatives, "teamId", teamId, "currentStatus", team.getStatus().name()));
+          "Rescue team '"
+              + team.getName()
+              + "' is currently "
+              + team.getStatus().name()
+              + " and not available for assignment",
+          Map.of(
+              "alternatives",
+              alternatives,
+              "teamId",
+              teamId,
+              "currentStatus",
+              team.getStatus().name()));
     }
 
     return team;
   }
 }
-

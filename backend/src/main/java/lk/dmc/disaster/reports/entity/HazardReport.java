@@ -116,8 +116,12 @@ public class HazardReport {
     r.reporterId = reporterId;
     r.hazardTypeId = draft.hazardTypeId();
     r.category = draft.category();
-    r.description = trimmedWithin(
-            draft.description(), "Description", ReportRules.DESCRIPTION_MIN, ReportRules.DESCRIPTION_MAX);
+    r.description =
+        trimmedWithin(
+            draft.description(),
+            "Description",
+            ReportRules.DESCRIPTION_MIN,
+            ReportRules.DESCRIPTION_MAX);
     r.districtId = draft.districtId();
     r.clientRef = draft.clientRef();
     r.capturedAt = draft.capturedAt();
@@ -164,7 +168,8 @@ public class HazardReport {
     ReportStatus next = ReportStatusMachine.transition(status, ReportStatus.NEEDS_MORE_INFO);
     requireReviewerIsNotReporter(officerId);
     String note =
-        trimmedWithin(comment, "Comment", ReportRules.REQUEST_INFO_COMMENT_MIN, ReportRules.COMMENT_MAX);
+        trimmedWithin(
+            comment, "Comment", ReportRules.REQUEST_INFO_COMMENT_MIN, ReportRules.COMMENT_MAX);
     decide(next, officerId, note, clock);
   }
 

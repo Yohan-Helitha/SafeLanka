@@ -13,7 +13,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface RescueAssignmentRepository extends JpaRepository<RescueAssignment, UUID> {
 
-  @Query("""
+  @Query(
+      """
       SELECT a FROM RescueAssignment a
       WHERE (:districtId IS NULL
          OR a.teamId IN (SELECT t.id FROM RescueTeam t WHERE t.districtId = :districtId)
@@ -21,7 +22,8 @@ public interface RescueAssignmentRepository extends JpaRepository<RescueAssignme
   """)
   List<RescueAssignment> findByDistrictId(@Param("districtId") UUID districtId);
 
-  @Query("""
+  @Query(
+      """
       SELECT a FROM RescueAssignment a
       WHERE (:districtId IS NULL
          OR a.teamId IN (SELECT t.id FROM RescueTeam t WHERE t.districtId = :districtId)
@@ -29,7 +31,8 @@ public interface RescueAssignmentRepository extends JpaRepository<RescueAssignme
   """)
   Page<RescueAssignment> findByDistrictId(@Param("districtId") UUID districtId, Pageable pageable);
 
-  @Query("""
+  @Query(
+      """
       SELECT a FROM RescueAssignment a
       WHERE a.status = :status
         AND (:districtId IS NULL
@@ -41,7 +44,8 @@ public interface RescueAssignmentRepository extends JpaRepository<RescueAssignme
       @Param("status") AssignmentStatus status,
       Pageable pageable);
 
-  @Query("""
+  @Query(
+      """
       SELECT a FROM RescueAssignment a
       WHERE a.status = :status
         AND (:districtId IS NULL
@@ -49,8 +53,7 @@ public interface RescueAssignmentRepository extends JpaRepository<RescueAssignme
          OR a.destinationShelterId IN (SELECT s.id FROM Shelter s WHERE s.districtId = :districtId))
   """)
   List<RescueAssignment> findByDistrictIdAndStatus(
-      @Param("districtId") UUID districtId,
-      @Param("status") AssignmentStatus status);
+      @Param("districtId") UUID districtId, @Param("status") AssignmentStatus status);
 
   Optional<RescueAssignment> findByIdAndTeamId(UUID id, UUID teamId);
 

@@ -10,7 +10,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import lk.dmc.disaster.reports.entity.HazardReport;
@@ -81,9 +80,11 @@ class DuplicateDetectorTest {
   void findDuplicates_testDistancesReallyStraddleTheLimit() {
     GeoPoint origin = GeoPoint.of(LAT, LNG);
 
-    assertThat(GeoDistance.metresBetween(origin, GeoPoint.of(LAT + 499 / METRES_PER_DEGREE_LAT, LNG)))
+    assertThat(
+            GeoDistance.metresBetween(origin, GeoPoint.of(LAT + 499 / METRES_PER_DEGREE_LAT, LNG)))
         .isLessThan(500);
-    assertThat(GeoDistance.metresBetween(origin, GeoPoint.of(LAT + 501 / METRES_PER_DEGREE_LAT, LNG)))
+    assertThat(
+            GeoDistance.metresBetween(origin, GeoPoint.of(LAT + 501 / METRES_PER_DEGREE_LAT, LNG)))
         .isGreaterThan(500);
   }
 

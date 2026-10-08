@@ -45,12 +45,16 @@ class ReportSeedDataTest {
     Map<String, Long> finalByStatus =
         jdbc
             .queryForList(
-                "select status, count(*) c from hazard_reports where " + SEED_IDS
+                "select status, count(*) c from hazard_reports where "
+                    + SEED_IDS
                     + " and id::text ~ '-00000000000[1-4]$|-00000000001[12]$' group by status")
             .stream()
             .collect(Collectors.toMap(r -> (String) r.get("status"), r -> (Long) r.get("c")));
 
-    assertThat(finalByStatus).containsEntry("VERIFIED", 4L).containsEntry("REJECTED", 2L).hasSize(2);
+    assertThat(finalByStatus)
+        .containsEntry("VERIFIED", 4L)
+        .containsEntry("REJECTED", 2L)
+        .hasSize(2);
     assertThat(
             jdbc.queryForList(
                 "select rejection_reason from hazard_reports"
@@ -96,13 +100,15 @@ class ReportSeedDataTest {
   void everyRejectedReportHasAReasonAndEveryDecidedReportAReviewer() {
     assertThat(
             jdbc.queryForObject(
-                "select count(*) from hazard_reports where " + SEED_IDS
+                "select count(*) from hazard_reports where "
+                    + SEED_IDS
                     + " and status = 'REJECTED' and rejection_reason is null",
                 Integer.class))
         .isZero();
     assertThat(
             jdbc.queryForObject(
-                "select count(*) from hazard_reports where " + SEED_IDS
+                "select count(*) from hazard_reports where "
+                    + SEED_IDS
                     + " and status <> 'PENDING' and reviewed_by is null",
                 Integer.class))
         .isZero();
@@ -112,7 +118,8 @@ class ReportSeedDataTest {
   void seedCoversEveryDemoDistrictWithGps() {
     assertThat(
             jdbc.queryForObject(
-                "select count(distinct district_id) from hazard_reports where " + SEED_IDS
+                "select count(distinct district_id) from hazard_reports where "
+                    + SEED_IDS
                     + " and latitude is not null",
                 Integer.class))
         .isEqualTo(5);

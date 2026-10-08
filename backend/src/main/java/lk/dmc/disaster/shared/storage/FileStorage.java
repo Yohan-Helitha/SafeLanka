@@ -13,6 +13,8 @@ public interface FileStorage {
   /** Bytes of a file returned by {@link #store}; a 404 when it is missing. */
   byte[] load(String path);
 
-  /** Removes a stored file, for example after a failed save. Never throws: a missing file is fine. */
+  /**
+   * Removes a stored file, for example after a failed save. Never throws: a missing file is fine.
+   */
   void delete(String path);
 }

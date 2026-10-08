@@ -3,10 +3,9 @@ package lk.dmc.disaster.response.api;
 import java.util.UUID;
 import lk.dmc.disaster.response.dto.response.AllocationDto;
 import lk.dmc.disaster.response.dto.response.AssignmentDto;
-import lk.dmc.disaster.response.dto.response.DistributionDto;
+import lk.dmc.disaster.response.dto.response.DistrictDashboard;
 import lk.dmc.disaster.response.dto.response.ReliefStockDto;
 import lk.dmc.disaster.response.dto.response.RescueTeamDto;
-import lk.dmc.disaster.response.dto.response.DistrictDashboard;
 import lk.dmc.disaster.response.dto.response.ShelterDto;
 import lk.dmc.disaster.response.dto.response.ShelterSuggestionDto;
 import org.springframework.http.ResponseEntity;
@@ -60,12 +59,13 @@ public interface ResponseApi {
       UUID teamId) {}
 
   record TeamStatusUpdate(
-      String toStatus,
-      UUID clientRef,
-      java.time.Instant changedAt,
-      boolean recordedOffline) {}
+      String toStatus, UUID clientRef, java.time.Instant changedAt, boolean recordedOffline) {}
 
   record AllocationInput(UUID stockId, UUID shelterId, UUID eventId, int quantity) {}
 
-  record DistributionInput(int quantityDistributed, java.time.Instant distributedAt, UUID clientRef, boolean recordedOffline) {}
+  record DistributionInput(
+      int quantityDistributed,
+      java.time.Instant distributedAt,
+      UUID clientRef,
+      boolean recordedOffline) {}
 }
