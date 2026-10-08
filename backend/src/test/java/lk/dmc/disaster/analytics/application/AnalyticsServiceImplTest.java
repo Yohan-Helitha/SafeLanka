@@ -89,7 +89,7 @@ class AnalyticsServiceImplTest {
 
     @Test
     void listAvailableEvents_callsQuery() {
-        var summary = new EventSummary(TestIds.event(1), "Test Event", TestIds.hazardType(1), "ACTIVE", Instant.now(), null, List.of(), 10, 5);
+        var summary = new EventSummary(TestIds.event(1), "Test Event", TestIds.hazardType(1), "ACTIVE", Instant.now(), null, new UUID[0], 10, 5);
         when(eventSummaryQuery.execute("ACTIVE")).thenReturn(List.of(summary));
         
         var result = service.listAvailableEvents("ACTIVE");

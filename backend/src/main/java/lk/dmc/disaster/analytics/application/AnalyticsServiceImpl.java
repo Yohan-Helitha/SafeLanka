@@ -35,12 +35,19 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return eventSummaryQuery.execute(status);
     }
 
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AnalyticsServiceImpl.class);
+
     @Override
     @Transactional
     public DisasterReport generateReport(ReportContext context) {
+        log.info("Generating report for eventId={} fromTime={} toTime={} districtIds={}", 
+            context.eventId(), context.fromTime(), context.toTime(), context.districtIds());
+            
         validateContext(context);
         
         DisasterReport report = reportBuilder.build(context);
+        log.info("Report built successfully for eventId={}, saving...", context.eventId());
+            
         return repository.save(report);
     }
 
@@ -65,7 +72,9 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     @Override
     @Transactional(readOnly = true)
     public List<DisasterReport> listSavedReports(UUID eventId) {
-        return repository.findByEventIdOrderByGeneratedAtDesc(eventId);
+        return eventId != null
+            ? repository.findByEventIdOrderByGeneratedAtDesc(eventId)
+            : repository.findAllByOrderByGeneratedAtDesc();
     }
 
     @Override

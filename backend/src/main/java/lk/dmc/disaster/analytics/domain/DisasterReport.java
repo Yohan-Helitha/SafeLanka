@@ -42,6 +42,7 @@ public class DisasterReport extends BaseEntity {
 
     public DisasterReport(UUID eventId, Map<String, Object> filters, Map<String, Object> sections,
                           List<Map<String, String>> unavailableSections, UUID generatedBy, Instant generatedAt) {
+        setId(UUID.randomUUID());
         this.eventId = eventId;
         this.filters = filters;
         this.sections = sections;

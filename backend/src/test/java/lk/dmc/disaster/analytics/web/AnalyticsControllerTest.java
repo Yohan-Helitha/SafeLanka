@@ -54,7 +54,7 @@ class AnalyticsControllerTest {
     @Test
     void getEvents() throws Exception {
         when(analyticsService.listAvailableEvents("ACTIVE")).thenReturn(List.of(
-            new EventSummary(TestIds.event(1), "Event 1", TestIds.hazardType(1), "ACTIVE", Instant.now(), null, List.of(), 5, 2)
+            new EventSummary(TestIds.event(1), "Event 1", TestIds.hazardType(1), "ACTIVE", Instant.now(), null, new java.util.UUID[0], 5, 2)
         ));
 
         mvc.perform(get("/api/analytics/events").param("status", "ACTIVE"))

@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface DisasterReportRepository extends JpaRepository<DisasterReport, UUID> {
     List<DisasterReport> findByEventIdOrderByGeneratedAtDesc(UUID eventId);
+    List<DisasterReport> findAllByOrderByGeneratedAtDesc();
 }

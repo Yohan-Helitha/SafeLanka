@@ -38,24 +38,24 @@ public class AnalyticsController {
 
     @GetMapping("/events")
     @Operation(summary = "List available events for analytics")
-    public List<EventSummary> getEvents(@RequestParam(required = false) String status) {
-        return analyticsService.listAvailableEvents(status);
+    public lk.dmc.disaster.shared.api.ApiResponse<List<EventSummary>> getEvents(@RequestParam(required = false) String status) {
+        return lk.dmc.disaster.shared.api.ApiResponse.of(analyticsService.listAvailableEvents(status));
     }
 
     @PostMapping("/reports")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Generate a new disaster report")
-    public DisasterReportResponse generateReport(
+    public lk.dmc.disaster.shared.api.ApiResponse<DisasterReportResponse> generateReport(
         @Valid @RequestBody GenerateReportRequest request
     ) {
         var context = mapper.toContext(request, actingUser.require().id());
         var report = analyticsService.generateReport(context);
-        return mapper.toResponse(report);
+        return lk.dmc.disaster.shared.api.ApiResponse.of(mapper.toResponse(report));
     }
 
     @GetMapping("/reports")
     @Operation(summary = "List saved reports")
-    public Page<ReportSummaryResponse> getReports(
+    public lk.dmc.disaster.shared.api.ApiResponse<List<ReportSummaryResponse>> getReports(
         @RequestParam(required = false) UUID eventId,
         @Parameter(hidden = true) Pageable pageable
     ) {
@@ -66,15 +66,15 @@ public class AnalyticsController {
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), list.size());
         if (start > list.size()) {
-            return new PageImpl<>(List.of(), pageable, list.size());
+            return lk.dmc.disaster.shared.api.ApiResponse.page(new PageImpl<>(List.of(), pageable, list.size()));
         }
-        return new PageImpl<>(list.subList(start, end), pageable, list.size());
+        return lk.dmc.disaster.shared.api.ApiResponse.page(new PageImpl<>(list.subList(start, end), pageable, list.size()));
     }
 
     @GetMapping("/reports/{id}")
     @Operation(summary = "Get a saved report")
-    public DisasterReportResponse getReport(@PathVariable UUID id) {
-        return mapper.toResponse(analyticsService.getReport(id));
+    public lk.dmc.disaster.shared.api.ApiResponse<DisasterReportResponse> getReport(@PathVariable UUID id) {
+        return lk.dmc.disaster.shared.api.ApiResponse.of(mapper.toResponse(analyticsService.getReport(id)));
     }
 
     @GetMapping("/reports/{id}/export")

@@ -9,7 +9,7 @@ export function ResourceDistributionSection({ data }: { data: Data }) {
     <Card title="4. Resource distribution">
       <div role="img" aria-label="Allocated and distributed relief by district and item">
         <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={data.byDistrictItem} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+          <BarChart data={data?.byDistrictItem ?? []} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
             <CartesianGrid stroke={CHART.grid} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="label" stroke={CHART.axis} tick={{ fontSize: 11 }} interval={0} />
             <YAxis stroke={CHART.axis} tick={{ fontSize: 11 }} allowDecimals={false} />
@@ -21,7 +21,7 @@ export function ResourceDistributionSection({ data }: { data: Data }) {
         </ResponsiveContainer>
       </div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {data.byOrganisationType.map((o) => (
+        {(data?.byOrganisationType ?? []).map((o) => (
           <Stat
             key={o.type}
             label={ORGANISATION_TYPE_LABEL[o.type as OrganisationType] ?? o.type}

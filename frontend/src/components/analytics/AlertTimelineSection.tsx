@@ -12,7 +12,7 @@ export function AlertTimelineSection({ data, districtName }: { data: Data; distr
         <Stat label="Report to warning" value={formatMinutes(data.minutesReportToWarning)} tone="signal" />
       </div>
       <ol className="relative ml-2 space-y-4 border-l border-line pl-5">
-        {data.entries.map((e) => (
+        {(data?.entries ?? []).map((e) => (
           <li key={e.warningId} className="relative">
             <span className="absolute -left-[27px] top-1.5 size-3 rounded-full bg-signal ring-4 ring-panel" aria-hidden />
             <div className="flex flex-wrap items-center gap-2">
@@ -22,7 +22,7 @@ export function AlertTimelineSection({ data, districtName }: { data: Data; distr
               {e.isEscalation && <span className="text-xs font-medium uppercase tracking-wide text-caution">escalation</span>}
             </div>
             <p className="mt-1 text-[15px] text-ink">{e.title}</p>
-            <p className="text-sm text-muted">{e.districtIds.map(districtName).join(', ')}</p>
+            <p className="text-sm text-muted">{(e.districtIds ?? []).map(districtName).join(', ')}</p>
           </li>
         ))}
       </ol>

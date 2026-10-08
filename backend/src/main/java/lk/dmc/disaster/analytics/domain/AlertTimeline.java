@@ -16,6 +16,6 @@ public record AlertTimeline(
         String status,
         Instant issuedAt,
         UUID supersedesId,
-        List<UUID> resolvedDistrictIds
+        UUID[] resolvedDistrictIds
     ) {}
 }

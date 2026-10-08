@@ -6,5 +6,5 @@ import java.util.UUID;
 
 public record EventSummary(
     UUID id, String name, UUID hazardTypeId, String status, Instant startedAt, Instant endedAt,
-    List<UUID> districtIds, int warningCount, int reportCount
+    UUID[] districtIds, int warningCount, int reportCount
 ) {}
