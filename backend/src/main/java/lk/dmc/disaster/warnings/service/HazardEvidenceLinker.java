@@ -5,6 +5,7 @@ import java.util.Optional;
 import lk.dmc.disaster.warnings.entity.Hazard;
 import lk.dmc.disaster.warnings.entity.HazardArea;
 import lk.dmc.disaster.warnings.entity.HazardEvidence;
+import lk.dmc.disaster.warnings.entity.WarningRules;
 import lk.dmc.disaster.warnings.integration.AreaReference;
 import lk.dmc.disaster.warnings.repository.HazardEvidenceRepository;
 import lk.dmc.disaster.warnings.repository.HazardRepository;
@@ -14,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Attaches a newly verified report to the hazard it belongs to, or starts a new hazard for it. Safe
- * to run twice for the same report. The event listener that calls this is a thin wrapper added when
- * the reports module publishes its verified-report event.
+ * to run twice for the same report. {@link HazardEvidenceListener} calls it when the reports module
+ * publishes a verified report.
  */
 @Slf4j
 @Service
@@ -57,8 +58,22 @@ public class HazardEvidenceLinker {
                 areas.basinsOfDistrict(report.districtId()))
             .orElseGet(() -> hazards.save(newHazardFor(report)));
     evidence.save(HazardEvidence.link(hazard.getId(), report.reportId(), clock.instant()));
+    raiseSeverity(hazard, report.severity());
     log.info("Report {} linked to hazard {}", report.reportId(), hazard.getId());
     return Optional.of(hazard);
+  }
+
+  /**
+   * More verified reports mean a more serious hazard, and the verifying officer's own judgement
+   * counts too: the hazard is raised to the higher of the two. It is never lowered here.
+   */
+  private void raiseSeverity(Hazard hazard, Integer officerSeverity) {
+    int fromEvidence = WarningRules.severityForEvidence(evidence.countByIdHazardId(hazard.getId()));
+    int severity = officerSeverity == null ? fromEvidence : Math.max(fromEvidence, officerSeverity);
+    if (severity > hazard.getSeverity()) {
+      log.info("Hazard {} severity raised to {} by its evidence", hazard.getId(), severity);
+      hazard.raiseSeverity(severity);
+    }
   }
 
   private Hazard newHazardFor(VerifiedReportRef report) {
@@ -66,6 +81,7 @@ public class HazardEvidenceLinker {
         report.hazardTypeId(),
         new HazardArea(report.districtId(), null),
         report.description(),
+        report.severity() == null ? WarningRules.REPORT_HAZARD_SEVERITY : report.severity(),
         clock.instant());
   }
 }

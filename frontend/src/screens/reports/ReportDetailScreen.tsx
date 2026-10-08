@@ -26,6 +26,7 @@ export function ReportDetailScreen() {
   const [rejecting, setRejecting] = useState(false)
   const [asking, setAsking] = useState(false)
   const [comment, setComment] = useState('')
+  const [severity, setSeverity] = useState(2)
   useDocumentTitle(report.data?.referenceNo ?? 'Report')
 
   if (report.isLoading) return <Loading />
@@ -115,12 +116,30 @@ export function ReportDetailScreen() {
             <Card title="Decision">
               <div className="space-y-3">
                 <ApiErrorNotice error={verify.error} />
+                <div role="group" aria-label="Hazard severity">
+                  <p className="mb-1.5 text-sm text-muted">How dangerous is this? (1 low, 5 very dangerous)</p>
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        aria-pressed={n === severity}
+                        onClick={() => setSeverity(n)}
+                        className={`h-9 flex-1 rounded-control border text-sm font-medium ${
+                          n === severity ? 'border-signal bg-signal/15 text-signal' : 'border-line text-muted hover:border-signal/60 hover:text-ink'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <Button
                   size="lg"
                   block
                   loading={verify.isPending}
                   onClick={() =>
-                    verify.mutate(r.id, {
+                    verify.mutate({ id: r.id, severity }, {
                       onSuccess: () => {
                         toast(`${r.referenceNo} verified`)
                         backToQueue()

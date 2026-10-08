@@ -6,7 +6,7 @@ import { HAZARD_SOURCE_LABEL } from '@/constants/labels'
 import { paths } from '@/constants/routes'
 import { useToast } from '@/context/ToastContext'
 import { useDocumentTitle, useReferenceData } from '@/hooks/shared'
-import { useHazard, useSetHazardStatus } from '@/hooks/warnings/useWarnings'
+import { useHazard, useSetHazardSeverity, useSetHazardStatus } from '@/hooks/warnings/useWarnings'
 import { formatDateTime, relativeTime } from '@/utils/format'
 
 export function HazardDetailScreen() {
@@ -16,6 +16,7 @@ export function HazardDetailScreen() {
   const { hazardTypeName, areaName } = useReferenceData()
   const hazard = useHazard(id)
   const setStatus = useSetHazardStatus()
+  const setSeverity = useSetHazardSeverity()
   useDocumentTitle('Hazard')
 
   if (hazard.isLoading) return <Loading />
@@ -51,7 +52,7 @@ export function HazardDetailScreen() {
           )
         }
       />
-      <ApiErrorNotice error={setStatus.error} />
+      <ApiErrorNotice error={setStatus.error ?? setSeverity.error} />
 
       <dl className="mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
         <div className="flex items-center gap-2">
@@ -62,8 +63,30 @@ export function HazardDetailScreen() {
         </div>
         <div className="flex items-center gap-2">
           <dt className="text-faint">Severity</dt>
-          <dd>
+          <dd className="flex flex-wrap items-center gap-3">
             <SeverityMeter value={h.severity} />
+            {!resolved && (
+              <span role="group" aria-label="Set severity" className="flex items-center gap-1">
+                <span className="text-xs text-faint">Set to</span>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-pressed={n === h.severity}
+                    disabled={setSeverity.isPending}
+                    onClick={() =>
+                      n !== h.severity &&
+                      setSeverity.mutate({ id: h.id, severity: n }, { onSuccess: () => toast(`Severity set to ${n} of 5`) })
+                    }
+                    className={`size-7 rounded-control border text-xs font-medium ${
+                      n === h.severity ? 'border-signal bg-signal/15 text-signal' : 'border-line text-muted hover:border-signal/60 hover:text-ink'
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </span>
+            )}
           </dd>
         </div>
         <div className="flex gap-2">

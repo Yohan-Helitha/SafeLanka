@@ -86,7 +86,16 @@ export interface WireWarningRef {
   districtIds: string[]
   riverBasinIds: string[]
   issuedAt: string
+  levelChangedAt: string
+  levelHistory: WireLevelChange[]
   reached: number
+}
+
+export interface WireLevelChange {
+  fromLevel: WarningLevel | null
+  toLevel: WarningLevel
+  changedBy: string
+  changedAt: string
 }
 
 export interface WireHazardDetail extends WireHazardListItem {
@@ -117,7 +126,8 @@ export interface WireWarning {
   instructions: string
   issuedAt: string
   issuedBy: string
-  supersedesId: string | null
+  levelChangedAt: string
+  levelHistory: WireLevelChange[]
   cancelledAt: string | null
   cancelReason: string | null
   evidenceReportIds: string[]
@@ -248,6 +258,13 @@ export function toWarningListItem(w: WireWarningRef | WireWarning): WarningListI
     districtIds: w.districtIds,
     riverBasinIds: w.riverBasinIds,
     issuedAt: w.issuedAt,
+    levelChangedAt: w.levelChangedAt,
+    levelHistory: w.levelHistory.map((c) => ({
+      from: c.fromLevel,
+      to: c.toLevel,
+      changedBy: c.changedBy,
+      changedAt: c.changedAt,
+    })),
     reached: 'reached' in w ? w.reached : w.deliverySummary.targeted,
   }
 }
@@ -261,7 +278,6 @@ export function toWarning(w: WireWarning): Warning {
     smsText: w.smsText,
     instructions: w.instructions,
     issuedBy: w.issuedBy,
-    supersedesId: w.supersedesId,
     cancelledAt: w.cancelledAt,
     cancelReason: w.cancelReason,
     reportIds: w.evidenceReportIds,

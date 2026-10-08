@@ -120,4 +120,17 @@ class WarningValueObjectsTest {
         .satisfies(e -> assertValidationOn(e, "severity"));
     assertThat(WarningRules.requireSeverity(5)).isEqualTo(5);
   }
+
+  @Test
+  void severityForEvidence_growsWithTheNumberOfVerifiedReports() {
+    assertThat(WarningRules.severityForEvidence(0)).isEqualTo(2);
+    assertThat(WarningRules.severityForEvidence(1)).isEqualTo(2);
+    assertThat(WarningRules.severityForEvidence(2)).isEqualTo(2);
+    assertThat(WarningRules.severityForEvidence(3)).isEqualTo(3);
+    assertThat(WarningRules.severityForEvidence(4)).isEqualTo(3);
+    assertThat(WarningRules.severityForEvidence(5)).isEqualTo(4);
+    assertThat(WarningRules.severityForEvidence(7)).isEqualTo(4);
+    assertThat(WarningRules.severityForEvidence(8)).isEqualTo(5);
+    assertThat(WarningRules.severityForEvidence(500)).isEqualTo(5);
+  }
 }

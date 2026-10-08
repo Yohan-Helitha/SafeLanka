@@ -84,7 +84,7 @@ class ReportReviewControllerTest extends ReportWebTestSupport {
   @Test
   void verify_withoutABodyIs200() throws Exception {
     HazardReport report = gpsReport();
-    when(verification.verify(eq(report.getId()), eq(OFFICER_ID), isNull()))
+    when(verification.verify(eq(report.getId()), eq(OFFICER_ID), isNull(), isNull()))
         .thenReturn(detailOf(report));
 
     mvc.perform(patch("/api/reports/" + report.getId() + "/verify").header(HEADER, OFFICER))
@@ -96,7 +96,7 @@ class ReportReviewControllerTest extends ReportWebTestSupport {
   @Test
   void verify_withACommentPassesItOn() throws Exception {
     HazardReport report = gpsReport();
-    when(verification.verify(any(), any(), eq("Confirmed on site"))).thenReturn(detailOf(report));
+    when(verification.verify(any(), any(), eq("Confirmed on site"), isNull())).thenReturn(detailOf(report));
 
     mvc.perform(
             patch("/api/reports/" + report.getId() + "/verify")
@@ -104,7 +104,32 @@ class ReportReviewControllerTest extends ReportWebTestSupport {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"comment\":\"Confirmed on site\"}"))
         .andExpect(status().isOk());
-    verify(verification).verify(report.getId(), OFFICER_ID, "Confirmed on site");
+    verify(verification).verify(report.getId(), OFFICER_ID, "Confirmed on site", null);
+  }
+
+  @Test
+  void verify_withASeverityPassesItOn() throws Exception {
+    HazardReport report = gpsReport();
+    when(verification.verify(any(), any(), isNull(), eq(4))).thenReturn(detailOf(report));
+
+    mvc.perform(
+            patch("/api/reports/" + report.getId() + "/verify")
+                .header(HEADER, OFFICER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"severity\":4}"))
+        .andExpect(status().isOk());
+    verify(verification).verify(report.getId(), OFFICER_ID, null, 4);
+  }
+
+  @Test
+  void verify_severityOutsideOneToFiveIs400() throws Exception {
+    mvc.perform(
+            patch("/api/reports/" + UUID.randomUUID() + "/verify")
+                .header(HEADER, OFFICER)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"severity\":6}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.details.fields.severity").exists());
   }
 
   @Test
@@ -120,7 +145,7 @@ class ReportReviewControllerTest extends ReportWebTestSupport {
 
   @Test
   void verify_alreadyDecidedIs409WithTheErrorEnvelope() throws Exception {
-    when(verification.verify(any(), any(), any()))
+    when(verification.verify(any(), any(), any(), any()))
         .thenThrow(new InvalidStateTransitionException("VERIFIED", "VERIFIED"));
 
     mvc.perform(patch("/api/reports/" + UUID.randomUUID() + "/verify").header(HEADER, OFFICER))
@@ -131,7 +156,7 @@ class ReportReviewControllerTest extends ReportWebTestSupport {
 
   @Test
   void verify_ownReportIs422() throws Exception {
-    when(verification.verify(any(), any(), any()))
+    when(verification.verify(any(), any(), any(), any()))
         .thenThrow(new BusinessRuleException("You cannot review your own report."));
 
     mvc.perform(patch("/api/reports/" + UUID.randomUUID() + "/verify").header(HEADER, OFFICER))

@@ -104,7 +104,7 @@ class WarningReadControllersTest extends ControllerTestSupport {
     UUID warningId = UUID.randomUUID();
     NotificationDelivery failed =
         NotificationDelivery.queue(
-            warningId, UUID.randomUUID(), Channel.SMS, ControllerFixtures.NOW);
+            warningId, UUID.randomUUID(), Channel.SMS, WarningLevel.WARNING, ControllerFixtures.NOW);
     failed.failed("Simulated gateway timeout");
     when(deliveries.summary(warningId))
         .thenReturn(

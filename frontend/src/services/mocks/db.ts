@@ -490,12 +490,24 @@ export function summariseDeliveries(rows: DeliveryRow[]): Warning['deliverySumma
 const warnings: Warning[] = []
 const deliveries: DeliveryRow[] = []
 
-function seedWarning(w: Omit<Warning, 'deliverySummary' | 'reached' | 'districtIds'> & { reached?: number }) {
+type SeedWarning = Omit<
+  Warning,
+  'deliverySummary' | 'reached' | 'districtIds' | 'levelChangedAt' | 'levelHistory'
+>
+
+function seedWarning(w: SeedWarning) {
   const districtIds = districtsOfBasins(w.riverBasinIds)
   const rows = makeDeliveries(w, recipientsFor([], w.riverBasinIds), { seeded: true })
   const summary = summariseDeliveries(rows)
   deliveries.push(...rows)
-  warnings.push({ ...w, districtIds, reached: summary.targeted, deliverySummary: summary })
+  warnings.push({
+    ...w,
+    districtIds,
+    levelChangedAt: w.issuedAt,
+    levelHistory: [{ from: null, to: w.level, changedBy: w.issuedBy, changedAt: w.issuedAt }],
+    reached: summary.targeted,
+    deliverySummary: summary,
+  })
 }
 
 const kaluIds = [seedId(15, 2), seedId(15, 3), seedId(15, 4)]
@@ -525,7 +537,6 @@ seedWarning({
   instructions: 'Move to higher ground if water enters your street. Keep documents and medicine ready.',
   issuedBy: ID.user.DMC_OFFICER,
   issuedAt: ago(300),
-  supersedesId: null,
   cancelledAt: null,
   cancelReason: null,
   reportIds: [seedId(12, 2), seedId(12, 3)],
@@ -540,7 +551,6 @@ seedWarning({
   smsText: 'DMC WATCH: Kalu river rising at Ratnapura. Be ready to act. Dial 117 for help.',
   instructions: 'Check on neighbours and move valuables off the floor.',
   issuedAt: at('2026-05-14T07:35:00+05:30'),
-  supersedesId: null,
 })
 seedWarning({
   ...kaluCommon,
@@ -552,7 +562,6 @@ seedWarning({
   smsText: 'DMC WARNING: Kalu river flooding. Prepare to move to higher ground. Dial 117.',
   instructions: 'Pack essentials and be ready to leave on short notice.',
   issuedAt: at('2026-05-14T12:10:00+05:30'),
-  supersedesId: kaluIds[0],
 })
 seedWarning({
   ...kaluCommon,
@@ -564,7 +573,6 @@ seedWarning({
   smsText: 'DMC EVACUATE: Kalu river at major flood level. Leave now for the nearest shelter. Dial 117.',
   instructions: 'Leave now for the nearest open shelter. Take documents and medicine.',
   issuedAt: at('2026-05-15T02:30:00+05:30'),
-  supersedesId: kaluIds[1],
 })
 
 // ---------- response: teams, assignments, shelters, stock ----------

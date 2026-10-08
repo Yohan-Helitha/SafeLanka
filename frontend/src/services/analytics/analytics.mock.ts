@@ -79,7 +79,7 @@ export const analyticsMock: AnalyticsApi = {
             title: w.title,
             issuedAt: w.issuedAt,
             districtIds: w.districtIds.filter((d) => districtIds.includes(d)),
-            isEscalation: w.supersedesId !== null,
+            isEscalation: w.levelHistory.length > 1,
           })),
         }
       } else unavailable.push({ key: 'alertTimeline', reason: NO_DATA.alertTimeline })

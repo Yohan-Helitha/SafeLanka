@@ -1,7 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { LEVEL_ORDER } from '@/constants/labels'
-import { paths } from '@/constants/routes'
 import { useToast } from '@/context/ToastContext'
 import { useCancelWarning, useEscalateWarning, useUpdateWarning } from '@/hooks/warnings/useWarnings'
 import { SEVERITY } from '@/theme/tokens'
@@ -42,7 +40,6 @@ export function WarningActions({ warning }: { warning: Warning }) {
 }
 
 function EscalateDialog({ warning, onClose }: { warning: Warning; onClose: () => void }) {
-  const navigate = useNavigate()
   const { toast } = useToast()
   const escalate = useEscalateWarning()
   const higher = LEVEL_ORDER.slice(LEVEL_ORDER.indexOf(warning.level) + 1)
@@ -57,7 +54,7 @@ function EscalateDialog({ warning, onClose }: { warning: Warning; onClose: () =>
       open
       onClose={onClose}
       title="Escalate warning"
-      description="The higher level goes out as a new warning to the same area and replaces this one."
+      description="This warning is raised to the higher level and sent again to the same area. The change is kept in its level history."
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
@@ -72,9 +69,8 @@ function EscalateDialog({ warning, onClose }: { warning: Warning; onClose: () =>
               escalate.mutate(
                 { id: warning.id, input: { ...text, level } },
                 {
-                  onSuccess: (next) => {
-                    toast(`Escalated to ${SEVERITY[next.level].label}`)
-                    navigate(paths.dmc.warning(next.id))
+                  onSuccess: (raised) => {
+                    toast(`Escalated to ${SEVERITY[raised.level].label}`)
                     onClose()
                   },
                 },

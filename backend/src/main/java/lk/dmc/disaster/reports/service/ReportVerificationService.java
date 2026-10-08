@@ -41,12 +41,14 @@ public class ReportVerificationService {
   /**
    * Verifies a report and publishes {@link ReportVerifiedEvent}.
    *
+   * @param severity how dangerous the officer judges the hazard (1 to 5), or null to let the
+   *     evidence decide; it is passed on in the event and not stored on the report
    * @throws NotFoundException (404) when the report does not exist
    * @throws lk.dmc.disaster.shared.error.InvalidStateTransitionException (409) when already decided
    * @throws lk.dmc.disaster.shared.error.BusinessRuleException (422) for the officer's own report
    */
   @Transactional
-  public ReportDetailView verify(UUID reportId, UUID officerId, String comment) {
+  public ReportDetailView verify(UUID reportId, UUID officerId, String comment, Integer severity) {
     HazardReport report = load(reportId);
     report.verify(officerId, comment, clock);
     events.publishEvent(
@@ -57,7 +59,8 @@ public class ReportVerificationService {
             report.getDistrictId(),
             report.getLatitude(),
             report.getLongitude(),
-            report.getReviewedAt()));
+            report.getReviewedAt(),
+            severity));
     return saved(report, "verified", officerId);
   }
 

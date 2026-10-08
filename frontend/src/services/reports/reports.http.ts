@@ -30,7 +30,8 @@ export const reportsHttp: ReportsApi = {
       size: filter.size,
     }),
   get: async (id) => withLocalPhoto(await http.get<ReportDetail>(`/reports/${id}`)),
-  verify: async (id) => withLocalPhoto(await http.patch<ReportDetail>(`/reports/${id}/verify`)),
+  verify: async (id, severity) =>
+    withLocalPhoto(await http.patch<ReportDetail>(`/reports/${id}/verify`, severity ? { severity } : undefined)),
   reject: async (id, reason, comment) =>
     withLocalPhoto(await http.patch<ReportDetail>(`/reports/${id}/reject`, { reason, comment })),
   requestInfo: async (id, comment) =>

@@ -78,16 +78,21 @@ class WarningRepositoryTest extends RepositoryTestSupport {
   }
 
   @Test
-  void findActiveCovering_afterEscalation_returnsOnlyTheNewWarning() {
-    Warning old = savedWarning(hazard, districtTarget(districtA));
-    Warning next =
-        old.escalateTo(
-            WarningLevel.EVACUATE, old.content(), old.getIssuedBy(), NOW.plusSeconds(60));
-    warnings.saveAndFlush(old);
-    warnings.saveAndFlush(next);
+  void escalation_keepsOneWarningAndStoresItsLevelHistory() {
+    Warning warning = savedWarning(hazard, districtTarget(districtA));
+    warning.escalateTo(
+        WarningLevel.EVACUATE, warning.content(), warning.getIssuedBy(), NOW.plusSeconds(60));
+    warnings.saveAndFlush(warning);
 
-    assertThat(warnings.findActiveCovering(Set.of(districtA), Set.of())).containsExactly(next);
-    assertThat(next.getSupersedesId()).isEqualTo(old.getId());
+    assertThat(warnings.findActiveCovering(Set.of(districtA), Set.of())).containsExactly(warning);
+    assertThat(
+            jdbc.sql(
+                    "select to_level from warning_level_changes where warning_id = :id"
+                        + " order by changed_at")
+                .param("id", warning.getId())
+                .query(String.class)
+                .list())
+        .containsExactly("WARNING", "EVACUATE");
   }
 
   @Test
@@ -138,13 +143,33 @@ class WarningRepositoryTest extends RepositoryTestSupport {
   void delivery_sameCitizenAndChannelTwice_isRejectedByTheDatabase() {
     Warning warning = savedWarning(hazard, districtTarget(districtA));
     UUID citizen = userWithRole("CITIZEN", 0);
-    deliveries.saveAndFlush(NotificationDelivery.queue(warning.getId(), citizen, Channel.SMS, NOW));
+    deliveries.saveAndFlush(
+        NotificationDelivery.queue(warning.getId(), citizen, Channel.SMS, WarningLevel.WARNING, NOW));
 
     assertThatThrownBy(
             () ->
                 deliveries.saveAndFlush(
-                    NotificationDelivery.queue(warning.getId(), citizen, Channel.SMS, NOW)))
+                    NotificationDelivery.queue(
+                        warning.getId(), citizen, Channel.SMS, WarningLevel.WARNING, NOW)))
         .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
+  void delivery_sameCitizenAndChannelAtAHigherLevel_isAllowed() {
+    Warning warning = savedWarning(hazard, districtTarget(districtA));
+    UUID citizen = userWithRole("CITIZEN", 0);
+    deliveries.saveAndFlush(
+        NotificationDelivery.queue(warning.getId(), citizen, Channel.SMS, WarningLevel.WARNING, NOW));
+
+    deliveries.saveAndFlush(
+        NotificationDelivery.queue(
+            warning.getId(), citizen, Channel.SMS, WarningLevel.EVACUATE, NOW.plusSeconds(60)));
+
+    assertThat(deliveries.findAll(DeliverySpecifications.forWarning(warning.getId()))).hasSize(2);
+    assertThat(deliveries.countTargetedCitizens(warning.getId())).isEqualTo(1);
+    assertThat(
+            deliveries.countByChannelAndStatus(warning.getId(), WarningLevel.EVACUATE))
+        .containsExactly(new DeliveryCount(Channel.SMS, DeliveryStatus.QUEUED, 1));
   }
 
   @Test
@@ -160,7 +185,7 @@ class WarningRepositoryTest extends RepositoryTestSupport {
     sms.failed("Simulated gateway timeout");
     deliveries.flush();
 
-    assertThat(deliveries.countByChannelAndStatus(warning.getId()))
+    assertThat(deliveries.countByChannelAndStatus(warning.getId(), WarningLevel.WARNING))
         .containsExactlyInAnyOrder(
             new DeliveryCount(Channel.PUSH, DeliveryStatus.DELIVERED, 2),
             new DeliveryCount(Channel.SMS, DeliveryStatus.FAILED, 1));
@@ -190,6 +215,7 @@ class WarningRepositoryTest extends RepositoryTestSupport {
   }
 
   private NotificationDelivery saveDelivery(Warning warning, UUID citizen, Channel channel) {
-    return deliveries.save(NotificationDelivery.queue(warning.getId(), citizen, channel, NOW));
+    return deliveries.save(
+        NotificationDelivery.queue(warning.getId(), citizen, channel, WarningLevel.WARNING, NOW));
   }
 }

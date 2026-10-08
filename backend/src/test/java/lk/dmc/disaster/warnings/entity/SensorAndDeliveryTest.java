@@ -6,11 +6,29 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import lk.dmc.disaster.shared.domain.WarningLevel;
 import lk.dmc.disaster.shared.error.AppException;
 import lk.dmc.disaster.shared.error.ErrorCode;
 import org.junit.jupiter.api.Test;
 
 class SensorAndDeliveryTest {
+
+  private static NotificationDelivery queued(Channel channel) {
+    return NotificationDelivery.queue(
+        UUID.randomUUID(), UUID.randomUUID(), channel, WarningLevel.WARNING, NOW);
+  }
+
+  @Test
+  void delivery_queued_remembersTheLevelItWasSentAt() {
+    assertThat(queued(Channel.PUSH).getLevel()).isEqualTo(WarningLevel.WARNING);
+  }
+
+  @Test
+  void sensorKind_hasTheTwoGaugeTypesThatMatchTheDatabaseValues() {
+    assertThat(SensorKind.values()).containsExactly(SensorKind.RIVER_GAUGE, SensorKind.RAIN_GAUGE);
+    assertThat(SensorKind.valueOf("RIVER_GAUGE")).isEqualTo(SensorKind.RIVER_GAUGE);
+    assertThat(SensorKind.valueOf("RAIN_GAUGE")).isEqualTo(SensorKind.RAIN_GAUGE);
+  }
 
   @Test
   void simulationStep_isAnEighthOfTheGap() {
@@ -50,7 +68,7 @@ class SensorAndDeliveryTest {
   @Test
   void delivery_queued_thenDelivered() {
     NotificationDelivery delivery =
-        NotificationDelivery.queue(UUID.randomUUID(), UUID.randomUUID(), Channel.PUSH, NOW);
+        queued(Channel.PUSH);
     assertThat(delivery.getStatus()).isEqualTo(DeliveryStatus.QUEUED);
 
     delivery.delivered(NOW.plusSeconds(1));
@@ -63,7 +81,7 @@ class SensorAndDeliveryTest {
   @Test
   void delivery_failed_keepsReason() {
     NotificationDelivery delivery =
-        NotificationDelivery.queue(UUID.randomUUID(), UUID.randomUUID(), Channel.SMS, NOW);
+        queued(Channel.SMS);
 
     delivery.failed("Simulated gateway timeout");
 
@@ -75,7 +93,7 @@ class SensorAndDeliveryTest {
   @Test
   void delivery_failedWithNoReason_isStoredAsUnknownFailure() {
     NotificationDelivery delivery =
-        NotificationDelivery.queue(UUID.randomUUID(), UUID.randomUUID(), Channel.PUSH, NOW);
+        queued(Channel.PUSH);
 
     delivery.failed(null);
 
@@ -86,9 +104,9 @@ class SensorAndDeliveryTest {
   @Test
   void delivery_failedWithBlankOrHugeReason_isStillStoredWithinLimit() {
     NotificationDelivery blank =
-        NotificationDelivery.queue(UUID.randomUUID(), UUID.randomUUID(), Channel.SMS, NOW);
+        queued(Channel.SMS);
     NotificationDelivery huge =
-        NotificationDelivery.queue(UUID.randomUUID(), UUID.randomUUID(), Channel.SMS, NOW);
+        queued(Channel.SMS);
 
     blank.failed("  ");
     huge.failed("x".repeat(500));
@@ -100,7 +118,7 @@ class SensorAndDeliveryTest {
   @Test
   void delivery_settledTwice_isInvalidTransition() {
     NotificationDelivery delivery =
-        NotificationDelivery.queue(UUID.randomUUID(), UUID.randomUUID(), Channel.AUDIBLE, NOW);
+        queued(Channel.AUDIBLE);
     delivery.delivered(NOW);
 
     assertThatThrownBy(() -> delivery.failed("late"))

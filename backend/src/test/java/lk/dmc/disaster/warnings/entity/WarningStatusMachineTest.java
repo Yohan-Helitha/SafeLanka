@@ -14,9 +14,15 @@ class WarningStatusMachineTest {
   @ParameterizedTest
   @EnumSource(
       value = WarningStatus.class,
-      names = {"ESCALATED", "CANCELLED", "EXPIRED"})
+      names = {"CANCELLED", "EXPIRED"})
   void canTransition_fromActiveToAnyEnd_isAllowed(WarningStatus to) {
     assertThat(WarningStatusMachine.canTransition(WarningStatus.ACTIVE, to)).isTrue();
+  }
+
+  @Test
+  void canTransition_activeToEscalated_isForbiddenBecauseEscalationRaisesTheSameWarning() {
+    assertThat(WarningStatusMachine.canTransition(WarningStatus.ACTIVE, WarningStatus.ESCALATED))
+        .isFalse();
   }
 
   @Test
