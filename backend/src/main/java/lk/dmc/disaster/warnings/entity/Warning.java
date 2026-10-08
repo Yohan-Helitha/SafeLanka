@@ -7,10 +7,12 @@ import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -80,9 +82,6 @@ public class Warning {
   @Column(name = "issued_at", nullable = false)
   private Instant issuedAt;
 
-  @Column(name = "supersedes_id")
-  private UUID supersedesId;
-
   @Column(name = "cancelled_at")
   private Instant cancelledAt;
 
@@ -93,6 +92,14 @@ public class Warning {
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
   @JoinColumn(name = "warning_id", nullable = false)
   private List<WarningTargetArea> targetAreas = new ArrayList<>();
+
+  @Getter(AccessLevel.NONE)
+  // Eager: the history is a handful of rows and is read by the mappers after the transaction ends
+  // (open-in-view is off), so a lazy collection would fail there.
+  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+  @JoinColumn(name = "warning_id", nullable = false)
+  @OrderBy("changedAt asc")
+  private List<WarningLevelChange> levelChanges = new ArrayList<>();
 
   @Getter(AccessLevel.NONE)
   @ElementCollection
@@ -120,6 +127,7 @@ public class Warning {
     warning.applyContent(draft.content());
     warning.issuedBy = issuedBy;
     warning.issuedAt = now;
+    warning.levelChanges.add(WarningLevelChange.issuedAt(draft.level(), issuedBy, now));
     warning.evidenceReportIds.addAll(draft.evidenceReportIds());
     draft
         .target()
@@ -143,28 +151,23 @@ public class Warning {
   }
 
   /**
-   * Replaces this warning with a higher-level one for the same targets and evidence.
+   * Raises the warning to a higher level and records the change in its history. The warning stays
+   * the same warning; the caller sends it again at the new level.
    *
-   * @param content the texts for the new warning (pass {@link #content()} to keep them)
-   * @return the new ACTIVE warning, which supersedes this one
+   * @param content the texts for the new level (pass {@link #content()} to keep them)
    * @throws AppException INVALID_STATE_TRANSITION when not ACTIVE; BUSINESS_RULE when the level is
    *     not higher
    */
-  public Warning escalateTo(
-      WarningLevel newLevel, WarningContent content, UUID issuedBy, Instant now) {
-    WarningStatusMachine.require(status, WarningStatus.ESCALATED);
+  public void escalateTo(
+      WarningLevel newLevel, WarningContent content, UUID changedBy, Instant now) {
+    requireActive();
     if (!newLevel.isHigherThan(level)) {
       throw new AppException(
           ErrorCode.BUSINESS_RULE, "New level must be higher than " + level + ".");
     }
-    status = WarningStatus.ESCALATED;
-    Warning next =
-        publish(
-            new WarningDraft(hazardId, eventId, newLevel, target(), content, evidenceReportIds),
-            issuedBy,
-            now);
-    next.supersedesId = id;
-    return next;
+    levelChanges.add(WarningLevelChange.raised(level, newLevel, changedBy, now));
+    level = newLevel;
+    applyContent(content);
   }
 
   /**
@@ -198,6 +201,16 @@ public class Warning {
         targetType,
         areaIds(WarningTargetArea::getDistrictId),
         areaIds(WarningTargetArea::getRiverBasinId));
+  }
+
+  /** Every level the warning has had, oldest first, starting with the level it was issued at. */
+  public List<WarningLevelChange> levelHistory() {
+    return List.copyOf(levelChanges);
+  }
+
+  /** When the level last changed: the issue time until the first escalation. */
+  public Instant levelChangedAt() {
+    return levelChanges.get(levelChanges.size() - 1).getChangedAt();
   }
 
   public List<WarningTargetArea> targetAreas() {

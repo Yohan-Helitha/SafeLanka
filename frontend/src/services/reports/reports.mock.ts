@@ -156,12 +156,12 @@ export const reportsMock: ReportsApi = {
       return toDetail(find(id))
     }),
 
-  verify: (id) =>
+  verify: (id, severity) =>
     mockCall(() => {
       const row = reviewable(id)
       stamp(row, 'VERIFIED')
       row.rejectionReason = null
-      bus.emit({ type: 'ReportVerified', reportId: row.id })
+      bus.emit({ type: 'ReportVerified', reportId: row.id, severity })
       return toDetail(row)
     }),
 

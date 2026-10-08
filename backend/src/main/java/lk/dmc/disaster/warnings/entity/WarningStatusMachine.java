@@ -2,15 +2,14 @@ package lk.dmc.disaster.warnings.entity;
 
 import static lk.dmc.disaster.warnings.entity.WarningStatus.ACTIVE;
 import static lk.dmc.disaster.warnings.entity.WarningStatus.CANCELLED;
-import static lk.dmc.disaster.warnings.entity.WarningStatus.ESCALATED;
 import static lk.dmc.disaster.warnings.entity.WarningStatus.EXPIRED;
 
-/** Allowed warning status changes: ACTIVE may end three ways, every other status is final. */
+/** Allowed warning status changes: ACTIVE may end two ways, every other status is final. */
 public final class WarningStatusMachine {
 
   private static final StatusMachine<WarningStatus> MACHINE =
       StatusMachine.builder("Warning", WarningStatus.class)
-          .allow(ACTIVE, ESCALATED, CANCELLED, EXPIRED)
+          .allow(ACTIVE, CANCELLED, EXPIRED)
           .build();
 
   private WarningStatusMachine() {}

@@ -83,6 +83,16 @@ class HazardQueryServiceTest {
   }
 
   @Test
+  void list_emptyStatusList_fallsBackToTheOpenStatusesLikeNull() {
+    hazardsFound();
+
+    assertThat(service.list(List.of(), null, null)).isEmpty();
+    assertThat(service.list(null, null, null)).isEmpty();
+
+    verify(hazards, org.mockito.Mockito.times(2)).findAll(any(Specification.class), any(Sort.class));
+  }
+
+  @Test
   void list_sensorHazardWhoseGaugeHasNoReadingsYet_hasNoLatestReading() {
     Sensor sensor = ServiceFixtures.sensor();
     Hazard hazard = Hazard.fromSensor(sensor, UUID.randomUUID(), "Gauge crossed alert level.", NOW);

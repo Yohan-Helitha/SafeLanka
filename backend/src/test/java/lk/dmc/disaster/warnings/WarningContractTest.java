@@ -86,7 +86,6 @@ class WarningContractTest {
     WarningEscalatedEvent event =
         new WarningEscalatedEvent(
             UUID.randomUUID(),
-            UUID.randomUUID(),
             WarningLevel.WATCH,
             WarningLevel.EVACUATE,
             resolved,

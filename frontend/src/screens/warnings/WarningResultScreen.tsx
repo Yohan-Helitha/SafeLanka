@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { useState } from 'react'
 import { SeverityBadge, StatusChip } from '@/components/domain'
@@ -48,13 +48,6 @@ export function WarningResultScreen() {
           </>
         }
       />
-      {w.supersedesId && (
-        <p className="mb-3 text-sm">
-          <Link to={paths.dmc.warning(w.supersedesId)} className="text-signal hover:underline">
-            View previous warning
-          </Link>
-        </p>
-      )}
       {w.cancelReason && <p className="mb-3 rounded-control border border-line bg-panel p-3 text-sm text-muted">Cancelled: {w.cancelReason}</p>}
 
       <WarningActions warning={w} />

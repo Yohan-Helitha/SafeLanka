@@ -14,6 +14,9 @@ public interface HazardEvidenceRepository extends JpaRepository<HazardEvidence, 
 
   List<HazardEvidence> findByIdHazardId(UUID hazardId);
 
+  /** How many verified reports are linked to the hazard. */
+  long countByIdHazardId(UUID hazardId);
+
   /** True when the report is already linked to any hazard, so the listener can skip it. */
   boolean existsByIdReportId(UUID reportId);
 

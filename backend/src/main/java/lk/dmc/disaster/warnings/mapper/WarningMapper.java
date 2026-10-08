@@ -4,6 +4,7 @@ import lk.dmc.disaster.warnings.dto.ChannelOutcomeResponse;
 import lk.dmc.disaster.warnings.dto.DeliveriesResponse;
 import lk.dmc.disaster.warnings.dto.DeliveryResponse;
 import lk.dmc.disaster.warnings.dto.DeliverySummaryResponse;
+import lk.dmc.disaster.warnings.dto.LevelChangeResponse;
 import lk.dmc.disaster.warnings.dto.PageResponse;
 import lk.dmc.disaster.warnings.dto.WarningResponse;
 import lk.dmc.disaster.warnings.entity.NotificationDelivery;
@@ -37,7 +38,8 @@ public class WarningMapper {
         warning.getInstructions(),
         warning.getIssuedAt(),
         warning.getIssuedBy(),
-        warning.getSupersedesId(),
+        warning.levelChangedAt(),
+        warning.levelHistory().stream().map(LevelChangeResponse::from).toList(),
         warning.getCancelledAt(),
         warning.getCancelReason(),
         view.evidenceReportIds(),

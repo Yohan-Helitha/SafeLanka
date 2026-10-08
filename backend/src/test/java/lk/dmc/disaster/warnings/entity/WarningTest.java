@@ -8,7 +8,9 @@ import static lk.dmc.disaster.warnings.entity.EntityFixtures.activeWarning;
 import static lk.dmc.disaster.warnings.entity.EntityFixtures.content;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 import lk.dmc.disaster.shared.domain.WarningLevel;
@@ -41,7 +43,16 @@ class WarningTest {
     assertThat(warning.getTargetType()).isEqualTo(TargetType.DISTRICT);
     assertThat(warning.getIssuedBy()).isEqualTo(OFFICER);
     assertThat(warning.getIssuedAt()).isEqualTo(NOW);
-    assertThat(warning.getSupersedesId()).isNull();
+    assertThat(warning.levelHistory())
+        .singleElement()
+        .satisfies(
+            first -> {
+              assertThat(first.getFromLevel()).isNull();
+              assertThat(first.getToLevel()).isEqualTo(WarningLevel.WARNING);
+              assertThat(first.getChangedBy()).isEqualTo(OFFICER);
+              assertThat(first.getChangedAt()).isEqualTo(NOW);
+            });
+    assertThat(warning.levelChangedAt()).isEqualTo(NOW);
     assertThat(warning.targetAreas())
         .extracting(WarningTargetArea::getDistrictId)
         .containsExactly(DISTRICT);
@@ -100,20 +111,63 @@ class WarningTest {
   }
 
   @Test
-  void escalateTo_higherLevel_returnsNewWarningSupersedingTheOld() {
-    Warning old = activeWarning(WarningLevel.WATCH);
+  void escalateTo_higherLevel_raisesTheSameWarningAndRecordsTheChange() {
+    Warning warning = activeWarning(WarningLevel.WATCH);
+    UUID id = warning.getId();
+    WarningTarget target = warning.target();
+    Instant later = NOW.plusSeconds(60);
 
-    Warning next =
-        old.escalateTo(WarningLevel.EVACUATE, old.content(), OFFICER, NOW.plusSeconds(60));
+    warning.escalateTo(WarningLevel.EVACUATE, warning.content(), OFFICER, later);
 
-    assertThat(old.getStatus()).isEqualTo(WarningStatus.ESCALATED);
-    assertThat(next.getStatus()).isEqualTo(WarningStatus.ACTIVE);
-    assertThat(next.getLevel()).isEqualTo(WarningLevel.EVACUATE);
-    assertThat(next.getSupersedesId()).isEqualTo(old.getId());
-    assertThat(next.getId()).isNotEqualTo(old.getId());
-    assertThat(next.target()).isEqualTo(old.target());
-    assertThat(next.evidenceReportIds()).isEqualTo(old.evidenceReportIds());
-    assertThat(next.getIssuedAt()).isEqualTo(NOW.plusSeconds(60));
+    assertThat(warning.getId()).isEqualTo(id);
+    assertThat(warning.getStatus()).isEqualTo(WarningStatus.ACTIVE);
+    assertThat(warning.getLevel()).isEqualTo(WarningLevel.EVACUATE);
+    assertThat(warning.target()).isEqualTo(target);
+    assertThat(warning.getIssuedAt()).isEqualTo(NOW);
+    assertThat(warning.levelChangedAt()).isEqualTo(later);
+    assertThat(warning.levelHistory())
+        .extracting(
+            WarningLevelChange::getFromLevel,
+            WarningLevelChange::getToLevel,
+            WarningLevelChange::getChangedAt)
+        .containsExactly(
+            tuple(null, WarningLevel.WATCH, NOW),
+            tuple(WarningLevel.WATCH, WarningLevel.EVACUATE, later));
+  }
+
+  @Test
+  void escalateTo_twice_keepsTheWholePathInOrder() {
+    Warning warning = activeWarning(WarningLevel.ADVISORY);
+
+    warning.escalateTo(WarningLevel.WARNING, content(), OFFICER, NOW.plusSeconds(60));
+    warning.escalateTo(WarningLevel.EVACUATE, content(), OFFICER, NOW.plusSeconds(120));
+
+    assertThat(warning.levelHistory())
+        .extracting(WarningLevelChange::getToLevel)
+        .containsExactly(WarningLevel.ADVISORY, WarningLevel.WARNING, WarningLevel.EVACUATE);
+  }
+
+  @Test
+  void escalateTo_newContent_replacesTheTexts() {
+    Warning warning = activeWarning(WarningLevel.WATCH);
+    WarningContent evacuate =
+        new WarningContent(
+            "Evacuate Kelani banks",
+            "Leave the Kelani river banks immediately.",
+            "DMC: Evacuate Kelani banks now.",
+            "Go to the nearest safe centre.");
+
+    warning.escalateTo(WarningLevel.EVACUATE, evacuate, OFFICER, NOW.plusSeconds(60));
+
+    assertThat(warning.content()).isEqualTo(evacuate);
+  }
+
+  @Test
+  void levelHistory_isACopy() {
+    Warning warning = activeWarning(WarningLevel.WATCH);
+
+    assertThatThrownBy(() -> warning.levelHistory().clear())
+        .isInstanceOf(UnsupportedOperationException.class);
   }
 
   @Test
@@ -123,6 +177,7 @@ class WarningTest {
     assertThatThrownBy(() -> warning.escalateTo(WarningLevel.WARNING, content(), OFFICER, NOW))
         .satisfies(e -> assertCode(e, ErrorCode.BUSINESS_RULE));
     assertThat(warning.isActive()).isTrue();
+    assertThat(warning.levelHistory()).hasSize(1);
   }
 
   @Test

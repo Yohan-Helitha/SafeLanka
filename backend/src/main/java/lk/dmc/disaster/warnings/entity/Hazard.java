@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lk.dmc.disaster.shared.error.AppException;
+import lk.dmc.disaster.shared.error.ErrorCode;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -85,9 +87,15 @@ public class Hazard {
   /** A verified report with no matching hazard starts one. */
   public static Hazard fromReport(
       UUID hazardTypeId, HazardArea area, String description, Instant now) {
+    return fromReport(hazardTypeId, area, description, WarningRules.REPORT_HAZARD_SEVERITY, now);
+  }
+
+  /** A verified report starts one at the severity the officer chose when verifying it. */
+  public static Hazard fromReport(
+      UUID hazardTypeId, HazardArea area, String description, int severity, Instant now) {
     return open(
         hazardTypeId,
-        WarningRules.REPORT_HAZARD_SEVERITY,
+        severity,
         area,
         description,
         HazardSource.REPORT,
@@ -150,6 +158,21 @@ public class Hazard {
     if (status != HazardStatus.WARNED) {
       assessAs(HazardStatus.WARNED);
     }
+  }
+
+  /**
+   * Sets the severity the officer judges right, up or down.
+   *
+   * @throws lk.dmc.disaster.shared.error.AppException VALIDATION_ERROR outside 1 to 5;
+   *     INVALID_STATE_TRANSITION when the hazard is resolved
+   */
+  public void setSeverity(int newSeverity) {
+    WarningRules.requireSeverity(newSeverity);
+    if (!isOpen()) {
+      throw new AppException(
+          ErrorCode.INVALID_STATE_TRANSITION, "A resolved hazard cannot be changed.");
+    }
+    severity = newSeverity;
   }
 
   /** Raises severity to at least {@code minimum}; never lowers it. */

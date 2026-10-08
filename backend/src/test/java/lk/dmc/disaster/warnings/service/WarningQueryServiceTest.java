@@ -56,7 +56,7 @@ class WarningQueryServiceTest {
     when(warnings.findById(warning.getId())).thenReturn(Optional.of(warning));
     when(audience.resolveDistricts(new AudienceSelection(Set.of(), Set.of(KELANI))))
         .thenReturn(Set.of(COLOMBO, GAMPAHA));
-    when(deliveries.outcomeOf(warning.getId())).thenReturn(OUTCOME);
+    when(deliveries.outcomeOf(warning)).thenReturn(OUTCOME);
 
     WarningView view = service.get(warning.getId());
 
@@ -85,7 +85,7 @@ class WarningQueryServiceTest {
             WarningLevel.WATCH, ServiceFixtures.districtTarget(COLOMBO), ServiceFixtures.NOW);
     when(warnings.findByHazardIdOrderByIssuedAtDesc(hazardId)).thenReturn(List.of(warning));
     when(audience.resolveDistricts(any(AudienceSelection.class))).thenReturn(Set.of(COLOMBO));
-    when(deliveries.outcomeOf(warning.getId())).thenReturn(OUTCOME);
+    when(deliveries.outcomeOf(warning)).thenReturn(OUTCOME);
 
     List<WarningView> views = service.listForHazard(hazardId);
 
@@ -114,7 +114,7 @@ class WarningQueryServiceTest {
     Page<Warning> page = new PageImpl<>(List.of(first, second), pageable, 2);
     when(warnings.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
     when(audience.resolveDistricts(any(AudienceSelection.class))).thenReturn(Set.of(COLOMBO));
-    when(deliveries.outcomeOf(any(UUID.class))).thenReturn(OUTCOME);
+    when(deliveries.outcomeOf(any(Warning.class))).thenReturn(OUTCOME);
 
     Page<WarningView> result = service.list(WarningStatus.ACTIVE, null, pageable);
 

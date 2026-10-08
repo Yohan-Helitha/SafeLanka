@@ -8,6 +8,7 @@ import lk.dmc.disaster.warnings.dto.GaugeResponse;
 import lk.dmc.disaster.warnings.dto.HazardDetail;
 import lk.dmc.disaster.warnings.dto.HazardListItem;
 import lk.dmc.disaster.warnings.dto.HazardWarningRef;
+import lk.dmc.disaster.warnings.dto.LevelChangeResponse;
 import lk.dmc.disaster.warnings.dto.LatestReadingResponse;
 import lk.dmc.disaster.warnings.dto.ReadingResponse;
 import lk.dmc.disaster.warnings.entity.Hazard;
@@ -126,6 +127,8 @@ public class HazardMapper {
         view.target().districtIds(),
         view.target().riverBasinIds(),
         warning.getIssuedAt(),
+        warning.levelChangedAt(),
+        warning.levelHistory().stream().map(LevelChangeResponse::from).toList(),
         view.deliveries().targeted());
   }
 }

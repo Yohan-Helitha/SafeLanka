@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lk.dmc.disaster.shared.domain.WarningLevel;
 import lk.dmc.disaster.shared.error.AppException;
 import lk.dmc.disaster.shared.error.ErrorCode;
 import lombok.AccessLevel;
@@ -35,6 +36,10 @@ public class NotificationDelivery {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
+  private WarningLevel level;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   private DeliveryStatus status;
 
   @Column(name = "attempted_at", nullable = false)
@@ -46,13 +51,15 @@ public class NotificationDelivery {
   @Column(name = "failure_reason")
   private String failureReason;
 
+  /** Queues one attempt; {@code level} is the warning level being sent. */
   public static NotificationDelivery queue(
-      UUID warningId, UUID citizenId, Channel channel, Instant now) {
+      UUID warningId, UUID citizenId, Channel channel, WarningLevel level, Instant now) {
     NotificationDelivery delivery = new NotificationDelivery();
     delivery.id = UUID.randomUUID();
     delivery.warningId = warningId;
     delivery.citizenId = citizenId;
     delivery.channel = channel;
+    delivery.level = level;
     delivery.status = DeliveryStatus.QUEUED;
     delivery.attemptedAt = now;
     return delivery;

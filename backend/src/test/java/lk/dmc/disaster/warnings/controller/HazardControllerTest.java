@@ -220,6 +220,49 @@ class HazardControllerTest extends ControllerTestSupport {
   }
 
   @Test
+  void setSeverity_validValue_returnsTheUpdatedHazard() throws Exception {
+    signedInAs(Role.DMC_OFFICER);
+    hazardTypesKnown();
+    when(query.detail(hazard.getId())).thenReturn(ControllerFixtures.detailOf(hazard));
+
+    mvc.perform(
+            patch("/api/hazards/{id}/severity", hazard.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"severity\": 4}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.id").value(hazard.getId().toString()));
+
+    verify(assessment).setSeverity(hazard.getId(), 4);
+  }
+
+  @Test
+  void setSeverity_outOfRange_is400() throws Exception {
+    signedInAs(Role.DMC_OFFICER);
+
+    mvc.perform(
+            patch("/api/hazards/{id}/severity", UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"severity\": 6}"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.error.details.fields.severity").exists());
+    verify(assessment, never()).setSeverity(any(), org.mockito.ArgumentMatchers.anyInt());
+  }
+
+  @Test
+  void setSeverity_resolvedHazard_is409() throws Exception {
+    signedInAs(Role.DMC_OFFICER);
+    UUID id = UUID.randomUUID();
+    when(assessment.setSeverity(id, 2))
+        .thenThrow(new AppException(ErrorCode.INVALID_STATE_TRANSITION, "Hazard is resolved."));
+
+    mvc.perform(
+            patch("/api/hazards/{id}/severity", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"severity\": 2}"))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
   void everyEndpoint_forOtherRoles_is403() throws Exception {
     signedInAs(Role.DISTRICT_OFFICER);
 

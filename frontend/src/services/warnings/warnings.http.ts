@@ -50,6 +50,9 @@ export const warningsHttp: WarningsApi = {
   setHazardStatus: async (id, status) =>
     toHazardDetail(await http.patch<WireHazardDetail>(`/hazards/${id}/status`, { status })),
 
+  setHazardSeverity: async (id, severity) =>
+    toHazardDetail(await http.patch<WireHazardDetail>(`/hazards/${id}/severity`, { severity })),
+
   audience: async (districtIds, basinIds) => {
     // The API needs at least one area; nothing chosen simply reaches nobody.
     if (districtIds.length === 0 && basinIds.length === 0) return { recipients: 0 }

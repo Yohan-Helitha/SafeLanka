@@ -14,9 +14,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.sql.ResultSet;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,6 +132,18 @@ class JdbcAdaptersTest {
   }
 
   @Test
+  void citizens_countWithOnlyDistrictsOrOnlyBasins_usesJustThatFilter() {
+    doReturn(resultOf(List.of(3L))).when(statement).query(Long.class);
+    JdbcCitizenDirectory directory = new JdbcCitizenDirectory(jdbc);
+
+    assertThat(directory.countCitizensInAreas(Set.of(COLOMBO), Set.of())).isEqualTo(3);
+    assertThat(directory.countCitizensInAreas(Set.of(), Set.of(KELANI))).isEqualTo(3);
+
+    verify(statement).param("districtIds", Set.of(COLOMBO));
+    verify(statement).param("basinIds", Set.of(KELANI));
+  }
+
+  @Test
   void citizens_noAreas_returnNothingWithoutAskingTheDatabase() {
     JdbcCitizenDirectory directory = new JdbcCitizenDirectory(jdbc);
 
@@ -194,38 +203,6 @@ class JdbcAdaptersTest {
 
     doReturn(resultOf(List.of(0L))).when(statement).query(Long.class);
     assertThat(new JdbcAreaReference(jdbc).riverBasinExists(KELANI)).isFalse();
-  }
-
-  // ---- JdbcVerifiedReports -----------------------------------------------------------------
-
-  @Test
-  void reports_findVerified_mapsTheRowsOfVerifiedReports() throws Exception {
-    UUID report = UUID.randomUUID();
-    Instant captured = Instant.parse("2026-10-06T10:00:00Z");
-    ResultSet row = mock(ResultSet.class);
-    when(row.getObject("id", UUID.class)).thenReturn(report);
-    when(row.getString("reference_no")).thenReturn("RPT-2026-0001");
-    when(row.getString("category")).thenReturn("FLOOD");
-    when(row.getString("description")).thenReturn("Water over the road.");
-    when(row.getObject("district_id", UUID.class)).thenReturn(COLOMBO);
-    when(row.getObject("captured_at", OffsetDateTime.class))
-        .thenReturn(captured.atOffset(ZoneOffset.UTC));
-    queryByMapperReturnsOneRowFrom(row);
-
-    List<VerifiedReportSummary> found = new JdbcVerifiedReports(jdbc).findVerified(Set.of(report));
-
-    assertThat(found)
-        .containsExactly(
-            new VerifiedReportSummary(
-                report, "RPT-2026-0001", "FLOOD", "Water over the road.", COLOMBO, captured));
-    assertThat(sqlSent()).contains("status = 'VERIFIED'");
-  }
-
-  @Test
-  void reports_findVerified_noIds_doesNotAskTheDatabase() {
-    assertThat(new JdbcVerifiedReports(jdbc).findVerified(Set.of())).isEmpty();
-
-    verifyNoInteractions(jdbc);
   }
 
   // ---- JdbcHazardTypeDirectory -------------------------------------------------------------

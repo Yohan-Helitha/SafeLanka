@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import lk.dmc.disaster.shared.domain.WarningLevel;
 import lk.dmc.disaster.warnings.entity.Channel;
 import lk.dmc.disaster.warnings.entity.DeliveryStatus;
 import lk.dmc.disaster.warnings.entity.Hazard;
@@ -107,8 +108,11 @@ class SpecificationsTest {
     when(root.get("warningId")).thenReturn(mock(Path.class));
     when(root.get("status")).thenReturn(mock(Path.class));
     when(root.get("channel")).thenReturn(mock(Path.class));
+    when(root.get("level")).thenReturn(mock(Path.class));
 
     assertThat(apply(DeliverySpecifications.forWarning(UUID.randomUUID()), root))
+        .isSameAs(restricted);
+    assertThat(apply(DeliverySpecifications.atLevel(WarningLevel.EVACUATE), root))
         .isSameAs(restricted);
     assertThat(apply(DeliverySpecifications.withStatus(null), root)).isSameAs(everything);
     assertThat(apply(DeliverySpecifications.onChannel(null), root)).isSameAs(everything);
