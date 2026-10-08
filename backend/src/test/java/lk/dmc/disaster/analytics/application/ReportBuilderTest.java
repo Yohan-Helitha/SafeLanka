@@ -36,4 +36,21 @@ class ReportBuilderTest {
         assertThat(report.getUnavailableSections().get(0)).containsEntry("key", "CITIZENS_REACHED");
         assertThat(report.getUnavailableSections().get(0)).containsEntry("reason", "No data");
     }
+
+    @Test
+    void shouldBuildReportWithFilters() {
+        var builder = new ReportBuilder(List.of());
+        var context = new ReportContext(
+            TestIds.event(1), 
+            java.util.Set.of(java.util.UUID.randomUUID()), 
+            java.time.Instant.parse("2026-05-01T00:00:00Z"), 
+            java.time.Instant.parse("2026-05-10T00:00:00Z"), 
+            TestIds.user(1)
+        );
+
+        var report = builder.build(context);
+
+        assertThat(report.getEventId()).isEqualTo(TestIds.event(1));
+        assertThat(report.getFilters()).containsKeys("districtIds", "fromTime", "toTime");
+    }
 }

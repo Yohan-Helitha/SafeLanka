@@ -117,4 +117,53 @@ class AnalyticsServiceImplTest {
         assertThat(result).isNotNull();
         verify(repository).findById(reportId);
     }
+    
+    @Test
+    void unknownEventSavesNothing_whenCountIsNull() {
+        var context = new ReportContext(TestIds.event(1), null, null, null, TestIds.user(1));
+
+        when(jdbcClient.sql(anyString())).thenReturn(statementSpec);
+        when(statementSpec.param(anyString(), any())).thenReturn(statementSpec);
+        when(statementSpec.query(Integer.class)).thenReturn(countQuerySpec);
+        when(countQuerySpec.single()).thenReturn(null);
+
+        assertThatThrownBy(() -> service.generateReport(context))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Unknown event");
+    }
+    
+    @Test
+    void generateReportSuccess_withTimeWindow() {
+        var context = new ReportContext(TestIds.event(1), null, Instant.now().minus(5, ChronoUnit.DAYS), Instant.now(), TestIds.user(1));
+        var report = new DisasterReport(TestIds.event(1), java.util.Map.of(), java.util.Map.of(), List.of(), TestIds.user(1), Instant.now());
+
+        when(jdbcClient.sql(anyString())).thenReturn(statementSpec);
+        when(statementSpec.param(anyString(), any())).thenReturn(statementSpec);
+        when(statementSpec.query(Integer.class)).thenReturn(countQuerySpec);
+        when(countQuerySpec.single()).thenReturn(1);
+        
+        when(reportBuilder.build(context)).thenReturn(report);
+        when(repository.save(report)).thenReturn(report);
+
+        var result = service.generateReport(context);
+        assertThat(result).isNotNull();
+    }
+    
+    @Test
+    void listSavedReports_withNullEventId_callsFindAll() {
+        when(repository.findAllByOrderByGeneratedAtDesc()).thenReturn(List.of());
+        var result = service.listSavedReports(null);
+        assertThat(result).isEmpty();
+        verify(repository).findAllByOrderByGeneratedAtDesc();
+    }
+    
+    @Test
+    void getReport_throwsWhenNotFound() {
+        var reportId = UUID.randomUUID();
+        when(repository.findById(reportId)).thenReturn(Optional.empty());
+        
+        assertThatThrownBy(() -> service.getReport(reportId))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessage("Report not found");
+    }
 }

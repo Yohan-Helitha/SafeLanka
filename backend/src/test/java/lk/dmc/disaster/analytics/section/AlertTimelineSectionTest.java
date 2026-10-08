@@ -27,4 +27,20 @@ class AlertTimelineSectionTest {
         var res = section.generate(null);
         assertThat(res.isUnavailable()).isTrue();
     }
+
+    @Test
+    void generate_withWarnings_success() {
+        var entry = new lk.dmc.disaster.analytics.domain.AlertTimeline.TimelineEntry(
+            java.util.UUID.randomUUID(), "WATCH", "ISSUED", java.time.Instant.now(), null, new java.util.UUID[0]
+        );
+        when(warningQuery.execute(any())).thenReturn(List.of(entry));
+        when(timingQuery.execute(any())).thenReturn(Optional.of(java.time.Instant.now().minusSeconds(60)));
+        
+        var res = section.generate(null);
+        assertThat(res.isUnavailable()).isFalse();
+        var data = (lk.dmc.disaster.analytics.domain.AlertTimeline) res.data();
+        assertThat(data.entries()).hasSize(1);
+        assertThat(data.firstVerifiedReportAt()).isNotNull();
+        assertThat(data.reportToWarningMinutes()).isNotNull();
+    }
 }

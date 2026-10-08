@@ -97,6 +97,20 @@ class AnalyticsControllerTest {
     }
 
     @Test
+    void getReports_outOfBounds_returnsEmptyPage() throws Exception {
+        var report = new DisasterReport(TestIds.event(1), Map.of(), Map.of(), List.of(), TestIds.user(1), Instant.now());
+        var summary = new ReportSummaryResponse(java.util.UUID.fromString("f0000000-0000-0000-0000-000000000001"), TestIds.event(1), "Event 1", Instant.now(), "User 1", 0);
+        
+        when(analyticsService.listSavedReports(null)).thenReturn(List.of(report));
+        when(mapper.toSummaryResponse(report)).thenReturn(summary);
+
+        // page=1 with size=20 means offset=20. List size is 1. Start (20) > list.size (1).
+        mvc.perform(get("/api/analytics/reports").param("page", "1").param("size", "20"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.content").isEmpty());
+    }
+
+    @Test
     void getReport() throws Exception {
         var report = new DisasterReport(TestIds.event(1), Map.of(), Map.of(), List.of(), TestIds.user(1), Instant.now());
         var response = new DisasterReportResponse(java.util.UUID.fromString("f0000000-0000-0000-0000-000000000001"), TestIds.event(1), "Event 1", Map.of(), Map.of(), List.of(), "User 1", Instant.now());
@@ -121,5 +135,19 @@ class AnalyticsControllerTest {
             .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"disaster-report-" + TestIds.event(1) + ".pdf\""))
             .andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE))
             .andExpect(content().string("PDF_BYTES"));
+    }
+
+    @Test
+    void exportReport_csv() throws Exception {
+        var report = new DisasterReport(TestIds.event(1), Map.of(), Map.of(), List.of(), TestIds.user(1), Instant.now());
+        when(analyticsService.getReport(java.util.UUID.fromString("f0000000-0000-0000-0000-000000000001"))).thenReturn(report);
+        when(exportService.exportReport(report, "CSV")).thenReturn("CSV_BYTES".getBytes());
+
+        mvc.perform(get("/api/analytics/reports/{id}/export", java.util.UUID.fromString("f0000000-0000-0000-0000-000000000001"))
+                .param("format", "CSV"))
+            .andExpect(status().isOk())
+            .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"disaster-report-" + TestIds.event(1) + ".csv\""))
+            .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "text/csv"))
+            .andExpect(content().string("CSV_BYTES"));
     }
 }

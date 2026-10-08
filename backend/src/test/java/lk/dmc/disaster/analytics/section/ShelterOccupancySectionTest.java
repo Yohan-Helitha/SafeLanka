@@ -23,4 +23,20 @@ class ShelterOccupancySectionTest {
         var res = section.generate(null);
         assertThat(res.isUnavailable()).isTrue();
     }
+
+    @Test
+    void generate_withOccupancy_success() {
+        when(query.getSeries(any())).thenReturn(java.util.List.of(
+            new lk.dmc.disaster.analytics.query.OccupancyQuery.ShelterSeriesRecord(java.util.UUID.randomUUID(), "S1", java.util.UUID.randomUUID(), 100, java.time.Instant.now(), 50)
+        ));
+        when(query.getPeaks(any())).thenReturn(java.util.List.of(
+            new lk.dmc.disaster.analytics.query.OccupancyQuery.ShelterPeakRecord(java.util.UUID.randomUUID(), 90, 100, java.time.Instant.now())
+        ));
+        
+        var res = section.generate(null);
+        assertThat(res.isUnavailable()).isFalse();
+        var data = (lk.dmc.disaster.analytics.domain.ShelterOccupancy) res.data();
+        assertThat(data.series()).hasSize(1);
+        assertThat(data.peaks()).hasSize(1);
+    }
 }

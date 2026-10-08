@@ -23,4 +23,20 @@ class ResourceDistributionSectionTest {
         var res = section.generate(null);
         assertThat(res.isUnavailable()).isTrue();
     }
+
+    @Test
+    void generate_withAllocations_success() {
+        when(query.getByDistrict(any())).thenReturn(List.of(
+            new lk.dmc.disaster.analytics.domain.ResourceDistribution.DistrictDistribution(java.util.UUID.randomUUID(), "D1", "WATER", "L", 100, 80)
+        ));
+        when(query.getByOrganisationType(any())).thenReturn(List.of(
+            new lk.dmc.disaster.analytics.domain.ResourceDistribution.OrganisationTypeDistribution("NGO", 50)
+        ));
+        
+        var res = section.generate(null);
+        assertThat(res.isUnavailable()).isFalse();
+        var data = (lk.dmc.disaster.analytics.domain.ResourceDistribution) res.data();
+        assertThat(data.byDistrict()).hasSize(1);
+        assertThat(data.byOrganisationType()).hasSize(1);
+    }
 }

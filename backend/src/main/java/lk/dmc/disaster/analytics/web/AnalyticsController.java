@@ -17,11 +17,14 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import lk.dmc.disaster.shared.actor.RequiresRole;
+import lk.dmc.disaster.shared.actor.Role;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/analytics")
 @Tag(name = "Analytics", description = "Disaster Analytics API")
+@RequiresRole(Role.DMC_OFFICER)
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
