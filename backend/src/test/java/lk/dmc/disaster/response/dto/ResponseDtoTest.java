@@ -203,4 +203,47 @@ class ResponseDtoTest {
         new ResponseApi.DistributionInput(10, Instant.now(), UUID.randomUUID(), true);
     assertThat(distIn.quantityDistributed()).isEqualTo(10);
   }
+
+  @Test
+  void shelterHeadcountUpdateDto_and_requests_mapCorrectly() {
+    UUID shelterId = UUID.randomUUID();
+    UUID districtId = UUID.randomUUID();
+    Shelter shelter = Shelter.create("Shelter ABC", districtId, "Road", 6.9, 79.8, 200, null);
+
+    lk.dmc.disaster.response.entity.ShelterHeadcountUpdate update =
+        lk.dmc.disaster.response.entity.ShelterHeadcountUpdate.create(
+            shelterId, districtId, 175, 120, "Volunteer Sam", "VOLUNTEER", "30 families arrived");
+
+    lk.dmc.disaster.response.dto.response.ShelterHeadcountUpdateDto dtoWithShelter =
+        lk.dmc.disaster.response.dto.response.ShelterHeadcountUpdateDto.from(update, shelter);
+    assertThat(dtoWithShelter.id()).isEqualTo(update.getId());
+    assertThat(dtoWithShelter.shelterId()).isEqualTo(shelterId);
+    assertThat(dtoWithShelter.shelterName()).isEqualTo("Shelter ABC");
+    assertThat(dtoWithShelter.shelterCapacity()).isEqualTo(200);
+    assertThat(dtoWithShelter.currentShelterOccupancy()).isEqualTo(0);
+    assertThat(dtoWithShelter.reportedOccupancy()).isEqualTo(175);
+    assertThat(dtoWithShelter.previousOccupancy()).isEqualTo(120);
+    assertThat(dtoWithShelter.reportedByName()).isEqualTo("Volunteer Sam");
+    assertThat(dtoWithShelter.reportedByRole()).isEqualTo("VOLUNTEER");
+    assertThat(dtoWithShelter.message()).isEqualTo("30 families arrived");
+    assertThat(dtoWithShelter.status()).isEqualTo(lk.dmc.disaster.response.entity.HeadcountUpdateStatus.PENDING);
+
+    lk.dmc.disaster.response.dto.response.ShelterHeadcountUpdateDto dtoWithoutShelter =
+        lk.dmc.disaster.response.dto.response.ShelterHeadcountUpdateDto.from(update, null);
+    assertThat(dtoWithoutShelter.shelterName()).isEqualTo("Unknown Shelter");
+    assertThat(dtoWithoutShelter.shelterCapacity()).isEqualTo(0);
+
+    lk.dmc.disaster.response.dto.request.CreateHeadcountUpdateRequest createReq =
+        new lk.dmc.disaster.response.dto.request.CreateHeadcountUpdateRequest(
+            shelterId, 150, "Lead Officer", "FIELD_OFFICER", "Headcount count");
+    assertThat(createReq.shelterId()).isEqualTo(shelterId);
+    assertThat(createReq.reportedOccupancy()).isEqualTo(150);
+    assertThat(createReq.reportedByName()).isEqualTo("Lead Officer");
+    assertThat(createReq.reportedByRole()).isEqualTo("FIELD_OFFICER");
+    assertThat(createReq.message()).isEqualTo("Headcount count");
+
+    lk.dmc.disaster.response.dto.request.ApplyHeadcountUpdateRequest applyReq =
+        new lk.dmc.disaster.response.dto.request.ApplyHeadcountUpdateRequest(160);
+    assertThat(applyReq.customOccupancy()).isEqualTo(160);
+  }
 }
