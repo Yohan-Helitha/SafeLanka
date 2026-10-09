@@ -79,9 +79,11 @@ export interface Shelter {
   level: OccupancyLevel
   status: ShelterStatus
   coordinatorId: Id | null
+  addedBy?: string
   createdAt?: string
   updatedAt?: string
 }
+
 
 export interface ShelterSuggestion extends Shelter {
   distanceKm: number
@@ -147,3 +149,31 @@ export interface ResponseDashboard {
   activeWarnings: number
   activity: ActivityEntry[]
 }
+
+export type HeadcountUpdateStatus = 'PENDING' | 'APPLIED' | 'DISMISSED'
+
+export interface ShelterHeadcountUpdate {
+  id: Id
+  shelterId: Id
+  shelterName: string
+  districtId: Id
+  reportedOccupancy: number
+  previousOccupancy: number | null
+  currentShelterOccupancy: number
+  shelterCapacity: number
+  reportedByName: string
+  reportedByRole: string
+  message: string
+  status: HeadcountUpdateStatus
+  reportedAt: string
+  processedAt: string | null
+}
+
+export interface CreateHeadcountUpdateInput {
+  shelterId: Id
+  reportedOccupancy: number
+  reportedByName?: string
+  reportedByRole?: string
+  message: string
+}
+
