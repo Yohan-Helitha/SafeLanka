@@ -1,19 +1,30 @@
-package lk.dmc.disaster.analytics.web;
+package lk.dmc.disaster.analytics.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * A saved report. {@code sections} holds the data of each available section under its camelCase
+ * key ({@code alertTimeline}, {@code citizensReached}, {@code shelterOccupancy}, {@code
+ * resourceDistribution}); a section without data is absent there and listed, with its reason, in
+ * {@code unavailableSections}.
+ */
 @Schema(description = "Full disaster report data")
 public record DisasterReportResponse(
     UUID id,
     UUID eventId,
     String eventName,
-    Map<String, Object> filters,
+    @Schema(description = "districtIds, from and to; null where the report was not narrowed")
+        Map<String, Object> filters,
     Map<String, Object> sections,
-    List<Map<String, String>> unavailableSections,
-    String generatedBy,
-    Instant generatedAt
-) {}
+    @Schema(description = "[{key: SHELTER_OCCUPANCY, reason: ...}]")
+        List<Map<String, String>> unavailableSections,
+    GeneratedBy generatedBy,
+    Instant generatedAt) {
+
+  /** Who generated the report. */
+  public record GeneratedBy(UUID id, String fullName) {}
+}

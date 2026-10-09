@@ -1,4 +1,4 @@
-package lk.dmc.disaster.analytics.web;
+package lk.dmc.disaster.analytics.dto;
 
 import java.time.Instant;
 import java.util.Set;

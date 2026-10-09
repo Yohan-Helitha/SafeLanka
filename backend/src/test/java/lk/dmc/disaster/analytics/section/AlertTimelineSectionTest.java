@@ -6,7 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import lk.dmc.disaster.analytics.domain.ReportContext;
+import lk.dmc.disaster.analytics.entity.ReportContext;
 import lk.dmc.disaster.analytics.query.ReportTimingQuery;
 import lk.dmc.disaster.analytics.query.WarningTimelineQuery;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ class AlertTimelineSectionTest {
 
     @Test
     void generate_withWarnings_success() {
-        var entry = new lk.dmc.disaster.analytics.domain.AlertTimeline.TimelineEntry(
+        var entry = new lk.dmc.disaster.analytics.entity.AlertTimeline.TimelineEntry(
             java.util.UUID.randomUUID(), "WATCH", "ISSUED", java.time.Instant.now(), null, new java.util.UUID[0]
         );
         when(warningQuery.execute(any())).thenReturn(List.of(entry));
@@ -38,7 +38,7 @@ class AlertTimelineSectionTest {
         
         var res = section.generate(null);
         assertThat(res.isUnavailable()).isFalse();
-        var data = (lk.dmc.disaster.analytics.domain.AlertTimeline) res.data();
+        var data = (lk.dmc.disaster.analytics.entity.AlertTimeline) res.data();
         assertThat(data.entries()).hasSize(1);
         assertThat(data.firstVerifiedReportAt()).isNotNull();
         assertThat(data.reportToWarningMinutes()).isNotNull();

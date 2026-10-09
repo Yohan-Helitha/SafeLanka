@@ -1,4 +1,4 @@
-package lk.dmc.disaster.analytics.domain;
+package lk.dmc.disaster.analytics.entity;
 
 import java.util.List;
 import java.util.UUID;

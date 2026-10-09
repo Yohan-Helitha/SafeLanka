@@ -1,90 +1,81 @@
 package lk.dmc.disaster.analytics.query;
 
 import java.util.List;
-import java.util.UUID;
-import lk.dmc.disaster.analytics.domain.CitizensReached.ChannelStats;
-import lk.dmc.disaster.analytics.domain.CitizensReached.DistrictStats;
-import lk.dmc.disaster.analytics.domain.ReportContext;
+import lk.dmc.disaster.analytics.entity.CitizensReached.ChannelStats;
+import lk.dmc.disaster.analytics.entity.CitizensReached.DistrictStats;
+import lk.dmc.disaster.analytics.entity.ReportContext;
+import lk.dmc.disaster.analytics.query.ContextFilters.Filter;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Who a warning was sent to and who it reached, from the notification deliveries of an event. A
+ * delivery counts when it was attempted inside the window and the citizen lives in a chosen district.
+ */
 @Component
 @Transactional(readOnly = true)
 public class DeliveryStatsQuery {
-    private final JdbcClient jdbcClient;
-    public DeliveryStatsQuery(JdbcClient jdbcClient) { this.jdbcClient = jdbcClient; }
 
-    public long getUniqueTargeted(ReportContext context) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(DISTINCT nd.citizen_id) FROM notification_deliveries nd " +
-                     "JOIN warnings w ON nd.warning_id = w.id " +
-                     "JOIN users u ON nd.citizen_id = u.id " +
-                     "WHERE w.event_id = :eventId ");
-        appendFilters(sql, context);
-        return queryLong(sql.toString(), context);
-    }
+  private static final String FROM =
+      "FROM notification_deliveries nd "
+          + "JOIN warnings w ON nd.warning_id = w.id "
+          + "JOIN users u ON nd.citizen_id = u.id ";
 
-    public long getUniqueReached(ReportContext context) {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(DISTINCT nd.citizen_id) FROM notification_deliveries nd " +
-                     "JOIN warnings w ON nd.warning_id = w.id " +
-                     "JOIN users u ON nd.citizen_id = u.id " +
-                     "WHERE w.event_id = :eventId AND nd.status = 'DELIVERED' ");
-        appendFilters(sql, context);
-        return queryLong(sql.toString(), context);
-    }
+  private final JdbcClient jdbcClient;
 
-    public List<ChannelStats> getChannelStats(ReportContext context) {
-        StringBuilder sql = new StringBuilder("SELECT nd.channel, " +
-                     "COUNT(CASE WHEN nd.status = 'DELIVERED' THEN 1 END) AS delivered, " +
-                     "COUNT(CASE WHEN nd.status != 'DELIVERED' THEN 1 END) AS failed " +
-                     "FROM notification_deliveries nd " +
-                     "JOIN warnings w ON nd.warning_id = w.id " +
-                     "JOIN users u ON nd.citizen_id = u.id " +
-                     "WHERE w.event_id = :eventId ");
-        appendFilters(sql, context);
-        sql.append("GROUP BY nd.channel ORDER BY nd.channel");
-        
-        var query = bindParameters(jdbcClient.sql(sql.toString()), context);
-        return query.query(ChannelStats.class).list();
-    }
+  public DeliveryStatsQuery(JdbcClient jdbcClient) {
+    this.jdbcClient = jdbcClient;
+  }
 
-    public List<DistrictStats> getDistrictStats(ReportContext context) {
-        StringBuilder sql = new StringBuilder("SELECT u.district_id AS districtId, d.name AS districtName, " +
-                     "COUNT(DISTINCT nd.citizen_id) AS targeted, " +
-                     "COUNT(DISTINCT CASE WHEN nd.status = 'DELIVERED' THEN nd.citizen_id END) AS reached " +
-                     "FROM notification_deliveries nd " +
-                     "JOIN warnings w ON nd.warning_id = w.id " +
-                     "JOIN users u ON nd.citizen_id = u.id " +
-                     "JOIN districts d ON u.district_id = d.id " +
-                     "WHERE w.event_id = :eventId ");
-        appendFilters(sql, context);
-        sql.append("GROUP BY u.district_id, d.name ORDER BY d.name");
-        
-        var query = bindParameters(jdbcClient.sql(sql.toString()), context);
-        return query.query(DistrictStats.class).list();
-    }
+  /** Distinct citizens any warning of the event was sent to. */
+  public long getUniqueTargeted(ReportContext context) {
+    return countCitizens("WHERE w.event_id = :eventId ", context);
+  }
 
-    private void appendFilters(StringBuilder sql, ReportContext context) {
-        if (context.fromTime() != null) sql.append("AND nd.attempted_at >= :fromTime ");
-        if (context.toTime() != null) sql.append("AND nd.attempted_at <= :toTime ");
-        if (context.districtIds() != null && !context.districtIds().isEmpty()) {
-            sql.append("AND u.district_id = ANY(CAST(:districtIds AS uuid[])) ");
-        }
-    }
+  /** Distinct citizens with at least one DELIVERED notification. */
+  public long getUniqueReached(ReportContext context) {
+    return countCitizens("WHERE w.event_id = :eventId AND nd.status = 'DELIVERED' ", context);
+  }
 
-    private org.springframework.jdbc.core.simple.JdbcClient.StatementSpec bindParameters(org.springframework.jdbc.core.simple.JdbcClient.StatementSpec spec, ReportContext context) {
-        var query = spec.param("eventId", context.eventId());
-        if (context.fromTime() != null) query = query.param("fromTime", java.time.OffsetDateTime.ofInstant(context.fromTime(), java.time.ZoneOffset.UTC));
-        if (context.toTime() != null) query = query.param("toTime", java.time.OffsetDateTime.ofInstant(context.toTime(), java.time.ZoneOffset.UTC));
-        if (context.districtIds() != null && !context.districtIds().isEmpty()) {
-            query = query.param("districtIds", context.districtIds().toArray(new UUID[0]));
-        }
-        return query;
-    }
+  public List<ChannelStats> getChannelStats(ReportContext context) {
+    Filter filter = filter(context);
+    String sql =
+        "SELECT nd.channel, "
+            + "COUNT(CASE WHEN nd.status = 'DELIVERED' THEN 1 END) AS delivered, "
+            + "COUNT(CASE WHEN nd.status != 'DELIVERED' THEN 1 END) AS failed "
+            + FROM
+            + "WHERE w.event_id = :eventId "
+            + filter.sql()
+            + "GROUP BY nd.channel ORDER BY nd.channel";
+    return ContextFilters.statement(jdbcClient, sql, context, filter)
+        .query(ChannelStats.class)
+        .list();
+  }
 
-    private long queryLong(String sql, ReportContext context) {
-        var query = bindParameters(jdbcClient.sql(sql), context);
-        Long val = query.query(Long.class).single();
-        return val != null ? val : 0L;
-    }
+  public List<DistrictStats> getDistrictStats(ReportContext context) {
+    Filter filter = filter(context);
+    String sql =
+        "SELECT u.district_id AS districtId, d.name AS districtName, "
+            + "COUNT(DISTINCT nd.citizen_id) AS targeted, "
+            + "COUNT(DISTINCT CASE WHEN nd.status = 'DELIVERED' THEN nd.citizen_id END) AS reached "
+            + FROM
+            + "JOIN districts d ON u.district_id = d.id "
+            + "WHERE w.event_id = :eventId "
+            + filter.sql()
+            + "GROUP BY u.district_id, d.name ORDER BY d.name";
+    return ContextFilters.statement(jdbcClient, sql, context, filter)
+        .query(DistrictStats.class)
+        .list();
+  }
+
+  private long countCitizens(String where, ReportContext context) {
+    Filter filter = filter(context);
+    String sql = "SELECT COUNT(DISTINCT nd.citizen_id) " + FROM + where + filter.sql();
+    return ContextFilters.statement(jdbcClient, sql, context, filter).query(Long.class).single();
+  }
+
+  private static Filter filter(ReportContext context) {
+    return ContextFilters.of(context, "nd.attempted_at", "u.district_id");
+  }
 }

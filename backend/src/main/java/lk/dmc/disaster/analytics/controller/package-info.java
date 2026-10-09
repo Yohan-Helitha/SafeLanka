@@ -1,2 +1,2 @@
-/** web: REST controllers and request/response records. No business logic, no repositories. */
-package lk.dmc.disaster.analytics.web;
+/** controller: REST endpoints for UC04. No business logic, no repositories. */
+package lk.dmc.disaster.analytics.controller;

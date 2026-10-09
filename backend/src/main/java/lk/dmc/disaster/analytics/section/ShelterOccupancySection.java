@@ -5,25 +5,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lk.dmc.disaster.analytics.domain.ReportContext;
-import lk.dmc.disaster.analytics.domain.SectionKey;
-import lk.dmc.disaster.analytics.domain.SectionResult;
-import lk.dmc.disaster.analytics.domain.ShelterOccupancy;
-import lk.dmc.disaster.analytics.domain.ShelterOccupancy.OccupancyPoint;
-import lk.dmc.disaster.analytics.domain.ShelterOccupancy.ShelterPeak;
-import lk.dmc.disaster.analytics.domain.ShelterOccupancy.ShelterSeries;
+import lk.dmc.disaster.analytics.entity.ReportContext;
+import lk.dmc.disaster.analytics.entity.SectionKey;
+import lk.dmc.disaster.analytics.entity.SectionResult;
+import lk.dmc.disaster.analytics.entity.ShelterOccupancy;
+import lk.dmc.disaster.analytics.entity.ShelterOccupancy.OccupancyPoint;
+import lk.dmc.disaster.analytics.entity.ShelterOccupancy.ShelterPeak;
+import lk.dmc.disaster.analytics.entity.ShelterOccupancy.ShelterSeries;
 import lk.dmc.disaster.analytics.query.OccupancyQuery;
 import org.springframework.stereotype.Component;
 
+/** Report section: how full the shelters were. */
 @Component
 public class ShelterOccupancySection implements ReportSection {
     private final OccupancyQuery query;
 
     public ShelterOccupancySection(OccupancyQuery query) { this.query = query; }
 
+    /** This section is the {@link SectionKey#SHELTER_OCCUPANCY}. */
     @Override
     public SectionKey getKey() { return SectionKey.SHELTER_OCCUPANCY; }
 
+    /** Gives the occupancy series and the peak of each shelter. */
     @Override
     public SectionResult<?> generate(ReportContext context) {
         List<OccupancyQuery.ShelterSeriesRecord> records = query.getSeries(context);

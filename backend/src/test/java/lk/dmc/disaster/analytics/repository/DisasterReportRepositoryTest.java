@@ -1,4 +1,4 @@
-package lk.dmc.disaster.analytics.persistence;
+package lk.dmc.disaster.analytics.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -6,16 +6,18 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import lk.dmc.disaster.analytics.domain.DisasterReport;
+import lk.dmc.disaster.analytics.entity.DisasterReport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import lk.dmc.disaster.support.TestIds;
 import lk.dmc.disaster.TestcontainersConfiguration;
 
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 class DisasterReportRepositoryTest {

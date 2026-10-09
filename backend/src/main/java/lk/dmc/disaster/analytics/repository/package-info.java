@@ -1,2 +1,2 @@
-/** persistence: Spring Data repositories. */
-package lk.dmc.disaster.analytics.persistence;
+/** repository: Spring Data repository for the saved reports (disaster_reports). */
+package lk.dmc.disaster.analytics.repository;

@@ -2,7 +2,7 @@ package lk.dmc.disaster.analytics.query;
 
 import java.util.List;
 import java.util.UUID;
-import lk.dmc.disaster.analytics.domain.EventSummary;
+import lk.dmc.disaster.analytics.entity.EventSummary;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,13 +23,13 @@ public class EventSummaryQuery {
                      "ORDER BY e.started_at DESC";
         return jdbcClient.sql(sql).param("status", status).query((rs, rowNum) -> {
             java.sql.Array arr = rs.getArray("districtIds");
-            UUID[] districtIds = arr == null ? new UUID[0] : (UUID[]) arr.getArray();
+            UUID[] districtIds = (UUID[]) arr.getArray();
             return new EventSummary(
                 rs.getObject("id", UUID.class),
                 rs.getString("name"),
                 rs.getObject("hazardTypeId", UUID.class),
                 rs.getString("status"),
-                rs.getTimestamp("startedAt") != null ? rs.getTimestamp("startedAt").toInstant() : null,
+                rs.getTimestamp("startedAt").toInstant(),
                 rs.getTimestamp("endedAt") != null ? rs.getTimestamp("endedAt").toInstant() : null,
                 districtIds,
                 rs.getInt("warningCount"),

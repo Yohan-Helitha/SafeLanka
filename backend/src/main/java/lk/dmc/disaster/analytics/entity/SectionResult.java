@@ -1,4 +1,4 @@
-package lk.dmc.disaster.analytics.domain;
+package lk.dmc.disaster.analytics.entity;
 
 import org.springframework.lang.Nullable;
 

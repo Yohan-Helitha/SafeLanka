@@ -1,2 +1,2 @@
-/** domain: entities, enums, state machines, Rules constants. */
-package lk.dmc.disaster.analytics.domain;
+/** entity: the saved report entity, section data records, enums and rules for UC04. */
+package lk.dmc.disaster.analytics.entity;
