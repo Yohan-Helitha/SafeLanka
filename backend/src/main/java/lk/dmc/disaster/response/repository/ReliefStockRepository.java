@@ -5,6 +5,9 @@ import java.util.Optional;
 import java.util.UUID;
 import lk.dmc.disaster.response.entity.ReliefStock;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ReliefStockRepository extends JpaRepository<ReliefStock, UUID> {
 
@@ -14,4 +17,8 @@ public interface ReliefStockRepository extends JpaRepository<ReliefStock, UUID> 
 
   Optional<ReliefStock> findByItemIdAndOrganisationIdAndDistrictId(
       UUID itemId, UUID organisationId, UUID districtId);
+
+  @Modifying
+  @Query("UPDATE ReliefStock s SET s.quantityAvailable = s.quantityAvailable + :amount, s.updatedAt = CURRENT_TIMESTAMP")
+  int incrementAllStockQuantities(@Param("amount") int amount);
 }

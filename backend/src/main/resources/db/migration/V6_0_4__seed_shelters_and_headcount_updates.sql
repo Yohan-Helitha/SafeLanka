@@ -42,7 +42,47 @@ INSERT INTO shelter_headcount_updates (id, shelter_id, district_id, reported_occ
  ('00000000-0000-0000-0018-000000000004', '00000000-0000-0000-0009-000000000001', '00000000-0000-0000-0001-000000000001',
   190, 140, 'Red Cross Medical Team', 'NGO',
   'Boat rescue team delivered 50 evacuees from Salamulla. Current headcount verified at 190.',
-  'PENDING', now() - interval '2 hours');
+  'PENDING', now() - interval '2 hours'),
+
+ ('00000000-0000-0000-0018-000000000005', '00000000-0000-0000-0009-000000000002', '00000000-0000-0000-0001-000000000001',
+  198, 185, 'Sunil Perera (Coordinator)', 'SHELTER_COORDINATOR',
+  '13 individuals transferred from low-lying Kittampahuwa community area. Shelter almost at maximum capacity (198/200).',
+  'PENDING', now() - interval '15 minutes'),
+
+ ('00000000-0000-0000-0018-000000000006', '00000000-0000-0000-0009-000000000010', '00000000-0000-0000-0001-000000000001',
+  60, 0, 'Army Disaster Relief Unit 4', 'MILITARY',
+  'First wave of evacuees arrived from Himbutana North embankment. 60 individuals registered and sheltered.',
+  'PENDING', now() - interval '10 minutes'),
+
+ ('00000000-0000-0000-0018-000000000007', '00000000-0000-0000-0009-000000000003', '00000000-0000-0000-0001-000000000001',
+  110, 120, 'Kaduwela Bodhirajaramaya Team', 'VOLUNTEER',
+  '10 displaced residents safely returned home or relocated with host families as local waters receded.',
+  'PENDING', now() - interval '35 minutes'),
+
+ ('00000000-0000-0000-0018-000000000008', '00000000-0000-0000-0009-000000000004', '00000000-0000-0000-0001-000000000002',
+  85, 40, 'MOH Public Health Inspector', 'GOVERNMENT_OFFICER',
+  '45 additional displaced persons from Biyagama industrial perimeter accommodated after flash flood surge.',
+  'PENDING', now() - interval '50 minutes'),
+
+ ('00000000-0000-0000-0018-000000000009', '00000000-0000-0000-0009-000000000001', '00000000-0000-0000-0001-000000000001',
+  235, 140, 'Kolonnawa Municipal Council Warden', 'LOCAL_AUTHORITY',
+  'Severe flooding across Meetotamulla road triggered emergency bus evacuation. Current verified count 235 evacuees.',
+  'PENDING', now() - interval '8 minutes'),
+
+ ('00000000-0000-0000-0018-000000000010', '00000000-0000-0000-0009-000000000002', '00000000-0000-0000-0001-000000000001',
+  192, 185, 'Police Community Patrol 03', 'POLICE',
+  'Police boat patrol escorted 7 residents to safety from flooded railway track sector. Headcount adjusted to 192.',
+  'PENDING', now() - interval '18 minutes'),
+
+ ('00000000-0000-0000-0018-000000000011', '00000000-0000-0000-0009-000000000006', '00000000-0000-0000-0001-000000000004',
+  75, 0, 'Ratnapura Divisional Secretariat Relief Team', 'DISTRICT_FIELD_OFFICER',
+  '75 residents from vulnerable river slopes along Kalu Ganga pre-emptively evacuated to Sivali Central College.',
+  'PENDING', now() - interval '30 minutes'),
+
+ ('00000000-0000-0000-0018-000000000012', '00000000-0000-0000-0009-000000000008', '00000000-0000-0000-0001-000000000001',
+  345, 290, 'Kotikawatta Volunteer Corps', 'VOLUNTEER',
+  'Critically approaching capacity. 55 newly registered evacuees from Low-Line canal. Total count is now 345 of 350.',
+  'PENDING', now() - interval '5 minutes');
 
 -- Activity logs for newly added shelters and incoming headcount update alerts
 INSERT INTO activity_logs (id, district_id, event_id, type, message, occurred_at) VALUES
@@ -56,5 +96,11 @@ INSERT INTO activity_logs (id, district_id, event_id, type, message, occurred_at
   'SHELTER', 'Headcount update alert: 320 evacuees reported at Kotikawatta Rajasinghe Maha Vidyalaya (91% full)', now() - interval '40 minutes'),
 
  (gen_random_uuid(), '00000000-0000-0000-0001-000000000001', '00000000-0000-0000-0007-000000000001',
-  'SHELTER', 'Headcount update alert: 145 evacuees reported at Sedawatta Siddhartha Maha Vidyalaya', now() - interval '25 minutes');
+  'SHELTER', 'Headcount update alert: 198 evacuees reported at Wellampitiya Community Hall (99% full)', now() - interval '15 minutes'),
+
+ (gen_random_uuid(), '00000000-0000-0000-0001-000000000001', '00000000-0000-0000-0007-000000000001',
+  'SHELTER', 'Headcount update alert: 145 evacuees reported at Sedawatta Siddhartha Maha Vidyalaya', now() - interval '25 minutes'),
+
+ (gen_random_uuid(), '00000000-0000-0000-0001-000000000001', '00000000-0000-0000-0007-000000000001',
+  'SHELTER', 'Headcount update alert: 60 evacuees reported at Mulleriyawa Central Relief Shelter', now() - interval '10 minutes');
 
