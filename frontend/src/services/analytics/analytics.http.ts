@@ -90,7 +90,8 @@ const normalizeResourceDistribution = (raw: any) => {
 }
 
 export const analyticsHttp: AnalyticsApi = {
-  events: () => http.get<any[]>('/analytics/events')
+  // Not /analytics/events: browser ad blockers block that exact path as if it were tracking.
+  events: () => http.get<any[]>('/analytics/disaster-events')
     .then(res => res.map(e => ({ ...e, linkedReportCount: e.reportCount }))),
     
   generate: (eventId, filters) =>

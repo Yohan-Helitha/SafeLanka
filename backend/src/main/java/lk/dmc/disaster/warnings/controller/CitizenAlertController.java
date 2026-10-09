@@ -14,11 +14,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** The alerts a signed-in citizen or volunteer sees for their own district and river basin. */
+/**
+ * The active alerts for the signed-in person's own district and river basin: the public alert
+ * banner every citizen, volunteer and officer sees (the URL rule in AccessRules allows the same
+ * four roles).
+ */
 @Tag(name = "Citizen alerts")
 @RestController
 @RequestMapping("/api/warnings/active/mine")
-@RequiresRole({Role.CITIZEN, Role.VOLUNTEER})
+@RequiresRole({Role.CITIZEN, Role.VOLUNTEER, Role.DISTRICT_OFFICER, Role.DMC_OFFICER})
 class CitizenAlertController {
 
   private final CitizenAlertService alerts;

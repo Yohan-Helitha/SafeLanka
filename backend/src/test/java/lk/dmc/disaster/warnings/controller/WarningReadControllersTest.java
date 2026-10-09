@@ -197,8 +197,29 @@ class WarningReadControllersTest extends ControllerTestSupport {
   }
 
   @Test
-  void myAlerts_asAnOfficer_is403() throws Exception {
+  void myAlerts_asDistrictOfficer_getsTheAlertsOfTheirDistrict() throws Exception {
+    signedInAs(Role.DISTRICT_OFFICER);
+    when(alerts.alertsFor(DISTRICT, BASIN)).thenReturn(List.of());
+
+    mvcFor(new CitizenAlertController(alerts, actingUser))
+        .perform(get("/api/warnings/active/mine"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").isEmpty());
+  }
+
+  @Test
+  void myAlerts_asDmcOfficer_isAllowedToo() throws Exception {
     signedInAs(Role.DMC_OFFICER);
+    when(alerts.alertsFor(DISTRICT, BASIN)).thenReturn(List.of());
+
+    mvcFor(new CitizenAlertController(alerts, actingUser))
+        .perform(get("/api/warnings/active/mine"))
+        .andExpect(status().isOk());
+  }
+
+  @Test
+  void myAlerts_asARescueMember_is403() throws Exception {
+    signedInAs(Role.RESCUE_MEMBER);
 
     mvcFor(new CitizenAlertController(alerts, actingUser))
         .perform(get("/api/warnings/active/mine"))

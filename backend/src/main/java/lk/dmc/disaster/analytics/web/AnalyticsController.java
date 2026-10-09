@@ -24,7 +24,8 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/analytics")
 @Tag(name = "Analytics", description = "Disaster Analytics API")
-@RequiresRole(Role.DMC_OFFICER)
+// Reading is open to both officer roles (as in AccessRules); generating a report is DMC-only.
+@RequiresRole({Role.DMC_OFFICER, Role.DISTRICT_OFFICER})
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
@@ -39,13 +40,16 @@ public class AnalyticsController {
         this.actingUser = actingUser;
     }
 
-    @GetMapping("/events")
+    // /events is the path in the module spec. Browser ad blockers block any request to
+    // /analytics/events (it looks like a tracking call), so the frontend uses /disaster-events.
+    @GetMapping({"/events", "/disaster-events"})
     @Operation(summary = "List available events for analytics")
     public lk.dmc.disaster.shared.api.ApiResponse<List<EventSummary>> getEvents(@RequestParam(required = false) String status) {
         return lk.dmc.disaster.shared.api.ApiResponse.of(analyticsService.listAvailableEvents(status));
     }
 
     @PostMapping("/reports")
+    @RequiresRole(Role.DMC_OFFICER)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Generate a new disaster report")
     public lk.dmc.disaster.shared.api.ApiResponse<DisasterReportResponse> generateReport(
