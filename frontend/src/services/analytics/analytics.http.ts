@@ -1,4 +1,5 @@
 import { http } from '../http'
+import type { SectionKey } from '@/types'
 import type { AnalyticsApi } from './analyticsApi'
 
 const normalizeInstant = (v: any) => {
@@ -89,32 +90,39 @@ const normalizeResourceDistribution = (raw: any) => {
   }
 }
 
+/** The API names an unavailable section by its enum name; the screens use the camelCase section keys. */
+const SECTION_KEY: Record<string, SectionKey> = {
+  ALERT_TIMELINE: 'alertTimeline',
+  CITIZENS_REACHED: 'citizensReached',
+  SHELTER_OCCUPANCY: 'shelterOccupancy',
+  RESOURCE_DISTRIBUTION: 'resourceDistribution',
+}
+
+/** One saved report from the API, in the shape the analysis screens expect. */
+const toReport = (res: any) => ({
+  ...res,
+  // the API sends the author as { id, fullName }; the screens show the name
+  generatedBy: typeof res.generatedBy === 'string' ? res.generatedBy : (res.generatedBy?.fullName ?? ''),
+  alertTimeline: normalizeAlertTimeline(res.sections?.alertTimeline || res.sections?.ALERT_TIMELINE),
+  citizensReached: normalizeCitizensReached(res.sections?.citizensReached || res.sections?.CITIZENS_REACHED),
+  shelterOccupancy: normalizeShelterOccupancy(res.sections?.shelterOccupancy || res.sections?.SHELTER_OCCUPANCY),
+  resourceDistribution: normalizeResourceDistribution(res.sections?.resourceDistribution || res.sections?.RESOURCE_DISTRIBUTION),
+  unavailableSections: (res.unavailableSections ?? []).map((u: any) => ({ ...u, key: SECTION_KEY[u.key] ?? u.key })),
+})
+
 export const analyticsHttp: AnalyticsApi = {
-  events: () => http.get<any[]>('/analytics/events')
+  // Not /analytics/events: browser ad blockers block that exact path as if it were tracking.
+  events: () => http.get<any[]>('/analytics/disaster-events')
     .then(res => res.map(e => ({ ...e, linkedReportCount: e.reportCount }))),
-    
+
   generate: (eventId, filters) =>
-    http.post<any>('/analytics/reports', { eventId, ...filters })
-      .then(res => ({
-        ...res,
-        alertTimeline: normalizeAlertTimeline(res.sections?.alertTimeline || res.sections?.ALERT_TIMELINE),
-        citizensReached: normalizeCitizensReached(res.sections?.citizensReached || res.sections?.CITIZENS_REACHED),
-        shelterOccupancy: normalizeShelterOccupancy(res.sections?.shelterOccupancy || res.sections?.SHELTER_OCCUPANCY),
-        resourceDistribution: normalizeResourceDistribution(res.sections?.resourceDistribution || res.sections?.RESOURCE_DISTRIBUTION),
-      })),
-      
+    http.post<any>('/analytics/reports', { eventId, ...filters }).then(toReport),
+
   list: () => http.page<any>('/analytics/reports')
     .then(p => p.items.map(r => ({ ...r, generatedBy: r.generatedByName }))),
-    
-  get: (id) => http.get<any>(`/analytics/reports/${id}`)
-    .then(res => ({
-      ...res,
-      alertTimeline: normalizeAlertTimeline(res.sections?.alertTimeline || res.sections?.ALERT_TIMELINE),
-      citizensReached: normalizeCitizensReached(res.sections?.citizensReached || res.sections?.CITIZENS_REACHED),
-      shelterOccupancy: normalizeShelterOccupancy(res.sections?.shelterOccupancy || res.sections?.SHELTER_OCCUPANCY),
-      resourceDistribution: normalizeResourceDistribution(res.sections?.resourceDistribution || res.sections?.RESOURCE_DISTRIBUTION),
-    })),
-    
+
+  get: (id) => http.get<any>(`/analytics/reports/${id}`).then(toReport),
+
   download: (id, format) =>
     http.blob(`/analytics/reports/${id}/export`, { format }),
 }

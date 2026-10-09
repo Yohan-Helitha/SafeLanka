@@ -1,0 +1,241 @@
+openapi: "3.1.0"
+info:
+  title: "LankaGuard - Analytics module (UC04)"
+  version: "1.0"
+  description: "Disaster report generation, listing and export. Mirrors the controllers under /api/analytics; regenerate from /v3/api-docs when they change."
+paths:
+  /api/analytics/events:
+    get:
+      tags: ["Analytics"]
+      summary: "Events that can be reported on"
+      description: "Roles: DMC_OFFICER, DISTRICT_OFFICER. Also served at /api/analytics/disaster-events (same response)."
+      operationId: "getEvents"
+      parameters:
+        - name: "status"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            enum: ["ACTIVE", "CLOSED"]
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseListEventSummary"
+  /api/analytics/reports:
+    post:
+      tags: ["Analytics"]
+      summary: "Generate a disaster report"
+      description: "Role: DMC_OFFICER. Districts default to the event's; the window must lie inside the event (one minute tolerance)."
+      operationId: "generate"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateReportRequest"
+      responses:
+        201:
+          description: "Report generated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDisasterReport"
+        400:
+          description: "Invalid body"
+        403:
+          description: "Not a DMC officer"
+        404:
+          description: "Unknown event"
+        422:
+          description: "Districts outside the event, or an invalid time window"
+    get:
+      tags: ["Analytics"]
+      summary: "List generated reports"
+      description: "Roles: DMC_OFFICER, DISTRICT_OFFICER. Newest first."
+      operationId: "listReports"
+      parameters:
+        - name: "eventId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+            format: "uuid"
+        - name: "page"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            default: 0
+        - name: "size"
+          in: "query"
+          required: false
+          schema:
+            type: "integer"
+            default: 20
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseListReportSummary"
+  /api/analytics/reports/{id}:
+    get:
+      tags: ["Analytics"]
+      summary: "One generated report"
+      description: "Roles: DMC_OFFICER, DISTRICT_OFFICER."
+      operationId: "getReport"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+      responses:
+        200:
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponseDisasterReport"
+        404:
+          description: "Report not found"
+  /api/analytics/reports/{id}/export:
+    get:
+      tags: ["Analytics"]
+      summary: "Download a report as PDF or CSV"
+      description: "Roles: DMC_OFFICER, DISTRICT_OFFICER. File name disaster-report-<event-slug>-<yyyyMMdd>.<ext>. CSV columns: section,label,value,extra."
+      operationId: "export"
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+            format: "uuid"
+        - name: "format"
+          in: "query"
+          required: true
+          schema:
+            type: "string"
+            enum: ["PDF", "CSV"]
+      responses:
+        200:
+          description: "The file"
+          content:
+            application/pdf:
+              schema:
+                type: "string"
+                format: "binary"
+            text/csv:
+              schema:
+                type: "string"
+                format: "binary"
+        400:
+          description: "Unsupported format"
+        404:
+          description: "Report not found"
+components:
+  schemas:
+    GenerateReportRequest:
+      type: "object"
+      required: ["eventId"]
+      properties:
+        eventId:
+          type: "string"
+          format: "uuid"
+        districtIds:
+          type: "array"
+          items:
+            type: "string"
+            format: "uuid"
+        from:
+          type: "string"
+          format: "date-time"
+        to:
+          type: "string"
+          format: "date-time"
+    EventSummary:
+      type: "object"
+      properties:
+        id: { type: "string", format: "uuid" }
+        name: { type: "string" }
+        hazardTypeId: { type: "string", format: "uuid" }
+        status: { type: "string", enum: ["ACTIVE", "CLOSED"] }
+        startedAt: { type: "string", format: "date-time" }
+        endedAt: { type: "string", format: "date-time" }
+        districtIds:
+          type: "array"
+          items: { type: "string", format: "uuid" }
+        warningCount: { type: "integer" }
+        reportCount: { type: "integer" }
+    ReportSummary:
+      type: "object"
+      properties:
+        id: { type: "string", format: "uuid" }
+        eventId: { type: "string", format: "uuid" }
+        eventName: { type: "string" }
+        generatedAt: { type: "string", format: "date-time" }
+        generatedByName: { type: "string" }
+        unavailableCount: { type: "integer" }
+    DisasterReport:
+      type: "object"
+      properties:
+        id: { type: "string", format: "uuid" }
+        eventId: { type: "string", format: "uuid" }
+        eventName: { type: "string" }
+        filters:
+          type: "object"
+          properties:
+            districtIds:
+              type: "array"
+              items: { type: "string", format: "uuid" }
+            from: { type: "string", format: "date-time" }
+            to: { type: "string", format: "date-time" }
+        sections:
+          type: "object"
+          description: "Available sections only, keyed alertTimeline, citizensReached, shelterOccupancy, resourceDistribution, in that order."
+          additionalProperties: true
+        unavailableSections:
+          type: "object"
+          description: "Section key to the reason it has no data."
+          additionalProperties: { type: "string" }
+        generatedBy:
+          type: "object"
+          properties:
+            id: { type: "string", format: "uuid" }
+            fullName: { type: "string" }
+        generatedAt: { type: "string", format: "date-time" }
+    ApiResponseDisasterReport:
+      type: "object"
+      properties:
+        success: { type: "boolean" }
+        data:
+          $ref: "#/components/schemas/DisasterReport"
+    ApiResponseListEventSummary:
+      type: "object"
+      properties:
+        success: { type: "boolean" }
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/EventSummary"
+    ApiResponseListReportSummary:
+      type: "object"
+      properties:
+        success: { type: "boolean" }
+        data:
+          type: "array"
+          items:
+            $ref: "#/components/schemas/ReportSummary"
+        meta:
+          type: "object"
+          properties:
+            page: { type: "integer" }
+            size: { type: "integer" }
+            totalElements: { type: "integer" }
+            totalPages: { type: "integer" }

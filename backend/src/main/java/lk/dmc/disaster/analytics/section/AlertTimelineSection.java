@@ -3,14 +3,15 @@ package lk.dmc.disaster.analytics.section;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import lk.dmc.disaster.analytics.domain.AlertTimeline;
-import lk.dmc.disaster.analytics.domain.ReportContext;
-import lk.dmc.disaster.analytics.domain.SectionKey;
-import lk.dmc.disaster.analytics.domain.SectionResult;
+import lk.dmc.disaster.analytics.entity.AlertTimeline;
+import lk.dmc.disaster.analytics.entity.ReportContext;
+import lk.dmc.disaster.analytics.entity.SectionKey;
+import lk.dmc.disaster.analytics.entity.SectionResult;
 import lk.dmc.disaster.analytics.query.ReportTimingQuery;
 import lk.dmc.disaster.analytics.query.WarningTimelineQuery;
 import org.springframework.stereotype.Component;
 
+/** Report section: the warnings issued during the event. */
 @Component
 public class AlertTimelineSection implements ReportSection {
     private final WarningTimelineQuery warningQuery;
@@ -21,9 +22,11 @@ public class AlertTimelineSection implements ReportSection {
         this.timingQuery = timingQuery;
     }
 
+    /** This section is the {@link SectionKey#ALERT_TIMELINE}. */
     @Override
     public SectionKey getKey() { return SectionKey.ALERT_TIMELINE; }
 
+    /** Lists the warnings of the event in time order, with the delay from the first verified report. */
     @Override
     public SectionResult<?> generate(ReportContext context) {
         List<AlertTimeline.TimelineEntry> entries = warningQuery.execute(context);

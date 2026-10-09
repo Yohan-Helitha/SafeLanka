@@ -28,15 +28,15 @@ class CitizensReachedSectionTest {
         when(query.getUniqueTargeted(any())).thenReturn(100L);
         when(query.getUniqueReached(any())).thenReturn(80L);
         when(query.getChannelStats(any())).thenReturn(java.util.List.of(
-            new lk.dmc.disaster.analytics.domain.CitizensReached.ChannelStats("SMS", 50, 5)
+            new lk.dmc.disaster.analytics.entity.CitizensReached.ChannelStats("SMS", 50, 5)
         ));
         when(query.getDistrictStats(any())).thenReturn(java.util.List.of(
-            new lk.dmc.disaster.analytics.domain.CitizensReached.DistrictStats(java.util.UUID.randomUUID(), "D1", 100, 80)
+            new lk.dmc.disaster.analytics.entity.CitizensReached.DistrictStats(java.util.UUID.randomUUID(), "D1", 100, 80)
         ));
         
         var res = section.generate(null);
         assertThat(res.isUnavailable()).isFalse();
-        var data = (lk.dmc.disaster.analytics.domain.CitizensReached) res.data();
+        var data = (lk.dmc.disaster.analytics.entity.CitizensReached) res.data();
         assertThat(data.uniqueCitizensTargeted()).isEqualTo(100L);
         assertThat(data.uniqueCitizensReached()).isEqualTo(80L);
         assertThat(data.deliveryRate()).isEqualTo(0.8);

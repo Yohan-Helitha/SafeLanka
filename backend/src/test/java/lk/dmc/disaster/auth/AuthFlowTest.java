@@ -192,16 +192,15 @@ class AuthFlowTest {
     String citizen = text(login("PHONE", "0771000004", "Demo@1234"), "$.data.accessToken");
     String dmc = text(login("EMAIL", "nimal.perera@dmc.lk", "Demo@1234"), "$.data.accessToken");
 
-    // no controller exists for these paths yet: 404 means "allowed through", 401/403 means
-    // "blocked"
+    // blocked by the gate = 401 (nobody) or 403 (wrong role); anything else got past it
     assertThat(status(get("/api/hazards"))).isEqualTo(401);
     assertThat(status(bearer(get("/api/hazards"), citizen))).isEqualTo(403);
-    assertThat(status(bearer(get("/api/hazards"), dmc))).isEqualTo(404);
-    assertThat(status(bearer(get("/api/reports"), citizen))).isEqualTo(404);
-    assertThat(status(bearer(get("/api/warnings/active/mine"), citizen))).isEqualTo(404);
-    assertThat(status(bearer(get("/api/warnings/active/mine"), dmc))).isEqualTo(403);
+    assertThat(status(bearer(get("/api/hazards"), dmc))).isNotIn(401, 403);
+    assertThat(status(bearer(get("/api/reports/mine"), citizen))).isNotIn(401, 403);
+    assertThat(status(bearer(get("/api/warnings/active/mine"), citizen))).isNotIn(401, 403);
+    assertThat(status(bearer(get("/api/warnings/active/mine"), dmc))).isNotIn(401, 403);
     assertThat(status(bearer(get("/api/assignments"), citizen))).isEqualTo(403);
-    assertThat(status(get("/api/reference/hazard-types"))).isEqualTo(404);
+    assertThat(status(get("/api/reference/hazard-types"))).isNotIn(401, 403);
   }
 
   @Test

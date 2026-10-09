@@ -2,7 +2,7 @@ package lk.dmc.disaster.analytics.query;
 
 import java.time.Instant;
 import java.util.Optional;
-import lk.dmc.disaster.analytics.domain.ReportContext;
+import lk.dmc.disaster.analytics.entity.ReportContext;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

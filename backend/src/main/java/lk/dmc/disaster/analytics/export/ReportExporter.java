@@ -1,8 +1,10 @@
 package lk.dmc.disaster.analytics.export;
 
-import lk.dmc.disaster.analytics.domain.DisasterReport;
-
+/** Turns a report into a file (Strategy); a new format is one new implementation. */
 public interface ReportExporter {
-    boolean supports(String format);
-    byte[] export(DisasterReport report);
+
+  /** The format this exporter produces. */
+  ExportFormat format();
+
+  byte[] export(DisasterReportView report);
 }

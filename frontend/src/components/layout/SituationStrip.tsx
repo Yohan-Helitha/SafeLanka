@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { paths } from '@/constants/routes'
 import { LEVEL_ORDER } from '@/constants/labels'
 import { useAuth } from '@/context/AuthContext'
+import { useReferenceData } from '@/hooks/shared'
 import { useActiveWarnings } from '@/hooks/warnings/useWarnings'
 import { SEVERITY } from '@/theme/tokens'
 import { formatTime } from '@/utils/format'
@@ -12,8 +13,17 @@ import { SeverityIcon } from '../domain'
 export function SituationStrip() {
   const { user } = useAuth()
   const { data } = useActiveWarnings()
+  const { riverBasins } = useReferenceData()
 
-  const active = (data ?? []).filter((w) => user?.role !== 'DISTRICT_OFFICER' || w.districtIds.includes(user.districtId))
+  // A district officer sees the warnings for their own district: named directly, or through a river
+  // basin that flows through it (a basin warning lists no districts of its own).
+  const myBasinIds = riverBasins.filter((b) => b.districtIds?.includes(user?.districtId ?? '')).map((b) => b.id)
+  const active = (data ?? []).filter(
+    (w) =>
+      user?.role !== 'DISTRICT_OFFICER' ||
+      w.districtIds.includes(user.districtId) ||
+      (w.riverBasinIds ?? []).some((id) => myBasinIds.includes(id)),
+  )
   if (!active.length) {
     return (
       <div className="flex items-center gap-2 border-b border-line bg-panel px-4 py-2.5 text-sm text-muted">

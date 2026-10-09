@@ -35,7 +35,7 @@ class ShelterOccupancySectionTest {
         
         var res = section.generate(null);
         assertThat(res.isUnavailable()).isFalse();
-        var data = (lk.dmc.disaster.analytics.domain.ShelterOccupancy) res.data();
+        var data = (lk.dmc.disaster.analytics.entity.ShelterOccupancy) res.data();
         assertThat(data.series()).hasSize(1);
         assertThat(data.peaks()).hasSize(1);
     }
