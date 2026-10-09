@@ -4,14 +4,17 @@ import type {
   Assignment,
   AssignmentInput,
   AssignmentStatus,
+  CreateHeadcountUpdateInput,
   DistributionInput,
   ReliefStock,
   RescueTeam,
   ResponseDashboard,
   Shelter,
+  ShelterHeadcountUpdate,
   ShelterSuggestion,
   TeamStatusUpdate,
 } from '@/types'
+
 
 export interface ResponseApi {
   dashboard(districtId: string): Promise<ResponseDashboard>
@@ -28,8 +31,13 @@ export interface ResponseApi {
   shelters(filter?: { districtId?: string; coordinatorId?: string }): Promise<Shelter[]>
   shelterSuggestions(latitude: number, longitude: number): Promise<ShelterSuggestion[]>
   updateOccupancy(shelterId: string, occupancy: number): Promise<Shelter>
+  headcountUpdates(filter?: { districtId?: string; status?: string }): Promise<ShelterHeadcountUpdate[]>
+  applyHeadcountUpdate(updateId: string, customOccupancy?: number): Promise<Shelter>
+  dismissHeadcountUpdate(updateId: string): Promise<ShelterHeadcountUpdate>
+  createHeadcountUpdate(input: CreateHeadcountUpdateInput): Promise<ShelterHeadcountUpdate>
   stocks(filter?: { districtId?: string }): Promise<ReliefStock[]>
   allocate(input: AllocationInput): Promise<Allocation>
   recordDistribution(allocationId: string, input: DistributionInput): Promise<Allocation>
   allocations(filter?: { shelterId?: string; districtId?: string }): Promise<Allocation[]>
 }
+

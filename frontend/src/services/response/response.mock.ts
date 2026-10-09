@@ -305,9 +305,137 @@ export const responseMock: ResponseApi = {
       return shelterView(s)
     }),
 
+  headcountUpdates: (filter) =>
+    mockCall(() => {
+      actor()
+      return db.shelterHeadcountUpdates
+        .filter(
+          (u) =>
+            (!filter?.districtId || u.districtId === filter.districtId) &&
+            (!filter?.status || u.status === filter.status),
+        )
+        .map((u) => {
+          const shelter = db.shelters.find((s) => s.id === u.shelterId)
+          return {
+            ...u,
+            shelterName: shelter ? shelter.name : 'Unknown Shelter',
+            currentShelterOccupancy: shelter ? shelter.currentOccupancy : 0,
+            shelterCapacity: shelter ? shelter.capacity : 0,
+          }
+        })
+    }),
+
+  applyHeadcountUpdate: (id, customOccupancy) =>
+    mockCall(() => {
+      requireRole('DISTRICT_OFFICER', 'SHELTER_COORDINATOR')
+      const update = db.shelterHeadcountUpdates.find((u) => u.id === id) ?? notFound('Headcount update')
+      const shelter = db.shelters.find((s) => s.id === update.shelterId) ?? notFound('Shelter')
+      const targetOccupancy = customOccupancy != null ? customOccupancy : update.reportedOccupancy
+
+      if (!Number.isInteger(targetOccupancy) || targetOccupancy < 0) {
+        validationFail({ occupancy: 'Enter a headcount of 0 or more.' })
+      }
+      if (targetOccupancy > shelter.capacity) {
+        fail('CAPACITY_EXCEEDED', `${shelter.name} holds ${shelter.capacity} people.`, { capacity: shelter.capacity })
+      }
+
+      db.occupancyLogs.push({
+        shelterId: shelter.id,
+        eventId: db.events.find((e) => e.status === 'ACTIVE')?.id ?? db.events[0].id,
+        occupancy: targetOccupancy,
+        delta: targetOccupancy - shelter.currentOccupancy,
+        recordedAt: new Date().toISOString(),
+      })
+
+      shelter.currentOccupancy = targetOccupancy
+      if (shelter.status !== 'CLOSED') {
+        shelter.status = targetOccupancy >= shelter.capacity ? 'FULL' : 'OPEN'
+      }
+
+      update.status = 'APPLIED'
+      update.processedAt = new Date().toISOString()
+
+      log(
+        shelter.districtId,
+        'SHELTER',
+        `Headcount verified & applied: ${shelter.name} set to ${targetOccupancy}/${shelter.capacity} (reported by ${update.reportedByName})`,
+      )
+
+      return shelterView(shelter)
+    }),
+
+  dismissHeadcountUpdate: (id) =>
+    mockCall(() => {
+      requireRole('DISTRICT_OFFICER', 'SHELTER_COORDINATOR')
+      const update = db.shelterHeadcountUpdates.find((u) => u.id === id) ?? notFound('Headcount update')
+      update.status = 'DISMISSED'
+      update.processedAt = new Date().toISOString()
+      const shelter = db.shelters.find((s) => s.id === update.shelterId)
+      return {
+        ...update,
+        shelterName: shelter ? shelter.name : 'Unknown Shelter',
+        currentShelterOccupancy: shelter ? shelter.currentOccupancy : 0,
+        shelterCapacity: shelter ? shelter.capacity : 0,
+      }
+    }),
+
+  createHeadcountUpdate: (input) =>
+    mockCall(() => {
+      const u = actor()
+      const shelter = db.shelters.find((s) => s.id === input.shelterId) ?? notFound('Shelter')
+      const updateRow = {
+        id: newId(),
+        shelterId: shelter.id,
+        districtId: shelter.districtId,
+        reportedOccupancy: input.reportedOccupancy,
+        previousOccupancy: shelter.currentOccupancy,
+        reportedByName: input.reportedByName || u.fullName,
+        reportedByRole: input.reportedByRole || u.role,
+        message: input.message,
+        status: 'PENDING' as const,
+        reportedAt: new Date().toISOString(),
+        processedAt: null,
+      }
+      db.shelterHeadcountUpdates.unshift(updateRow)
+      log(
+        shelter.districtId,
+        'SHELTER',
+        `Incoming headcount update: ${input.reportedOccupancy} reported for ${shelter.name}`,
+      )
+      return {
+        ...updateRow,
+        shelterName: shelter.name,
+        currentShelterOccupancy: shelter.currentOccupancy,
+        shelterCapacity: shelter.capacity,
+      }
+    }),
+
+
   stocks: (filter) =>
     mockCall(() => {
       actor()
+
+      // Automatic daily replenishment (+100 per day per stock line since initial seed)
+      const LAST_CHECK_KEY = 'safelanka_stocks_last_replenish_date'
+      const todayStr = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+      const lastReplenishDate = localStorage.getItem(LAST_CHECK_KEY)
+
+      if (!lastReplenishDate) {
+        localStorage.setItem(LAST_CHECK_KEY, todayStr)
+      } else if (lastReplenishDate < todayStr) {
+        const d1 = new Date(lastReplenishDate)
+        const d2 = new Date(todayStr)
+        const diffDays = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)))
+
+        if (diffDays > 0) {
+          const replenishment = diffDays * 100
+          db.stocks.forEach((s) => {
+            s.quantityAvailable += replenishment
+          })
+          localStorage.setItem(LAST_CHECK_KEY, todayStr)
+        }
+      }
+
       return db.stocks
         .filter((s) => !filter?.districtId || s.districtId === filter.districtId)
         .map((s) => {

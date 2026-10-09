@@ -11,6 +11,7 @@ export const responseKeys = {
   assignments: (districtId?: string) => ['response', 'assignments', districtId ?? 'all'] as const,
   mine: ['response', 'my-assignment'] as const,
   shelters: (filter: string) => ['response', 'shelters', filter] as const,
+  headcountUpdates: (filter: string) => ['response', 'headcount-updates', filter] as const,
   suggestions: (lat: number, lng: number) => ['response', 'suggestions', lat, lng] as const,
   stocks: (districtId?: string) => ['response', 'stocks', districtId ?? 'all'] as const,
   allocations: (filter: string) => ['response', 'allocations', filter] as const,
@@ -131,6 +132,40 @@ export function useUpdateOccupancy() {
     onSuccess: done,
   })
 }
+
+export function useHeadcountUpdates(filter?: { districtId?: string; status?: string }) {
+  return useQuery({
+    queryKey: responseKeys.headcountUpdates(JSON.stringify(filter ?? {})),
+    queryFn: () => api.response.headcountUpdates(filter),
+    refetchInterval: POLL.situation,
+  })
+}
+
+export function useApplyHeadcountUpdate() {
+  const done = useDone()
+  return useMutation({
+    mutationFn: (v: { updateId: string; customOccupancy?: number }) =>
+      api.response.applyHeadcountUpdate(v.updateId, v.customOccupancy),
+    onSuccess: done,
+  })
+}
+
+export function useDismissHeadcountUpdate() {
+  const done = useDone()
+  return useMutation({
+    mutationFn: (updateId: string) => api.response.dismissHeadcountUpdate(updateId),
+    onSuccess: done,
+  })
+}
+
+export function useCreateHeadcountUpdate() {
+  const done = useDone()
+  return useMutation({
+    mutationFn: (input: import('@/types').CreateHeadcountUpdateInput) => api.response.createHeadcountUpdate(input),
+    onSuccess: done,
+  })
+}
+
 
 export function useAllocate() {
   const done = useDone()

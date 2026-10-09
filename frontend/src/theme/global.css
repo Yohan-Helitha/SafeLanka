@@ -50,11 +50,34 @@
   }
   dialog {
     @apply bg-panel text-ink;
+    scrollbar-width: thin;
+    scrollbar-color: #233b61 #0b1424;
+  }
+  dialog * {
+    scrollbar-width: thin;
+    scrollbar-color: #233b61 #0b1424;
+  }
+  dialog ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  dialog ::-webkit-scrollbar-track {
+    background: #0b1424;
+    border-radius: 9999px;
+  }
+  dialog ::-webkit-scrollbar-thumb {
+    background: #233b61;
+    border-radius: 9999px;
+    border: 1px solid #142238;
+  }
+  dialog ::-webkit-scrollbar-thumb:hover {
+    background: #38bdf8;
   }
   dialog::backdrop {
     background: rgb(2 6 23 / 0.7);
   }
 }
+
 
 @layer components {
   .tabular {

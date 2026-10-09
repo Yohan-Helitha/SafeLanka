@@ -51,7 +51,7 @@ export function Dialog({ open, onClose, title, description, footer, children, cl
               <X className="size-5" aria-hidden />
             </button>
           </header>
-          <div className="overflow-y-auto px-4 py-3 sm:px-5 sm:py-4">{children}</div>
+          <div className="overflow-y-auto custom-scrollbar px-4 py-3 sm:px-5 sm:py-4">{children}</div>
           {footer && <footer className="flex flex-col-reverse gap-2 border-t border-line px-4 py-3 sm:flex-row sm:flex-wrap sm:justify-end sm:px-5 sm:py-4">{footer}</footer>}
         </div>
       )}

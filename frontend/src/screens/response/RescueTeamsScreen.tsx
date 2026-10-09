@@ -3,7 +3,6 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiErrorNotice } from '@/components/domain'
 import { AssignDialog } from '@/components/response/AssignDialog'
-import { OfflineToggle } from '@/components/layout/OfflineToggle'
 import { Button, ErrorState, Loading } from '@/components/ui'
 import { TEAM_TYPE_LABEL } from '@/constants/labels'
 import { paths } from '@/constants/routes'
@@ -336,7 +335,6 @@ export function RescueTeamsScreen() {
           </div>
 
           <div className="flex items-center gap-3 self-start md:self-auto">
-            <OfflineToggle />
             <Button size="md" onClick={() => navigate(paths.district.newAssignment)}>
               New assignment
             </Button>

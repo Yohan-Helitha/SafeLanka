@@ -1,13 +1,15 @@
 import { useMemo, useState } from 'react'
 import { Home, MapPin, Search, Users, X } from 'lucide-react'
 import { HeadcountDialog } from '@/components/response/HeadcountDialog'
+import { HeadcountUpdatesModal } from '@/components/response/HeadcountUpdatesModal'
 import { EmptyState, ErrorState, Loading } from '@/components/ui'
 import { MapboxMap } from '@/components/ui/MapboxMap'
 import type { MapMarker } from '@/components/ui/MapboxMap'
 import { useCurrentUser } from '@/context/AuthContext'
 import { useDocumentTitle, useReferenceData } from '@/hooks/shared'
-import { useShelters } from '@/hooks/response/useResponse'
-import type { OccupancyLevel, Shelter, ShelterStatus } from '@/types'
+import { useHeadcountUpdates, useShelters } from '@/hooks/response/useResponse'
+import type { OccupancyLevel, Shelter, ShelterHeadcountUpdate, ShelterStatus } from '@/types'
+
 import { formatPercent } from '@/utils/format'
 
 type StatusFilter = 'ALL' | 'OPEN' | 'FULL' | 'CLOSED'
@@ -105,6 +107,14 @@ export function DistrictSheltersScreen() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [selectedShelterId, setSelectedShelterId] = useState<string | null>(null)
+  const [showUpdatesModal, setShowUpdatesModal] = useState(false)
+
+  const updatesQuery = useHeadcountUpdates({ districtId: user.districtId })
+  const pendingUpdates: ShelterHeadcountUpdate[] = useMemo(() => {
+    const list = Array.isArray(updatesQuery.data) ? updatesQuery.data : []
+    return list.filter((u) => u.status === 'PENDING')
+  }, [updatesQuery.data])
+
 
   const rawData: Shelter[] = useMemo(
     () =>
@@ -214,11 +224,32 @@ export function DistrictSheltersScreen() {
                 Occupancy across the shelters in your district.{' '}
               </p>
             </div>
-            <div className="flex items-center space-x-2 text-xs font-medium text-slate-400 self-start sm:self-auto">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-sm shadow-cyan-400/50" />
-              <span>Live district telemetry</span>
+            <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+              <button
+                type="button"
+                onClick={() => setShowUpdatesModal(true)}
+                className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
+                  pendingUpdates.length > 0
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                    : 'bg-[#152033] text-slate-300 border border-[#233552] hover:bg-[#1a2942]'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Field Headcount Reports</span>
+                {pendingUpdates.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-slate-950 font-black animate-pulse">
+                    {pendingUpdates.length}
+                  </span>
+                )}
+              </button>
+
+              <div className="flex items-center space-x-2 text-xs font-medium text-slate-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-sm shadow-cyan-400/50" />
+                <span>Live district telemetry</span>
+              </div>
             </div>
           </div>
+
 
           {/* 3 KPI Command Cards */}
           <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
@@ -292,8 +323,38 @@ export function DistrictSheltersScreen() {
               </div>
             </div>
           </div>
+
+
+
+          {/* Incoming Headcount Updates Notification Banner */}
+          {pendingUpdates.length > 0 && (
+            <div className="rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-950/40 via-[#1d1710] to-[#121c2c] p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0 mt-0.5">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-amber-200">
+                    {pendingUpdates.length} Shelter Headcount Update{pendingUpdates.length > 1 ? 's' : ''} Received
+                  </h4>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Field coordinators have reported updated evacuee counts awaiting District Officer verification.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowUpdatesModal(true)}
+                className="shrink-0 px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 active:scale-95 text-xs font-bold text-slate-950 shadow-md transition-all self-end sm:self-auto"
+              >
+                Review &amp; Apply Updates ({pendingUpdates.length})
+              </button>
+            </div>
+          )}
         </div>
       </header>
+
 
       {/* Operational Split Workspace (Cards List on Left + Existing Leaflet Map on Right) */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
@@ -359,6 +420,7 @@ export function DistrictSheltersScreen() {
               const pct = Math.min(100, Math.round(s.occupancyRatio * 100))
               const isSelected = selectedShelterId === s.id
               const isFull = s.level === 'FULL' || s.status === 'FULL'
+              const pendingForThisShelter = pendingUpdates.find((u) => u.shelterId === s.id)
 
               return (
                 <article
@@ -404,6 +466,31 @@ export function DistrictSheltersScreen() {
                       </button>
                     )}
                   </div>
+
+                  {pendingForThisShelter && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setShowUpdatesModal(true)
+                      }}
+                      className="mb-3 rounded-lg border border-amber-500/50 bg-amber-950/40 p-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-amber-950/70 transition-all cursor-pointer shadow-sm"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
+                        <div className="truncate">
+                          <span className="font-bold text-amber-200">
+                            Incoming field report: {pendingForThisShelter.reportedOccupancy} evacuees
+                          </span>
+                          <span className="text-slate-400 text-[11px] ml-1.5 hidden sm:inline">
+                            (reported by {pendingForThisShelter.reportedByName})
+                          </span>
+                        </div>
+                      </div>
+                      <span className="shrink-0 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold self-end sm:self-auto">
+                        Review &amp; Apply →
+                      </span>
+                    </div>
+                  )}
 
                   <div className="pt-3 border-t border-[#1e273a]">
                     <div className="flex justify-between items-end mb-2">
@@ -501,6 +588,17 @@ export function DistrictSheltersScreen() {
 
       {/* Headcount Modal Dialog */}
       {counting && <HeadcountDialog shelter={counting} onClose={() => setCounting(null)} />}
+
+      {/* Headcount Updates & New Shelters Modal */}
+      {showUpdatesModal && (
+        <HeadcountUpdatesModal
+          districtId={user.districtId}
+          allShelters={data}
+          onClose={() => setShowUpdatesModal(false)}
+        />
+      )}
+
     </div>
   )
 }
+
