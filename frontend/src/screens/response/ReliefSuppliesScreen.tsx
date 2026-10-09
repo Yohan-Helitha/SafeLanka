@@ -283,9 +283,6 @@ export function ReliefSuppliesScreen() {
               )}
               {enrichedAllocations.map((a) => {
                 const statusStyle = allocationStatusStyles[a.status] ?? allocationStatusStyles.ALLOCATED
-                const total = a.quantity || 1
-                const handed = a.distributed || 0
-                const pct = Math.min(100, Math.round((handed / total) * 100))
 
                 return (
                   <div
@@ -312,20 +309,6 @@ export function ReliefSuppliesScreen() {
                         <span className={`w-1.5 h-1.5 mr-1.5 rounded-full ${statusStyle.dot}`} />
                         {statusStyle.label}
                       </span>
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs text-slate-300 font-medium">
-                        <span>
-                          Handed out: {formatNumber(handed)} of {formatNumber(a.quantity)} {a.unit}
-                        </span>
-                        <span className="text-slate-400 tabular">{pct}%</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[#0d1320] rounded-full overflow-hidden border border-[#222d42]">
-                        <div
-                          className="bg-[#06b6d4] h-full rounded-full transition-all duration-300"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
                     </div>
                     <div className="pt-2 border-t border-[#222d42]/70 flex items-center justify-between text-[11px] text-slate-400">
                       <span>Allocated: {relativeTime(a.allocatedAt)}</span>
