@@ -83,7 +83,10 @@ export interface ShelterRow {
   currentOccupancy: number
   status: ShelterStatus
   coordinatorId: string | null
+  addedBy?: string
+  createdAt?: string
 }
+
 
 export interface OccupancyLog {
   shelterId: string
@@ -650,13 +653,18 @@ const assignments: Assignment[] = [
 ]
 
 const shelters: ShelterRow[] = [
-  { id: ID.shelter(1), name: 'Kolonnawa Maha Vidyalaya', districtId: ID.district.CMB, address: 'Kolonnawa', latitude: 6.933, longitude: 79.888, capacity: 300, currentOccupancy: 140, status: 'OPEN', coordinatorId: null },
-  { id: ID.shelter(2), name: 'Wellampitiya Community Hall', districtId: ID.district.CMB, address: 'Wellampitiya', latitude: 6.939, longitude: 79.892, capacity: 200, currentOccupancy: 185, status: 'OPEN', coordinatorId: ID.user.COORDINATOR },
-  { id: ID.shelter(3), name: 'Kaduwela Bodhirajaramaya', districtId: ID.district.CMB, address: 'Kaduwela', latitude: 6.933, longitude: 79.984, capacity: 120, currentOccupancy: 120, status: 'FULL', coordinatorId: null },
-  { id: ID.shelter(4), name: 'Biyagama Central College', districtId: ID.district.GAM, address: 'Biyagama', latitude: 6.9415, longitude: 79.9877, capacity: 250, currentOccupancy: 40, status: 'OPEN', coordinatorId: null },
-  { id: ID.shelter(5), name: 'Kelaniya Community Centre', districtId: ID.district.GAM, address: 'Kelaniya', latitude: 6.9553, longitude: 79.922, capacity: 150, currentOccupancy: 0, status: 'CLOSED', coordinatorId: null },
-  { id: ID.shelter(6), name: 'Ratnapura Sivali Central College', districtId: ID.district.RAT, address: 'Ratnapura', latitude: 6.683, longitude: 80.4, capacity: 300, currentOccupancy: 0, status: 'OPEN', coordinatorId: null },
+  { id: ID.shelter(1), name: 'Kolonnawa Maha Vidyalaya', districtId: ID.district.CMB, address: 'Kolonnawa', latitude: 6.933, longitude: 79.888, capacity: 300, currentOccupancy: 140, status: 'OPEN', coordinatorId: null, addedBy: 'Disaster Management Centre', createdAt: at('2026-10-02T08:00:00+05:30') },
+  { id: ID.shelter(2), name: 'Wellampitiya Community Hall', districtId: ID.district.CMB, address: 'Wellampitiya', latitude: 6.939, longitude: 79.892, capacity: 200, currentOccupancy: 185, status: 'OPEN', coordinatorId: ID.user.COORDINATOR, addedBy: 'Kasun Jayawardena (District Officer)', createdAt: at('2026-10-02T08:30:00+05:30') },
+  { id: ID.shelter(3), name: 'Kaduwela Bodhirajaramaya', districtId: ID.district.CMB, address: 'Kaduwela', latitude: 6.933, longitude: 79.984, capacity: 120, currentOccupancy: 120, status: 'FULL', coordinatorId: null, addedBy: 'DMC Field Team', createdAt: at('2026-10-02T09:00:00+05:30') },
+  { id: ID.shelter(4), name: 'Biyagama Central College', districtId: ID.district.GAM, address: 'Biyagama', latitude: 6.9415, longitude: 79.9877, capacity: 250, currentOccupancy: 40, status: 'OPEN', coordinatorId: null, addedBy: 'District Secretariat - Gampaha', createdAt: at('2026-10-02T09:30:00+05:30') },
+  { id: ID.shelter(5), name: 'Kelaniya Community Centre', districtId: ID.district.GAM, address: 'Kelaniya', latitude: 6.9553, longitude: 79.922, capacity: 150, currentOccupancy: 0, status: 'CLOSED', coordinatorId: null, addedBy: 'Kelaniya Divisional Secretariat', createdAt: at('2026-10-02T10:00:00+05:30') },
+  { id: ID.shelter(6), name: 'Ratnapura Sivali Central College', districtId: ID.district.RAT, address: 'Ratnapura', latitude: 6.683, longitude: 80.4, capacity: 300, currentOccupancy: 0, status: 'OPEN', coordinatorId: null, addedBy: 'Sanduni Wickramasinghe (District Officer)', createdAt: at('2026-05-14T08:00:00+05:30') },
+  { id: ID.shelter(7), name: 'Sedawatta Siddhartha Maha Vidyalaya', districtId: ID.district.CMB, address: 'Sedawatta, Kelani Bank Road', latitude: 6.9480, longitude: 79.8820, capacity: 250, currentOccupancy: 110, status: 'OPEN', coordinatorId: ID.user.COORDINATOR, addedBy: 'Kasun Jayawardena (District Officer)', createdAt: ago(180) },
+  { id: ID.shelter(8), name: 'Kotikawatta Rajasinghe Maha Vidyalaya', districtId: ID.district.CMB, address: 'Kotikawatta Junction', latitude: 6.9290, longitude: 79.9140, capacity: 350, currentOccupancy: 290, status: 'OPEN', coordinatorId: null, addedBy: 'DMC Emergency Response Operations', createdAt: ago(140) },
+  { id: ID.shelter(9), name: 'Grandpass Community Centre', districtId: ID.district.CMB, address: 'Grandpass North', latitude: 6.9535, longitude: 79.8700, capacity: 180, currentOccupancy: 45, status: 'OPEN', coordinatorId: null, addedBy: 'Grama Niladhari Division - Grandpass', createdAt: ago(90) },
+  { id: ID.shelter(10), name: 'Mulleriyawa Central Relief Shelter', districtId: ID.district.CMB, address: 'Mulleriyawa South', latitude: 6.9210, longitude: 79.9320, capacity: 220, currentOccupancy: 0, status: 'OPEN', coordinatorId: null, addedBy: 'Red Cross Disaster Field Team', createdAt: ago(50) },
 ]
+
 
 const occupancyLogs: OccupancyLog[] = [
   { shelterId: ID.shelter(1), eventId: ID.event.KELANI, occupancy: 140, delta: 140, recordedAt: at('2026-10-02T09:00:00+05:30') },
@@ -724,6 +732,182 @@ const activity: ActivityRow[] = [
   { id: newId(), districtId: ID.district.GAM, type: 'SHELTER', message: 'Biyagama Central College at 40 of 250', occurredAt: ago(240) },
   { id: newId(), districtId: ID.district.KEG, type: 'WARNING', message: 'Warning issued: Kelani river flood warning', occurredAt: ago(300) },
   { id: newId(), districtId: ID.district.RAT, type: 'RELIEF', message: 'Relief stock checked: 400 dry ration packs available', occurredAt: ago(700) },
+  { id: newId(), districtId: ID.district.CMB, type: 'SHELTER', message: 'New emergency shelter activated: Kotikawatta Rajasinghe Maha Vidyalaya (Capacity: 350)', occurredAt: ago(180) },
+  { id: newId(), districtId: ID.district.CMB, type: 'SHELTER', message: 'Headcount update alert: 320 evacuees reported at Kotikawatta Rajasinghe Maha Vidyalaya', occurredAt: ago(40) },
+  { id: newId(), districtId: ID.district.CMB, type: 'SHELTER', message: 'Headcount update alert: 145 evacuees reported at Sedawatta Siddhartha Maha Vidyalaya', occurredAt: ago(25) },
+]
+
+export interface ShelterHeadcountUpdateRow {
+  id: string
+  shelterId: string
+  districtId: string
+  reportedOccupancy: number
+  previousOccupancy: number | null
+  reportedByName: string
+  reportedByRole: string
+  message: string
+  status: 'PENDING' | 'APPLIED' | 'DISMISSED'
+  reportedAt: string
+  processedAt: string | null
+}
+
+const shelterHeadcountUpdates: ShelterHeadcountUpdateRow[] = [
+  {
+    id: seedId(18, 1),
+    shelterId: ID.shelter(7),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 145,
+    previousOccupancy: 110,
+    reportedByName: 'Dilani Gunasekara',
+    reportedByRole: 'SHELTER_COORDINATOR',
+    message: 'Rapid influx of families displaced by rising water near Nagalagam street. Verified count at 145 evacuees.',
+    status: 'PENDING',
+    reportedAt: ago(25),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 2),
+    shelterId: ID.shelter(8),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 320,
+    previousOccupancy: 290,
+    reportedByName: 'Tharindu Silva',
+    reportedByRole: 'VOLUNTEER',
+    message: '30 additional evacuees arrived from Kotikawatta Low-Line canal sector. Approaching 91% capacity limit.',
+    status: 'PENDING',
+    reportedAt: ago(40),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 3),
+    shelterId: ID.shelter(9),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 95,
+    previousOccupancy: 45,
+    reportedByName: 'Grama Niladhari Unit - Grandpass',
+    reportedByRole: 'DISTRICT_FIELD_OFFICER',
+    message: 'Evacuation transport wave 2 completed. 50 new occupants admitted. Total headcount is now 95.',
+    status: 'PENDING',
+    reportedAt: ago(60),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 4),
+    shelterId: ID.shelter(1),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 190,
+    previousOccupancy: 140,
+    reportedByName: 'Red Cross Medical Team',
+    reportedByRole: 'NGO',
+    message: 'Boat rescue team delivered 50 evacuees from Salamulla. Current headcount verified at 190.',
+    status: 'PENDING',
+    reportedAt: ago(120),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 5),
+    shelterId: ID.shelter(2),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 198,
+    previousOccupancy: 185,
+    reportedByName: 'Sunil Perera (Coordinator)',
+    reportedByRole: 'SHELTER_COORDINATOR',
+    message: '13 individuals transferred from low-lying Kittampahuwa community area. Shelter almost at maximum capacity (198/200).',
+    status: 'PENDING',
+    reportedAt: ago(15),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 6),
+    shelterId: ID.shelter(10),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 60,
+    previousOccupancy: 0,
+    reportedByName: 'Army Disaster Relief Unit 4',
+    reportedByRole: 'MILITARY',
+    message: 'First wave of evacuees arrived from Himbutana North embankment. 60 individuals registered and sheltered.',
+    status: 'PENDING',
+    reportedAt: ago(10),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 7),
+    shelterId: ID.shelter(3),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 110,
+    previousOccupancy: 120,
+    reportedByName: 'Kaduwela Bodhirajaramaya Team',
+    reportedByRole: 'VOLUNTEER',
+    message: '10 displaced residents safely returned home or relocated with host families as local waters receded.',
+    status: 'PENDING',
+    reportedAt: ago(35),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 8),
+    shelterId: ID.shelter(4),
+    districtId: ID.district.GAM,
+    reportedOccupancy: 85,
+    previousOccupancy: 40,
+    reportedByName: 'MOH Public Health Inspector',
+    reportedByRole: 'GOVERNMENT_OFFICER',
+    message: '45 additional displaced persons from Biyagama industrial perimeter accommodated after flash flood surge.',
+    status: 'PENDING',
+    reportedAt: ago(50),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 9),
+    shelterId: ID.shelter(1),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 235,
+    previousOccupancy: 140,
+    reportedByName: 'Kolonnawa Municipal Council Warden',
+    reportedByRole: 'LOCAL_AUTHORITY',
+    message: 'Severe flooding across Meetotamulla road triggered emergency bus evacuation. Current verified count 235 evacuees.',
+    status: 'PENDING',
+    reportedAt: ago(8),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 10),
+    shelterId: ID.shelter(2),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 192,
+    previousOccupancy: 185,
+    reportedByName: 'Police Community Patrol 03',
+    reportedByRole: 'POLICE',
+    message: 'Police boat patrol escorted 7 residents to safety from flooded railway track sector. Headcount adjusted to 192.',
+    status: 'PENDING',
+    reportedAt: ago(18),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 11),
+    shelterId: ID.shelter(6),
+    districtId: ID.district.RAT,
+    reportedOccupancy: 75,
+    previousOccupancy: 0,
+    reportedByName: 'Ratnapura Divisional Secretariat Relief Team',
+    reportedByRole: 'DISTRICT_FIELD_OFFICER',
+    message: '75 residents from vulnerable river slopes along Kalu Ganga pre-emptively evacuated to Sivali Central College.',
+    status: 'PENDING',
+    reportedAt: ago(30),
+    processedAt: null,
+  },
+  {
+    id: seedId(18, 12),
+    shelterId: ID.shelter(8),
+    districtId: ID.district.CMB,
+    reportedOccupancy: 345,
+    previousOccupancy: 290,
+    reportedByName: 'Kotikawatta Volunteer Corps',
+    reportedByRole: 'VOLUNTEER',
+    message: 'Critically approaching capacity. 55 newly registered evacuees from Low-Line canal. Total count is now 345 of 350.',
+    status: 'PENDING',
+    reportedAt: ago(5),
+    processedAt: null,
+  },
 ]
 
 export const db = {
@@ -743,6 +927,7 @@ export const db = {
   teams,
   assignments,
   shelters,
+  shelterHeadcountUpdates,
   occupancyLogs,
   stocks,
   allocations,
