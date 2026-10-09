@@ -36,6 +36,12 @@ async function send(payload: OutboxPayload): Promise<void> {
   }
 }
 
+/** A 4xx means the item itself is wrong, except for answers that only mean "not now" (expired login, slow, busy). */
+function isFinalRefusal(status: number): boolean {
+  const tryAgain = [401, 408, 425, 429]
+  return status >= 400 && status < 500 && !tryAgain.includes(status)
+}
+
 export function OutboxProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const { toast } = useToast()
@@ -95,11 +101,11 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
         } catch (e) {
           if (isApiError(e) && e.isOffline) break
           const message = isApiError(e) ? e.message : 'Could not send this item.'
-          // Server rejected it (4xx): keep it, but stop retrying until the person looks at it.
+          // The server refused it (4xx other than "try again"): keep it, but stop retrying until the person looks at it.
           await outboxStore.put({
             ...item,
             attempts: item.attempts + 1,
-            state: isApiError(e) && e.status >= 400 && e.status < 500 ? 'NEEDS_ATTENTION' : 'PENDING',
+            state: isApiError(e) && isFinalRefusal(e.status) ? 'NEEDS_ATTENTION' : 'PENDING',
             lastError: message,
           })
         }
@@ -115,14 +121,33 @@ export function OutboxProvider({ children }: { children: ReactNode }) {
     }
   }, [queryClient, reload, toast, ownerId])
 
+  // What is waiting, readable from timers and events without re-creating them.
+  const waiting = useRef(false)
   useEffect(() => {
-    const unsubscribe = connectivity.subscribe(() => {
+    waiting.current = items.some((i) => i.state === 'PENDING')
+  }, [items])
+
+  useEffect(() => {
+    // The browser says "online" a moment before the network works, so a send right then can fail;
+    // the timer below keeps trying until the queue is empty.
+    const tryNow = () => {
       if (!connectivity.isOffline()) void flush()
-    })
-    const timer = setInterval(() => void flush(), POLL.outbox)
+    }
+    const unsubscribe = connectivity.subscribe(tryNow)
+    const timer = setInterval(() => {
+      if (waiting.current) tryNow()
+    }, POLL.outbox)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tryNow()
+    }
+    window.addEventListener('focus', tryNow)
+    document.addEventListener('visibilitychange', onVisible)
+    tryNow()
     return () => {
       unsubscribe()
       clearInterval(timer)
+      window.removeEventListener('focus', tryNow)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [flush])
 
