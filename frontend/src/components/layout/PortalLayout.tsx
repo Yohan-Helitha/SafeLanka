@@ -74,7 +74,8 @@ export function PortalLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-line p-3">
+        <div className="border-t border-line p-3 space-y-2">
+          {user.role === 'DISTRICT_OFFICER' && <OfflineToggle fullWidth />}
           <UserMenu />
         </div>
       </aside>
@@ -129,7 +130,8 @@ export function PortalLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t border-line p-3">
+        <div className="border-t border-line p-3 space-y-2">
+          {user.role === 'DISTRICT_OFFICER' && <OfflineToggle fullWidth />}
           <UserMenu />
         </div>
       </aside>
@@ -153,7 +155,6 @@ export function PortalLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <OfflineToggle />
               <UserMenu compact />
             </div>
           </div>
