@@ -49,6 +49,16 @@ export function useSubmitReport() {
   })
 }
 
+/** The reporter answers the officer's question. */
+export function useReplyToReport() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (v: { id: string; message: string; photo?: File | null }) =>
+      api.reports.reply(v.id, v.message, v.photo),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: reportKeys.all }),
+  })
+}
+
 function useReviewInvalidation() {
   const queryClient = useQueryClient()
   return async () => {

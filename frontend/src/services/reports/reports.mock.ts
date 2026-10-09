@@ -56,6 +56,8 @@ function toDetail(row: ReportRow): ReportDetail {
     reviewedBy: row.reviewedBy ? (userById(row.reviewedBy)?.fullName ?? null) : null,
     reviewedAt: row.reviewedAt,
     possibleDuplicates: duplicatesOf(row),
+    reporterReply: row.reporterReply ?? null,
+    repliedAt: row.repliedAt ?? null,
   }
 }
 
@@ -187,6 +189,23 @@ export const reportsMock: ReportsApi = {
       }
       stamp(row, 'NEEDS_MORE_INFO')
       row.reviewComment = comment.trim()
+      return toDetail(row)
+    }),
+
+  reply: (id, message, photo) =>
+    mockCall(() => {
+      const user = requireRole('CITIZEN', 'VOLUNTEER')
+      const row = find(id)
+      if (row.reporterId !== user.id) fail('FORBIDDEN_ROLE', 'Only the reporter can answer this question.')
+      if (row.status !== 'NEEDS_MORE_INFO') fail('INVALID_STATE_TRANSITION', 'No question is waiting for an answer.')
+      const n = message.trim().length
+      if (n < LIMITS.comment.min || n > LIMITS.comment.max) {
+        validationFail({ message: `Reply must be ${LIMITS.comment.min}–${LIMITS.comment.max} characters.` })
+      }
+      if (photo) row.photoUrl = URL.createObjectURL(photo)
+      row.reporterReply = message.trim()
+      row.repliedAt = new Date().toISOString()
+      row.status = 'PENDING'
       return toDetail(row)
     }),
 }

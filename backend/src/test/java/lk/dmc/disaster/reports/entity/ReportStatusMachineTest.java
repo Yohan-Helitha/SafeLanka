@@ -25,6 +25,7 @@ class ReportStatusMachineTest {
           List.of(PENDING, VERIFIED),
           List.of(PENDING, REJECTED),
           List.of(PENDING, NEEDS_MORE_INFO),
+          List.of(NEEDS_MORE_INFO, PENDING),
           List.of(NEEDS_MORE_INFO, VERIFIED),
           List.of(NEEDS_MORE_INFO, REJECTED));
 
@@ -58,7 +59,7 @@ class ReportStatusMachineTest {
 
   @Test
   void forbidden_coversEverySelfTransitionAndEveryExitFromFinalStatuses() {
-    assertThat(forbidden().count()).isEqualTo(11);
+    assertThat(forbidden().count()).isEqualTo(10);
   }
 
   @ParameterizedTest

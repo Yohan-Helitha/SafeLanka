@@ -9,6 +9,7 @@ import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.service.ReportDetailView;
 import lk.dmc.disaster.reports.service.ReportFixtures;
 import lk.dmc.disaster.reports.service.ReportQueryService;
+import lk.dmc.disaster.reports.service.ReportReplyService;
 import lk.dmc.disaster.reports.service.ReportSubmissionService;
 import lk.dmc.disaster.reports.service.ReportVerificationService;
 import lk.dmc.disaster.shared.reference.UserView;
@@ -43,6 +44,7 @@ abstract class ReportWebTestSupport {
   @MockitoBean ReportSubmissionService submission;
   @MockitoBean ReportQueryService queries;
   @MockitoBean ReportVerificationService verification;
+  @MockitoBean ReportReplyService replies;
 
   static HazardReport gpsReport() {
     return ReportFixtures.gps(UUID.fromString(CITIZEN), 6.9391, 79.8921, NOW);

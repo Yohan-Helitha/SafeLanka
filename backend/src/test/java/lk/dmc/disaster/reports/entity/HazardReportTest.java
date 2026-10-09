@@ -378,6 +378,67 @@ class HazardReportTest {
     }
   }
 
+  // ---- reply ----------------------------------------------------------------------------------
+
+  @Test
+  void reply_byTheReporterMovesBackToPendingAndKeepsTheQuestion() {
+    HazardReport r = pending();
+    r.requestInfo(OFFICER, "Which side of the bridge?", CLOCK);
+
+    r.reply(r.getReporterId(), "  The north side, near the school.  ", LATER);
+
+    assertThat(r.getStatus()).isEqualTo(ReportStatus.PENDING);
+    assertThat(r.getReporterReply()).isEqualTo("The north side, near the school.");
+    assertThat(r.getRepliedAt()).isEqualTo(LATER.instant());
+    assertThat(r.getReviewComment()).isEqualTo("Which side of the bridge?");
+  }
+
+  @Test
+  void reply_bySomeoneElseIsForbidden() {
+    HazardReport r = pending();
+    r.requestInfo(OFFICER, "Which side of the bridge?", CLOCK);
+
+    assertThatThrownBy(() -> r.reply(OFFICER, "The north side", CLOCK))
+        .isInstanceOf(lk.dmc.disaster.shared.error.ForbiddenRoleException.class);
+    assertThat(r.getStatus()).isEqualTo(ReportStatus.NEEDS_MORE_INFO);
+  }
+
+  @Test
+  void reply_whenNoQuestionIsOpenIsAConflict() {
+    HazardReport r = pending();
+
+    assertThatThrownBy(() -> r.reply(r.getReporterId(), "The north side", CLOCK))
+        .isInstanceOf(InvalidStateTransitionException.class);
+  }
+
+  @ParameterizedTest
+  @CsvSource({"4,false", "5,true", "300,true", "301,false"})
+  void reply_lengthIsFiveToThreeHundred(int length, boolean accepted) {
+    HazardReport r = pending();
+    r.requestInfo(OFFICER, "Which side of the bridge?", CLOCK);
+
+    if (accepted) {
+      r.reply(r.getReporterId(), "x".repeat(length), CLOCK);
+      assertThat(r.getStatus()).isEqualTo(ReportStatus.PENDING);
+    } else {
+      assertThatThrownBy(() -> r.reply(r.getReporterId(), "x".repeat(length), CLOCK))
+          .isInstanceOf(BusinessRuleException.class);
+      assertThat(r.getStatus()).isEqualTo(ReportStatus.NEEDS_MORE_INFO);
+    }
+  }
+
+  @Test
+  void requestInfo_askedAgainClearsTheEarlierAnswer() {
+    HazardReport r = pending();
+    r.requestInfo(OFFICER, "Which side of the bridge?", CLOCK);
+    r.reply(r.getReporterId(), "The north side", CLOCK);
+
+    r.requestInfo(OFFICER, "Can you add a photo?", LATER);
+
+    assertThat(r.getReporterReply()).isNull();
+    assertThat(r.getRepliedAt()).isNull();
+  }
+
   @Test
   void requestInfo_missingCommentIsRejected() {
     assertThatThrownBy(() -> pending().requestInfo(OFFICER, null, CLOCK))

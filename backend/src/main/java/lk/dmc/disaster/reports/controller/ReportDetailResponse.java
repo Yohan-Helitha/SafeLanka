@@ -33,7 +33,9 @@ public record ReportDetailResponse(
     Reporter reporter,
     String reviewedBy,
     Instant reviewedAt,
-    List<Duplicate> possibleDuplicates) {
+    List<Duplicate> possibleDuplicates,
+    String reporterReply,
+    Instant repliedAt) {
 
   /** Who submitted the report. */
   public record Reporter(UUID id, String fullName, String role) {}

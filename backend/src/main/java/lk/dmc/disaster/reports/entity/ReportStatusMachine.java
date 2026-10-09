@@ -18,7 +18,8 @@ public final class ReportStatusMachine {
 
   static {
     ALLOWED.put(PENDING, Set.of(VERIFIED, REJECTED, NEEDS_MORE_INFO));
-    ALLOWED.put(NEEDS_MORE_INFO, Set.of(VERIFIED, REJECTED));
+    // PENDING again when the reporter answers the officer's question
+    ALLOWED.put(NEEDS_MORE_INFO, Set.of(PENDING, VERIFIED, REJECTED));
     ALLOWED.put(VERIFIED, Set.of());
     ALLOWED.put(REJECTED, Set.of());
   }

@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import lk.dmc.disaster.shared.error.BusinessRuleException;
+import lk.dmc.disaster.shared.error.ForbiddenRoleException;
 import lk.dmc.disaster.shared.geo.GeoPoint;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -88,6 +89,12 @@ public class HazardReport {
 
   @Column(name = "review_comment")
   private String reviewComment;
+
+  @Column(name = "reporter_reply")
+  private String reporterReply;
+
+  @Column(name = "replied_at")
+  private Instant repliedAt;
 
   @CreatedDate
   @Column(name = "created_at", nullable = false, updatable = false)
@@ -171,6 +178,27 @@ public class HazardReport {
         trimmedWithin(
             comment, "Comment", ReportRules.REQUEST_INFO_COMMENT_MIN, ReportRules.COMMENT_MAX);
     decide(next, officerId, note, clock);
+    // a new question makes the earlier answer out of date
+    reporterReply = null;
+    repliedAt = null;
+  }
+
+  /**
+   * The reporter answers the officer's question; the report goes back to PENDING for a decision.
+   * The answer is 5-300 characters and only the person who reported it may give it.
+   *
+   * @throws ForbiddenRoleException (403) for anyone else
+   */
+  public void reply(UUID reporterUserId, String message, Clock clock) {
+    if (!isReportedBy(reporterUserId)) {
+      throw new ForbiddenRoleException("Only the reporter can answer this question.");
+    }
+    ReportStatus next = ReportStatusMachine.transition(status, ReportStatus.PENDING);
+    reporterReply =
+        trimmedWithin(
+            message, "Reply", ReportRules.REQUEST_INFO_COMMENT_MIN, ReportRules.COMMENT_MAX);
+    repliedAt = clock.instant();
+    status = next;
   }
 
   private void decide(ReportStatus next, UUID officerId, String note, Clock clock) {

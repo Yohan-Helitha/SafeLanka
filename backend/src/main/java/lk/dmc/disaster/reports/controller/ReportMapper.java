@@ -50,7 +50,9 @@ class ReportMapper {
             reporter.id(), reporter.fullName(), reporter.role().name()),
         view.reviewer() == null ? null : view.reviewer().fullName(),
         r.getReviewedAt(),
-        view.duplicates().stream().map(ReportMapper::toDuplicate).toList());
+        view.duplicates().stream().map(ReportMapper::toDuplicate).toList(),
+        r.getReporterReply(),
+        r.getRepliedAt());
   }
 
   private static ReportDetailResponse.Duplicate toDuplicate(DuplicateMatch match) {

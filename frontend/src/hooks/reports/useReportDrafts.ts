@@ -53,7 +53,8 @@ export async function removeDraft(id: string): Promise<void> {
 /** The report to send, or null while the draft is still missing something the server requires. */
 export function draftToInput(draft: ReportDraft): ReportInput | null {
   const hasGps = !draft.manual && draft.latitude !== null && draft.longitude !== null
-  const manualOk = draft.manual && draft.manualText.trim().length >= 5
+  // Older drafts saved a typed place with manual=false (GPS had failed); the text is what counts.
+  const manualOk = draft.manualText.trim().length >= 5
   const description = draft.description.trim()
   if (!draft.hazardTypeId || !draft.category) return null
   if (description.length < LIMITS.description.min || description.length > LIMITS.description.max) return null

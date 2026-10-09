@@ -3,6 +3,7 @@ package lk.dmc.disaster.reports.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -19,6 +20,7 @@ import lk.dmc.disaster.reports.entity.HazardReport;
 import lk.dmc.disaster.reports.entity.ReportPhoto;
 import lk.dmc.disaster.reports.service.DuplicateMatch;
 import lk.dmc.disaster.reports.service.PhotoContent;
+import lk.dmc.disaster.reports.service.PhotoUpload;
 import lk.dmc.disaster.reports.service.ReportDetailView;
 import lk.dmc.disaster.reports.service.ReportWithPhoto;
 import lk.dmc.disaster.reports.service.SubmissionResult;
@@ -301,6 +303,65 @@ class ReportControllerTest extends ReportWebTestSupport {
   void photo_districtOfficerRoleIs403() throws Exception {
     mvc.perform(
             get("/api/reports/" + UUID.randomUUID() + "/photo").header(HEADER, DISTRICT_OFFICER))
+        .andExpect(status().isForbidden());
+  }
+
+  // ---- reply to the officer's question -----------------------------------------------------
+
+  private static MockMultipartFile replyPart(String json) {
+    return new MockMultipartFile("reply", "", "application/json", json.getBytes());
+  }
+
+  @Test
+  void reply_returnsTheReportAndPassesTheMessageOn() throws Exception {
+    HazardReport report = gpsReport();
+    when(replies.reply(
+            eq(report.getId()), eq(UUID.fromString(CITIZEN)), eq("The north side"), isNull()))
+        .thenReturn(detailOf(report));
+
+    mvc.perform(
+            multipart("/api/reports/" + report.getId() + "/reply")
+                .file(replyPart("{\"message\":\"The north side\"}"))
+                .header(HEADER, CITIZEN))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.id").value(report.getId().toString()));
+  }
+
+  @Test
+  void reply_passesAPhotoOn() throws Exception {
+    HazardReport report = gpsReport();
+    when(replies.reply(
+            eq(report.getId()), any(UUID.class), any(String.class), any(PhotoUpload.class)))
+        .thenReturn(detailOf(report));
+
+    mvc.perform(
+            multipart("/api/reports/" + report.getId() + "/reply")
+                .file(replyPart("{\"message\":\"A wider photo\"}"))
+                .file(new MockMultipartFile("photo", "p.jpg", "image/jpeg", new byte[] {1, 2, 3}))
+                .header(HEADER, CITIZEN))
+        .andExpect(status().isOk());
+
+    ArgumentCaptor<PhotoUpload> sent = ArgumentCaptor.forClass(PhotoUpload.class);
+    verify(replies).reply(eq(report.getId()), any(UUID.class), eq("A wider photo"), sent.capture());
+    assertThat(sent.getValue().contentType()).isEqualTo("image/jpeg");
+    assertThat(sent.getValue().content()).containsExactly(1, 2, 3);
+  }
+
+  @Test
+  void reply_tooShortMessageIs400() throws Exception {
+    mvc.perform(
+            multipart("/api/reports/" + UUID.randomUUID() + "/reply")
+                .file(replyPart("{\"message\":\"no\"}"))
+                .header(HEADER, CITIZEN))
+        .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void reply_officerRoleIs403() throws Exception {
+    mvc.perform(
+            multipart("/api/reports/" + UUID.randomUUID() + "/reply")
+                .file(replyPart("{\"message\":\"The north side\"}"))
+                .header(HEADER, OFFICER))
         .andExpect(status().isForbidden());
   }
 }

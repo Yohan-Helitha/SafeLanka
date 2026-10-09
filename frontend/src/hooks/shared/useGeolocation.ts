@@ -21,6 +21,16 @@ export function useGeolocation() {
       setState({ status: 'unavailable', fix: null, accuracyMetres: null, reason: 'GPS is switched off on this phone.' })
       return
     }
+    // Browsers silently refuse GPS on plain http (except localhost), without ever asking.
+    if (!window.isSecureContext) {
+      setState({
+        status: 'unavailable',
+        fix: null,
+        accuracyMetres: null,
+        reason: 'The browser only shares location on a secure (https) page.',
+      })
+      return
+    }
     if (!('geolocation' in navigator)) {
       setState({ status: 'unavailable', fix: null, accuracyMetres: null, reason: 'This device cannot share its location.' })
       return
