@@ -23,7 +23,9 @@ export function OfflineBanner() {
       <CloudOff className="size-4 shrink-0" aria-hidden />
       <span className="flex-1">
         {!online && "You're offline. "}
-        {waiting > 0 ? `${plural(waiting, 'saved item')} waiting to send.` : 'Changes are saved on this phone.'}
+        {waiting > 0
+          ? `${plural(waiting, 'saved item')} waiting to send.`
+          : 'Hazard reports, team status and relief records are saved and sent when you are back online. Other actions need a connection.'}
         {bad && ` ${plural(attentionCount, 'item')} could not be sent.`}
       </span>
       {online && waiting > 0 && (

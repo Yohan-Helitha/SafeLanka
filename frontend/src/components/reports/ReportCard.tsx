@@ -3,6 +3,7 @@ import { CATEGORY_LABEL, CITIZEN_REPORT_STATUS, REJECTION_LABEL } from '@/consta
 import type { ReportListItem } from '@/types'
 import { relativeTime } from '@/utils/format'
 import { StatusChip } from '../domain'
+import { ReplyForm } from './ReplyForm'
 
 interface Props {
   report: ReportListItem
@@ -41,6 +42,7 @@ export function ReportCard({ report, hazardTypeName }: Props) {
           The officer asked: {report.reviewComment}
         </div>
       )}
+      {report.status === 'NEEDS_MORE_INFO' && <ReplyForm reportId={report.id} />}
     </article>
   )
 }

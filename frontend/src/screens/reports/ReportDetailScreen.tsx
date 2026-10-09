@@ -94,6 +94,7 @@ export function ReportDetailScreen() {
               {r.reviewedAt && <Item label="Reviewed" value={`${formatDateTime(r.reviewedAt)} by ${r.reviewedBy ?? '—'}`} />}
               {r.rejectionReason && <Item label="Reason" value={REJECTION_LABEL[r.rejectionReason]} />}
               {r.reviewComment && <Item label="Comment" value={r.reviewComment} />}
+              {r.reporterReply && <Item label="Reporter's answer" value={r.reporterReply} />}
             </dl>
           </Card>
 

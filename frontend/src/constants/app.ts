@@ -11,7 +11,7 @@ export const POLL = {
   assignment: 15_000,
   situation: 30_000,
   queue: 30_000,
-  outbox: 30_000,
+  outbox: 8_000,
 } as const
 
 export const LIMITS = {

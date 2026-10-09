@@ -52,6 +52,9 @@ export interface ReportDetail extends ReportListItem, Partial<LatLng> {
   reviewedBy: string | null
   reviewedAt: string | null
   possibleDuplicates: ReportDuplicate[]
+  /** The reporter's answer to the officer's question, once given. */
+  reporterReply?: string | null
+  repliedAt?: string | null
 }
 
 export interface ReportFilter {

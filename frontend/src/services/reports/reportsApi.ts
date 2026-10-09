@@ -16,4 +16,6 @@ export interface ReportsApi {
   verify(id: string, severity?: number): Promise<ReportDetail>
   reject(id: string, reason: RejectionReason, comment: string): Promise<ReportDetail>
   requestInfo(id: string, comment: string): Promise<ReportDetail>
+  /** The reporter answers the officer's question, optionally with a photo that replaces the old one. */
+  reply(id: string, message: string, photo?: File | null): Promise<ReportDetail>
 }

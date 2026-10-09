@@ -1,3 +1,4 @@
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import react from '@vitejs/plugin-react'
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
@@ -23,7 +24,9 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react()],
+    // VITE_HTTPS=true serves the dev site over https (self-signed). A phone only allows GPS, the
+    // camera and the service worker on https, so use it when testing from a phone.
+    plugins: [react(), ...(env.VITE_HTTPS === 'true' ? [basicSsl()] : [])],
     resolve: {
       alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
     },

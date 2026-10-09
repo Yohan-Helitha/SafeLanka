@@ -24,6 +24,8 @@ import type { Channel } from '@/types'
 import { ID, newId, seedId } from './ids'
 
 export interface ReportRow {
+  reporterReply?: string | null
+  repliedAt?: string | null
   id: string
   referenceNo: string
   reporterId: string

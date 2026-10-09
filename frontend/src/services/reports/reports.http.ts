@@ -36,4 +36,10 @@ export const reportsHttp: ReportsApi = {
     withLocalPhoto(await http.patch<ReportDetail>(`/reports/${id}/reject`, { reason, comment })),
   requestInfo: async (id, comment) =>
     withLocalPhoto(await http.patch<ReportDetail>(`/reports/${id}/request-info`, { comment })),
+  reply: async (id, message, photo) => {
+    const form = new FormData()
+    form.append('reply', new Blob([JSON.stringify({ message })], { type: 'application/json' }))
+    if (photo) form.append('photo', photo)
+    return withLocalPhoto(await http.postForm<ReportDetail>(`/reports/${id}/reply`, form))
+  },
 }

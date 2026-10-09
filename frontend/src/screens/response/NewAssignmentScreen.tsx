@@ -22,7 +22,7 @@ import { paths } from '@/constants/routes'
 import { useCurrentUser } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { isApiError } from '@/services'
-import { useDocumentTitle, useReferenceData } from '@/hooks/shared'
+import { useDocumentTitle, useOnlineStatus, useReferenceData } from '@/hooks/shared'
 import { useCreateAssignment, useShelters, useShelterSuggestions, useTeams } from '@/hooks/response/useResponse'
 import { compact } from '@/utils/validation'
 
@@ -40,6 +40,7 @@ interface GeocodeFeature {
 
 export function NewAssignmentScreen() {
   useDocumentTitle('New assignment')
+  const online = useOnlineStatus()
   const user = useCurrentUser()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -363,7 +364,7 @@ export function NewAssignmentScreen() {
 
   const submit = () => {
     setAttempted(true)
-    if (Object.keys(errors).length || !event) return
+    if (!online || Object.keys(errors).length || !event) return
     create.mutate(
       {
         eventId: event.id,
@@ -823,6 +824,11 @@ export function NewAssignmentScreen() {
 
           {/* Dispatch Actions */}
           <div className="flex items-center justify-end gap-3 pt-1">
+            {!online && (
+              <span role="status" className="mr-auto text-sm text-amber-400">
+                Dispatching needs a connection. Your form stays here; send it when you are back online.
+              </span>
+            )}
             <Link
               to={paths.district.teams}
               className="rounded-lg border border-[#232c3f] bg-[#101726] px-5 py-2.5 text-sm font-semibold text-slate-300 transition-colors hover:bg-[#162033] hover:text-white"
@@ -831,7 +837,7 @@ export function NewAssignmentScreen() {
             </Link>
             <button
               type="submit"
-              disabled={create.isPending}
+              disabled={create.isPending || !online}
               className="inline-flex items-center gap-2 rounded-lg bg-cyan-500 px-6 py-2.5 text-sm font-bold text-slate-950 shadow-[0_0_16px_rgba(6,182,212,0.3)] transition-all hover:bg-cyan-400 hover:shadow-[0_0_24px_rgba(76,215,246,0.45)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {create.isPending ? (

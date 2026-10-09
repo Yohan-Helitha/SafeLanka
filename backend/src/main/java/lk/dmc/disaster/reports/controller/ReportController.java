@@ -10,6 +10,7 @@ import java.util.UUID;
 import lk.dmc.disaster.reports.service.PhotoContent;
 import lk.dmc.disaster.reports.service.PhotoUpload;
 import lk.dmc.disaster.reports.service.ReportQueryService;
+import lk.dmc.disaster.reports.service.ReportReplyService;
 import lk.dmc.disaster.reports.service.ReportSubmissionService;
 import lk.dmc.disaster.reports.service.SubmissionResult;
 import lk.dmc.disaster.reports.service.SubmitReportCommand;
@@ -40,16 +41,19 @@ class ReportController {
 
   private final ReportSubmissionService submission;
   private final ReportQueryService queries;
+  private final ReportReplyService replies;
   private final ReportMapper mapper;
   private final ActingUserContext actingUser;
 
   ReportController(
       ReportSubmissionService submission,
       ReportQueryService queries,
+      ReportReplyService replies,
       ReportMapper mapper,
       ActingUserContext actingUser) {
     this.submission = submission;
     this.queries = queries;
+    this.replies = replies;
     this.mapper = mapper;
     this.actingUser = actingUser;
   }
@@ -91,6 +95,24 @@ class ReportController {
   ApiResponse<ReportDetailResponse> detail(@PathVariable UUID id) {
     ActingUser actor = actingUser.require();
     return ApiResponse.of(mapper.toDetail(queries.detail(id, actor)));
+  }
+
+  @Operation(
+      summary = "Answer the officer's question",
+      description =
+          "Roles: CITIZEN, VOLUNTEER, only for their own report while it needs more information"
+              + " (otherwise 403 or 409). Multipart: part `reply` (JSON with `message`) and an"
+              + " optional `photo` (JPEG/PNG, max 5 MB) that replaces the report's photo."
+              + " The report goes back to PENDING.")
+  @PostMapping(value = "/{id}/reply", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  @RequiresRole({Role.CITIZEN, Role.VOLUNTEER})
+  ApiResponse<ReportDetailResponse> reply(
+      @PathVariable UUID id,
+      @RequestPart("reply") @Valid ReplyRequest reply,
+      @RequestPart(value = "photo", required = false) MultipartFile photo) {
+    return ApiResponse.of(
+        mapper.toDetail(
+            replies.reply(id, actingUser.require().id(), reply.message(), toUpload(photo))));
   }
 
   @Operation(

@@ -88,7 +88,8 @@ export function ReportHazardScreen() {
     category,
     description,
     photo,
-    manual,
+    // Without GPS the screen switches to typing the place by itself; the draft must remember that.
+    manual: useManual,
     manualText,
     districtId,
     latitude: fix?.latitude ?? null,
@@ -106,7 +107,7 @@ export function ReportHazardScreen() {
     if (!loaded || sent.current || !hasContent) return
     const timer = setTimeout(() => void saveDraft(latest.current.snapshot()), 500)
     return () => clearTimeout(timer)
-  }, [loaded, hasContent, hazardTypeId, category, description, photo, manual, manualText, districtId, fix])
+  }, [loaded, hasContent, hazardTypeId, category, description, photo, useManual, manualText, districtId, fix])
   useEffect(
     () => () => {
       const { snapshot: take, loaded: ready, hasContent: filled } = latest.current
